@@ -1,0 +1,24 @@
+Default: &defaults
+  user: middle
+  password: middle
+  host: localhost
+  port: 5432
+  database: middle
+  poolsize: 10
+
+Development:
+  <<: *defaults
+
+Testing:
+  database: middle_test
+  <<: *defaults
+
+Staging:
+  database: middle_staging
+  poolsize: 100
+  <<: *defaults
+
+Production:
+  database: middle_production
+  poolsize: 100
+  <<: *defaults

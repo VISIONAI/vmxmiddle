@@ -1,0 +1,16 @@
+/static      StaticR  Static  getStatic
+/auth        AuthR    Auth    getAuth
+/fay-command FaySiteR FaySite getFaySite
+
+/favicon.ico FaviconR GET
+/robots.txt RobotsR GET
+
+/ HomeR GET POST
+
+
+
+/session SessionR GET POST 
+/model ModelR GET POST PUT
+/session/#SessionId ProcessImageR GET POST
+/session/#SessionId/params SessionParamsR GET POST
+/session/#SessionId/Edit EditModelR GET POST PUT
