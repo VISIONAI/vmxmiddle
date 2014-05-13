@@ -25,7 +25,7 @@ postSessionR :: Handler String
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
-    (csc :: CreateSessionCommand ) <- parseJsonBody_
+    (csc :: CreateSessionCommand ) <- requireJsonBody
     sessionId      <- liftIO getSessionId
     outputPipePath <- createSession sessionId csc
     fromBrain      <- liftIO $ drainFifo outputPipePath
@@ -44,11 +44,13 @@ postSessionR = do
             inputPipePath' <- inputPipePath
             outputPipePath' <- outputPipePath
             outLogPath' <- outLogPath
-            inputPipe  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
-            outputPipe <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
-            log        <- lift $ openFile outLogPath' AppendMode
-            _          <- lift $ createProcess (shell $ unwords [vmxExecutable, matlabRuntime, sessionPath', inputPipePath', outputPipePath', modelPath])
-                                 {std_out = UseHandle log, std_err = UseHandle log}
+            vmxExecutable' <- vmxExecutable
+            matlabRuntime' <- matlabPath
+            _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
+            _  <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
+            log'        <- lift $ openFile outLogPath' AppendMode
+            _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', sessionPath', inputPipePath', outputPipePath', modelPath])
+                                 {std_out = UseHandle log', std_err = UseHandle log'}
             return outputPipePath'
             where
                 sessionPath :: Handler String
@@ -61,8 +63,6 @@ postSessionR = do
                 outputPipePath  = fmap (++ "/pipe_output") sessionPath >>= return
                 outLogPath :: Handler String
                 outLogPath  = fmap (++ "/log.txt") sessionPath >>= return
-                vmxExecutable = "/home/g/build/run_VMXserver.sh"
-                matlabRuntime = "/home/g/build/MATLAB/R2013a"
                 modelPath = case csc of
                                 CreateSessionCommand (Just m) ->  "models/" ++ m ++ ".mat"
                                 CreateSessionCommand Nothing  -> ""
@@ -98,7 +98,7 @@ list_sessions = do
             case eJ of
                 Right r -> r
                 -- TODO .. properly handle errors
-                Left e -> undefined
+                Left _ -> undefined
         notDots :: FilePath -> Bool
         notDots fp = case fp of
                         "." -> False

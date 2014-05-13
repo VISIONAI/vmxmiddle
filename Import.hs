@@ -14,6 +14,8 @@ import           Model                as Import
 import           Settings             as Import
 import           Settings.Development as Import
 import           Settings.StaticFiles as Import
+import           System.Process       as Import (readProcess)
+import           System.IO            as Import (readFile)
 import           SharedTypes          as Import
 
 #if __GLASGOW_HASKELL__ >= 704
