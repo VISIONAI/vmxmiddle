@@ -11,6 +11,6 @@
 
 /session SessionR GET POST 
 /model ModelR GET POST PUT
-/session/#SessionId ProcessImageR GET POST
+/session/#SessionId ProcessImageR POST
 /session/#SessionId/params SessionParamsR GET POST
 /session/#SessionId/Edit EditModelR GET POST PUT

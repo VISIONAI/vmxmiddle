@@ -9,6 +9,7 @@ import           Yesod                as Import hiding (Route (..))
 import           Control.Applicative  as Import (pure, (<$>), (<*>))
 import           Data.Text            as Import (Text)
 
+import           Control.Monad        as Import (mzero)
 import           Foundation           as Import
 import           Model                as Import
 import           Settings             as Import
