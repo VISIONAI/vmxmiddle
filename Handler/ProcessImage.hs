@@ -4,6 +4,14 @@ module Handler.ProcessImage where
 import Import
 import Helper.Shared
 
+optionsProcessImageR :: SessionId -> Handler ()
+optionsProcessImageR _ = do
+    addHeader "Allow" "POST"
+    addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "POST"
+    return ()
+
 data ProcessImageCommand =  ProcessImageCommand {
     picImage :: String,
     processImageParams   :: Value,

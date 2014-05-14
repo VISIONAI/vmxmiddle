@@ -17,6 +17,13 @@ import System.Posix.Env(setEnv)
 
 import Helper.Shared
 
+optionsSessionR :: Handler ()
+optionsSessionR = do
+    addHeader "Allow" "Get, Put"
+    addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET, PUT"
+    return ()
 
 
 

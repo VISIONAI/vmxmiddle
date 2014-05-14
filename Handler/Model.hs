@@ -21,6 +21,13 @@ import           GHC.Generics
 import           Data.Data
 
 
+optionsModelR :: Handler ()
+optionsModelR = do
+    addHeader "Allow" "Get, Put, Post"
+    addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET, PUT, POST"
+    return ()
 
 
 --list all models
