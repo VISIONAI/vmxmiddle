@@ -39,18 +39,13 @@ type OutputPipe = FilePath
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
     let f =  LBS.unpack $ encode v
-    path <- lockFilePath sid
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    ret <- lift $ withFileLock path Shared (\l -> do
-        file <- openFileBlocking i WriteMode
-        hPutStr file f
-        hClose file
-        ret' <- drainFifo o
-        unlockFile l
-        return ret'
-        )
-    return ret
+    file <- lift $ openFileBlocking i WriteMode
+    lift $ hPutStr file f
+    lift $ hClose file
+    ret' <- lift $ drainFifo o
+    return ret'
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 
