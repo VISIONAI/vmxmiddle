@@ -10,7 +10,7 @@
 
 
 /session SessionR GET POST OPTIONS
-/model ModelR GET POST PUT
+/model ModelR GET POST PUT OPTIONS
 /session/#SessionId ProcessImageR POST OPTIONS
 /session/#SessionId/params SessionParamsR GET OPTIONS
 /session/#SessionId/Edit EditModelR POST PUT OPTIONS
