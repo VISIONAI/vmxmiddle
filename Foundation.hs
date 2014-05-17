@@ -172,7 +172,7 @@ wwwDir = do
     extra <- getExtra
     case extraWwwDir extra of
         Just theDir -> return theDir
-        Nothing  -> return "/www/vmx"
+        Nothing  -> return "/www/vmx/"
 
 vmxExecutable :: Handler String
 vmxExecutable = do
