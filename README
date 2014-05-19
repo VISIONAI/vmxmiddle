@@ -1,0 +1,20 @@
+Requires postgres
+
+default database is
+
+user: middle
+pass: middle
+db  : middle
+
+
+sudo su - postgres
+psql
+
+
+> CREATE DATABASE middle;
+> CREATE USER middle with password 'middle'
+> GRANT ALL ON database middle to middle;
+
+
+
+
