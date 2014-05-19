@@ -1,3 +1,9 @@
+apt-get install libncurses5-dev haskell-platform
+
+cabal update
+
+cabal install --only-dependencies
+
 Requires postgres
 
 default database is
