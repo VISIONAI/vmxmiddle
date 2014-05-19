@@ -10,7 +10,6 @@ import Import
 import System.Process
 import System.IO
 import Control.Exception (evaluate)
-import System.FileLock
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)

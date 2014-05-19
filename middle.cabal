@@ -82,7 +82,6 @@ library
                  , process                      
                  , unix                      
                  , uuid                      
-                 , filelock
                  , base64-bytestring
                  , gd
                  , split
