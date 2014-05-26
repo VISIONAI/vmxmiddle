@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Handler.Session where
 
 import Import
@@ -7,7 +8,6 @@ import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
 import System.Directory (getDirectoryContents, createDirectory)
-import Data.Aeson (eitherDecode, (.:?))
 import Control.Monad (mzero)
 import System.Posix.Files (namedPipeMode, createNamedPipe, accessModes, namedPipeMode)
 import Data.Bits ((.|.))
@@ -33,52 +33,54 @@ postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    sessionId      <- liftIO getSessionId
-    outputPipePath <- createSession sessionId csc
-    fromBrain      <- liftIO $ drainFifo outputPipePath
+    sessionId <- createSession (modelName csc)
+    return sessionId
+
+type ModelName = String
+-- this probably should receive a modelName directly rather than a CreateSessionCommand
+createSession :: Maybe ModelName -> Handler String
+createSession modelNameM = do
+    sid   <- liftIO getSessionId
+    lift $ setEnv "MCR_CACHE_ROOT" "/tmp/mcr_cache" False
+    sessionPath' <- sessionPath sid
+    lift $ createDirectory sessionPath' 
+    inputPipePath' <- inputPipePath sid
+    outputPipePath' <- outputPipePath sid
+    outLogPath' <- outLogPath sid
+    vmxExecutable' <- vmxExecutable
+    matlabRuntime' <- matlabPath
+    _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
+    _  <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
+    log'        <- lift $ openFile outLogPath' AppendMode
+    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', sessionPath', inputPipePath', outputPipePath', modelPath])
+                         {std_out = UseHandle log', std_err = UseHandle log'}
+    fromBrain      <- liftIO $ drainFifo outputPipePath'
     return fromBrain
     where
         getSessionId :: IO String
         getSessionId = do
             seed <- U4.nextRandom
             return $ U.toString seed
-        -- this probably should receive a modelName directly rather than a CreateSessionCommand
-        createSession :: String -> CreateSessionCommand -> Handler FilePath
-        createSession sid csc = do
-            lift $ setEnv "MCR_CACHE_ROOT" "/tmp/mcr_cache" False
-            sessionPath' <- sessionPath
-            lift $ createDirectory sessionPath'
-            inputPipePath' <- inputPipePath
-            outputPipePath' <- outputPipePath
-            outLogPath' <- outLogPath
-            vmxExecutable' <- vmxExecutable
-            matlabRuntime' <- matlabPath
-            _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
-            _  <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
-            log'        <- lift $ openFile outLogPath' AppendMode
-            _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', sessionPath', inputPipePath', outputPipePath', modelPath])
-                                 {std_out = UseHandle log', std_err = UseHandle log'}
-            return outputPipePath'
-            where
-                sessionPath :: Handler String
-                sessionPath  = do
-                    dir <- wwwDir 
-                    return $ dir ++ "sessions/" ++ sid
-                inputPipePath :: Handler String
-                inputPipePath  = fmap (++ "/pipe_input") sessionPath >>= return
-                outputPipePath :: Handler String
-                outputPipePath  = fmap (++ "/pipe_output") sessionPath >>= return
-                outLogPath :: Handler String
-                outLogPath  = fmap (++ "/log.txt") sessionPath >>= return
-                modelPath = case csc of
-                                CreateSessionCommand (Just m) ->  "models/" ++ m ++ ".mat"
-                                CreateSessionCommand Nothing  -> ""
+        sessionPath :: SessionId -> Handler String
+        sessionPath  sid = do
+            dir <- wwwDir 
+            return $ dir ++ "sessions/" ++ sid
+        inputPipePath :: SessionId -> Handler String
+        inputPipePath  sid = fmap (++ "/pipe_input") (sessionPath sid)>>= return
+        outputPipePath :: SessionId -> Handler String
+        outputPipePath  sid = fmap (++ "/pipe_output") (sessionPath sid) >>= return
+        outLogPath :: SessionId -> Handler String
+        outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
+        modelPath = case modelNameM of
+                Just m -> "models/" ++ m ++ ".mat"
+                Nothing -> ""
 
 
 --list all sessions
 getSessionR :: Handler Value
 getSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Content-Type" "application/json"
     list_sessions
 
 list_sessions :: Handler Value
@@ -95,17 +97,6 @@ list_sessions = do
             sp' <- sp
             modelJson <- lift $ readFile (sp' ++ fp ++ "/model.json")
             return $ object ["session" .= fp, "model" .= makeJson modelJson]
-        makeJson :: String -> Value
-        makeJson s = do
-            -- String -> Char8 bystring
-            let packed = C.pack s
-            -- Char8 -> Lazy bytestring
-            let chunked = L.fromChunks [packed]
-            let eJ :: Either String Value = eitherDecode chunked
-            case eJ of
-                Right r -> r
-                -- TODO .. properly handle errors
-                Left _ -> undefined
         notDots :: FilePath -> Bool
         notDots fp = case fp of
                         "." -> False

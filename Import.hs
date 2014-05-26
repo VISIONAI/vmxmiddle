@@ -7,7 +7,7 @@ import           Prelude              as Import hiding (head, init, last,
 import           Yesod                as Import hiding (Route (..))
 
 import           Control.Applicative  as Import (pure, (<$>), (<*>))
-import           Data.Text            as Import (Text)
+import           Data.Text            as Import (Text, pack, unpack)
 
 import           Control.Monad        as Import (mzero)
 import           Foundation           as Import
@@ -18,6 +18,9 @@ import           Settings.StaticFiles as Import
 import           System.Process       as Import (readProcess)
 import           System.IO            as Import (readFile)
 import           SharedTypes          as Import
+import           Yesod.WebSockets     as Import (webSockets)
+import           Network.WebSockets   as Import (WebSocketsData(..))
+import Data.Aeson                     as Import (eitherDecode, (.:?))
 
 #if __GLASGOW_HASKELL__ >= 704
 import           Data.Monoid          as Import
@@ -26,6 +29,8 @@ import           Data.Monoid          as Import
 #else
 import           Data.Monoid          as Import
                                                  (Monoid (mappend, mempty, mconcat))
+
+
 
 infixr 5 <>
 (<>) :: Monoid m => m -> m -> m
