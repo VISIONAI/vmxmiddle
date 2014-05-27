@@ -1,18 +1,26 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Helper.Shared
     ( drainFifo
     , headers
     , getPipeResponse
     , InputPipe
     , OutputPipe
+    , makeJson
+    , processImage
     ) where
 
 import Import
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Char8 as C
+import System.Directory (getDirectoryContents, createDirectory)
 import System.Process
 import System.IO
 import Control.Exception (evaluate)
 import qualified Data.ByteString.Lazy.Char8 as LBS
-import Data.Aeson (encode)
+import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
+import Yesod.WebSockets
 
 
 
@@ -49,4 +57,82 @@ getPipeResponse v sid = do
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 
 lockFilePath sid = fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
+
+data HTTPVerb = 
+    GET   |
+    POST  |
+    PUT   |
+    DELETE
+
+data ResourceV = 
+    Model          |
+    EditModel      |
+    Session        |
+    ProcessImage   |
+    SessionParams
+    
+    
+instance WebSocketsData Value where
+   toLazyByteString v = encode v
+   fromLazyByteString s = do
+        case decode s of
+            Just val -> val
+            Nothing -> object []
+
+
+list_sessions :: Handler Value
+list_sessions = do
+    sessions <-  sp >>= lift.getDirectoryContents 
+    let sessions' = filter notDots sessions
+
+    out <- sequence $ map getSessionInfo sessions'
+    return $ object ["data" .= out]
+    where
+        sp = fmap (++ "sessions/") wwwDir 
+        getSessionInfo :: FilePath -> Handler Value
+        getSessionInfo fp = do
+            sp' <- sp
+            modelJson <- lift $ readFile (sp' ++ fp ++ "/model.json")
+            return $ object ["session" .= fp, "model" .= makeJson modelJson]
+        makeJson :: String -> Value
+        makeJson s = do
+            -- String -> Char8 bystring
+            let packed = C.pack s
+            -- Char8 -> Lazy bytestring
+            let chunked = L.fromChunks [packed]
+            let eJ :: Either String Value = eitherDecode chunked
+            case eJ of
+                Right r -> r
+                -- TODO .. properly handle errors
+                Left _ -> undefined
+        notDots :: FilePath -> Bool
+        notDots fp = case fp of
+                        "." -> False
+                        ".." -> False
+                        ".DS_Store" -> False
+                        _ -> True
+
+
+
+makeJson :: String -> Value
+makeJson s = do
+    -- String -> Char8 bystring
+    let packed = C.pack s
+    -- Char8 -> Lazy bytestring
+    let chunked = L.fromChunks [packed]
+    let eJ :: Either String Value = eitherDecode chunked
+    case eJ of
+        Right r -> r
+        -- TODO .. properly handle errors
+        Left _ -> undefined
+
+processImage :: SessionId -> String -> Value -> Int -> Handler String
+processImage sid image params time = do
+   let req = object ["command" .= command, "image" .= image, "params" .= params, "time" .= time]
+   response <- getPipeResponse req sid
+   return response
+   where
+        command :: String
+        command = "process_image"
+    
 
