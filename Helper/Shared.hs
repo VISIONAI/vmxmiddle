@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
     , headers
@@ -8,6 +9,7 @@ module Helper.Shared
     , OutputPipe
     , makeJson
     , processImage
+    , getLock
     ) where
 
 import Import
@@ -22,6 +24,25 @@ import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Yesod.WebSockets
 
+import Data.Map.Strict as Map (member, (!), insert) 
+import Data.IORef (atomicModifyIORef')
+
+
+getLock :: SessionId -> Handler ()
+getLock sid = do
+    App {..} <- getYesod
+    liftIO $ atomicModifyIORef' pipeLocks
+        $ \ls -> do
+            if member sid ls
+                then (ls,ls)
+                else do
+                    let l =  liftIO $ newEmptyMVar
+                    let ls' = Map.insert sid l ls
+                    undefined
+                    -- let ls' = insert sid l ls
+                    -- (ls',ls')
+    return ()
+            
 
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
