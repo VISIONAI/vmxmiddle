@@ -9,8 +9,6 @@ module Helper.Shared
     , OutputPipe
     , makeJson
     , processImage
-    , waitLock
-    , releaseLock
     ) where
 
 import Import
@@ -80,10 +78,12 @@ getPipeResponse v sid = do
     let f =  LBS.unpack $ encode v
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
+    waitLock sid
     file <- lift $ openFileBlocking i WriteMode
     lift $ hPutStr file f
     lift $ hClose file
     ret' <- lift $ drainFifo o
+    releaseLock sid
     return ret'
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
