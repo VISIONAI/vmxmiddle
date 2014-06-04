@@ -50,8 +50,10 @@ putModelR =  do
     headers
     cmd :: SaveModelCommand <- requireJsonBody
     let sid = saveModelSid cmd
+    waitLock sid
     let req = object ["command" .= save_model, "session_id" .= sid]
     response <- getPipeResponse req sid
+    releaseLock sid
     return response
     where
         save_model :: String = "save_model"

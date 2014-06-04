@@ -25,11 +25,13 @@ instance FromJSON ProcessImageCommand where
 
 postProcessImageR :: SessionId -> Handler String
 postProcessImageR sid = do
+   waitLock sid
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
    let req = object ["command" .= command, "image" .= picImage pic, "params" .= processImageParams pic, "time" .= picTime pic]
    response <- getPipeResponse req sid
+   releaseLock sid
    return response
    where
         command :: String
