@@ -9,7 +9,8 @@ module Helper.Shared
     , OutputPipe
     , makeJson
     , processImage
-    , getLock
+    , waitLock
+    , releaseLock
     ) where
 
 import Import
@@ -27,9 +28,14 @@ import Yesod.WebSockets
 import Data.Map.Strict as Map (member, (!), insert) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
+releaseLock :: SessionId -> Handler ()
+releaseLock sid = do
+    App {..} <- getYesod
+    currentLocks <- liftIO $ readIORef pipeLocks
+    liftIO $ takeMVar (currentLocks ! sid)
 
-getLock :: SessionId -> Handler ()
-getLock sid = do
+waitLock :: SessionId -> Handler ()
+waitLock sid = do
     App {..}   <- getYesod
     currentLocks <- liftIO $ readIORef pipeLocks
     locks <- if (member sid currentLocks)
