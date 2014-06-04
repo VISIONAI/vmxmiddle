@@ -25,22 +25,27 @@ import GHC.IO.Handle.FD (openFileBlocking)
 import Yesod.WebSockets
 
 import Data.Map.Strict as Map (member, (!), insert) 
-import Data.IORef (atomicModifyIORef')
+import Data.IORef (atomicModifyIORef', readIORef)
 
 
 getLock :: SessionId -> Handler ()
 getLock sid = do
-    App {..} <- getYesod
-    liftIO $ atomicModifyIORef' pipeLocks
-        $ \ls -> do
-            if member sid ls
-                then (ls,ls)
-                else do
-                    let l =  liftIO $ newEmptyMVar
-                    let ls' = Map.insert sid l ls
-                    undefined
-                    -- let ls' = insert sid l ls
-                    -- (ls',ls')
+    App {..}   <- getYesod
+    currentLocks <- liftIO $ readIORef pipeLocks
+    locks <- if (member sid currentLocks)
+                        then return currentLocks
+                        else do
+                            -- no semaphores exist for this session id
+                            l <- liftIO $ newEmptyMVar
+                            newLocks <- liftIO $ atomicModifyIORef' pipeLocks $
+                                    \lks -> do
+                                        -- update our list of semaphores to include the one we made for this sid
+                                        let locks' = Map.insert sid l lks
+                                        (locks',locks')
+                            return newLocks
+
+    let lock = locks ! sid
+    liftIO $ putMVar lock ()
     return ()
             
 
