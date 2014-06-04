@@ -1,0 +1,31 @@
+<div class="row" id="main-video-container">
+  <div class="col-md-12 col-lg-12 video-element-container" id="{{videoId}}-container">
+    <video id="{{videoId}}"
+    style="left:0;top:0;z-index=0;-webkit-transform: scale(-1,1);width:100%">
+    </video><!--END TAG-->
+  </div>
+  <div class="col-md-12 col-lg-12 drawing-canvas-container"
+       style="position:absolute;top:0px;left:0px;z-index:4;">
+    <canvas class="video-drawing-canvas" id="{{canvasId}}"
+            ng-class="selection_mode ? 'pointer_crosshair' : 'pointer_default'"
+            style="position:absolute;top:0px;left:0px;z-index:4;">
+    </canvas><!--END TAG-->
+    <vmx-tracker></vmx-tracker>
+  </div>
+  
+  <div class="col-md-12 col-lg-12 ip-cam-container" style="position: absolute;top:0px;left:0px;">
+    <canvas class="col-md-12 col-lg-12" id="ipcam"
+            ng-class="selection_mode ? 'pointer_crosshair' : 'pointer_default'"
+            style="position:absolute;top:0px;left:0px;z-index:3;-webkit-transform: scale(-1,1);-moz-transform: scale(-1,1)">
+    </canvas><!--END TAG-->
+  </div>
+  <!-- <div class="vid-container-footer"> -->
+  <!--   <a class="btn-primary btn btn-xs clickable" ng-click="external_source_modal()">Load External Stream</a> -->
+  <!-- </div> -->
+  
+  <div ng-if="g.is_playing" class="col-md-12" id="overlay-container" 
+  style="position:absolute;top:0px;left:0px;z-index:10;opacity:.85">
+    <vmx-overlay></vmx-overlay>
+  </div>
+</div>
+

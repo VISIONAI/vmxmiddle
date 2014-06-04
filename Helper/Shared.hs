@@ -30,7 +30,7 @@ releaseLock :: SessionId -> Handler ()
 releaseLock sid = do
     App {..} <- getYesod
     currentLocks <- liftIO $ readIORef pipeLocks
-    liftIO $ takeMVar (currentLocks ! sid)
+    trace ("releasing lock for " <> sid) $ liftIO $ takeMVar (currentLocks ! sid)
 
 waitLock :: SessionId -> Handler ()
 waitLock sid = do
@@ -49,7 +49,7 @@ waitLock sid = do
                             return newLocks
 
     let lock = locks ! sid
-    liftIO $ putMVar lock ()
+    trace ("getting lock for " <> sid) $ liftIO $ putMVar lock ()
     return ()
             
 
@@ -79,16 +79,16 @@ getPipeResponse v sid = do
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
     waitLock sid
-    file <- lift $ openFileBlocking i WriteMode
+    file <-  lift $ openFile i WriteMode
     lift $ hPutStr file f
     lift $ hClose file
-    ret' <- lift $ drainFifo o
+    ret' <- trace "draining fifo" $ lift $ drainFifo o
     releaseLock sid
     return ret'
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 
-lockFilePath sid = fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
+lockFilePath sid =  fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
 
 data HTTPVerb = 
     GET   |

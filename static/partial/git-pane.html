@@ -1,0 +1,47 @@
+<div class="panel"  style="box-shadow:0 0 12px black">
+  <div class="panel dragbar">
+  <a class="btn btn-default close" ng-click="toggle('gitApps')"><i class="fa fa-times fa-inverse"></i></a>
+  <h4><span><i class="fa fa-github-alt"></i></span>
+    Git
+  </h4>
+  </div>
+
+  <!-- <div class="row"> -->
+  <!--   <div class="col-md-12"> -->
+  <!--     <div class="row"> -->
+  <!--     <nav class="navbar navbar-default"> -->
+  <!--       <div class="navbar-header"> -->
+  <!--         <a class="navbar-brand">Git!</a> -->
+  <!--       </div> -->
+  <!--         <ul class="nav navbar-nav navbar-right"> -->
+  <!--         <li> -->
+  <!--           <button type="button" class="btn btn-default btn-xs" ng-click="vmxui.container.git_visible = !vmxui.container.git_visible"><i class="glyphicon glyphicon-remove"></i></button> -->
+  <!--         </li> -->
+  <!--         </ul> -->
+  <!--     </nav> -->
+  <!--     </div> -->
+  <!--   </div> -->
+      <div class="col-md-12"> Run code<input type="checkbox" ng-model="switches.run_code_switch" /> 
+        <p>Enter a GitHub Repository which uses the VMX Api:</p>
+      </div>
+      <div class="input-group col-md-12">
+        <span class="input-group-btn">
+          <button class="clickable btn btn-default"
+          ng-click="load_git_repo(gitrepo)">Load Git Repo</button>
+        </span>
+        <input class="form-control" size="" type="text" ng-model="gitrepo">
+      </div>
+      <div class="col-md-12">
+        <ul>
+          <li ng-repeat="repo in repos">
+            <a ng-click="setrepo(repo)" class="clickable">{{repo.name}}</a>
+          </li>
+        </ul>
+        <div class="alert alert-error" ng-repeat="error in container.errors">
+          In file: {{error.file}} (line:{{error.line}})
+          <pre>{{error.error}}</pre>
+        </div>
+        <a href="" ng-click="clear()" class="btn btn-default btn-xs clickable">Reset</a>
+      </div>
+  </div>
+</div>

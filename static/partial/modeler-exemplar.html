@@ -1,0 +1,13 @@
+<div class="thumbnail" style="text-align:center;"  ng-class="(class>0) ? 'alert-success' : 'alert-danger'" ng-click="class=class*-1">
+  <!-- <vmx-json-pane binding-foo="object"></vmx-json-pane> -->
+  
+  <img ng-src="{{image}}"
+       style="height:80%; width:80%";>
+  <caption>
+    <small>
+      <strong>Score:</strong>{{score}}<br/>
+      <strong>Time:</strong>{{date}}<br/>
+    </small>
+    <a class="btn btn-xs btn-primary"><span ng-class="class<0 ? 'glyphicon glyphicon-arrow-left' : 'glyphicon glyphicon-arrow-right'"></span></a>
+  </caption>
+</div>

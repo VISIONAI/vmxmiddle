@@ -1,0 +1,24 @@
+<div class="modal-header">
+  <nav class="navbar navbar-default">
+    <a class="navbar-brand">Model Library</a>
+    <ul class="nav navbar-nav navbar-right">
+      <li>
+        <a class="btn btn-default navbar-right" ng-click="cancel()"><i class="glyphicon glyphicon-remove"></i></a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<!-- <div class="modal-header"> -->
+<!--     <h3>Choose a model (ESC to cancel)</h3> -->
+<!-- </div> -->
+<div class="modal-body">
+    <div class="row">
+      <div ng-repeat="model in models" class="col-md-2" ng-click="choose(model.cls)" class="clickable">
+          <vmx-detector-thumbnail model="model"></vmx-detector-thumbnail>
+      </div>
+  </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

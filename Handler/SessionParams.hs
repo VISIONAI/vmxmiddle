@@ -14,9 +14,9 @@ optionsSessionParamsR _ = do
 
 getSessionParamsR :: SessionId -> Handler String
 getSessionParamsR sid = do
-    addHeader "Access-Control-Allow-Origin" "*"
+    trace "adding a header????" $ addHeader "Access-Control-Allow-Origin" "*"
+     -- trace "start of get session params" $ liftIO $ print sid
     addHeader "Content-Type" "application/json"
-    liftIO $ print sid
     let req = object ["command" .= update_params, "session_id" .= ("sessions/" ++ sid)]
     response <- getPipeResponse req sid
     return response

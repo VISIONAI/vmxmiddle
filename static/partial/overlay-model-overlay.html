@@ -1,0 +1,99 @@
+<div class="panel" style="box-shadow: 0 0 12px black";>
+  <!-- <nav class="navbar navbar-default"> -->
+  <!--   <a class="navbar-brand">New Model Creator</a>  -->
+  <!--   <ul class="nav navbar-nav navbar-right"> -->
+  <!--     <li> -->
+  <!--       <a class="btn btn-default navbar-right" ng-click="toggle('createModel')"><i class="glyphicon glyphicon-remove"></i></a>  -->
+  <!--     </li>  -->
+  <!--   </ul>  -->
+  <!-- </nav>  -->
+
+  <div class="panel dragbar">
+    <a class="btn btn-default close"
+       ng-click="toggle('createModel')">
+      <i class="fa fa-times
+                fa-inverse">
+    </i>
+    </a> 
+    
+    <div class="row">
+      <div class="col-md-4">
+        <h4><span><i class="fa fa-eye"></i></span>
+          Create Model</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="list-group">
+        <div class="list-group-item">
+          <div class="input-group">
+            <input class="form-control" ng-model="model_name"
+                   placeholder="Enter Object Name"
+                   id="create_model_text">
+
+            <span class="input-group-btn">
+              <button class="btn btn-primary ladda-button"
+                      ng-class="(has_selections() &&
+                      is_valid_name(model_name)) ? '' : 'disabled'"
+                      id="create_model_button" 
+                      data-style="zoom-in"
+                      ng-click="create_model(model_name);">
+                Create Model
+                <span class="glyphicon glyphicon-play">
+                </span> <!-- END i -->
+                
+              </button> <!-- END button -->
+            </span>
+          </div><!-- /input-group -->
+          <span class="text-danger">{{error_message}}</span>
+        </div> <!-- list-group-item -->
+      </div>   <!-- list-group -->
+    </div> <!-- col-md-6 -->
+    
+    <div class="col-md-6">
+      <vmx-detector-params showbutton="false" to-include="['init']"
+      params="paramsObj"></vmx-detector-params>
+    </div> <!-- end col-md-6 -->
+  </div> <!-- END row -->
+  <div class="row">
+    <div class="col-md-4">
+      <div class="btn-group btn-group-justified">
+      <a class="btn btn-default clickable" 
+         ng-class="(selections.length>0) ? '' : 'disabled'"
+         ng-click="container.show_selections = !container.show_selections">
+        {{(container.show_selections) ? 'Hide Selections' : 'Show
+        Selections ('+selections.length+')'}}</a>
+      <a class="btn btn-info clickable"
+         ng-click="toggle_selection_mode()">
+        Add Selection <small>(press A)</small></a>
+      </div>
+    </div>
+  </div> <!-- END row -->
+  
+  <div class="well" ng-if="container.show_selections">
+    <div class="row">
+      <div class="col-md-3" ng-animate="'animate'" ng-repeat="selection in selections">
+        <div class="thumbnail">
+          <caption>
+            <div style="text-align:center;">
+              <small>
+                Selection {{$index}}
+              </small>
+            </div>
+            <img ng-src="{{selection.icon}}" style="height:80px; align:center;"/>  <!-- END img -->
+            <div style="text-align:center;">
+              <small>
+                <strong>Time:</strong>{{unix_to_date(selection.time)}}<br/>
+                <a class="btn btn-primary btn-xs" ng-click="remove_selection($index)">Remove
+                  <i class="glyphicon glyphicon-remove"></i> <!-- END i -->
+                </a>   <!-- END a -->
+              </small>
+            </div>
+          </caption>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> <!-- end panel -->

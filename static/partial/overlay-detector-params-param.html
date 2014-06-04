@@ -1,0 +1,49 @@
+<div ng-init="paramcontainer={};paramcontainer.collapse=true"
+     class="param-label-container">
+  <label 
+  for="{{param.name}}" 
+  class="clickable" 
+  ng-click="paramcontainer.collapse = !paramcontainer.collapse; checker('top');" 
+  >
+    <small ng-class="(param.learning_mode==false &&
+    paramsObj.get('ilearn')==true) ? 'disabled-text' : ''">
+      {{param.alias}}
+      <i ng-class="(paramcontainer.collapse) ? 'fa fa-caret-right' : 'fa fa-caret-down'"></i>
+</small>
+  </label>
+</div>
+<form role="form" ng-if="!paramcontainer.collapse &&
+                         (param.learning_mode==true || paramsObj.get('ilearn')==false)">
+  <div class="control-group" ng-class="(param.current_value==param.value) ? 'success' : 'warning'">
+    <div class="form-group">
+      <!-- Do this if we have a checkbox -->
+      <div class="row" ng-if="param.widget == 'checkbox'">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-addon">
+              <input type="checkbox" ng-model="param.current_value">
+            </span>
+            <div class="form-control">{{(param.current_value) ?
+                                            'On' : 'Off'}}
+            </div>
+            </div> <!-- END input group -->
+        </div> <!-- END col-md-3 -->
+      </div>
+      
+      <!-- Do this if we have a slider -->
+      <div class="row" ng-if="param.widget =='slider'" >
+        <div class="col-md-12">
+          <input class="form-control input-sm" ng-model="param.current_value">
+        </div>
+        <div class="col-md-3">
+          <slider
+             min="param.min_value" 
+             max="param.max_value" 
+             step-size="{{param.slider_step}}" 
+             value="param.current_value">
+          </slider>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>

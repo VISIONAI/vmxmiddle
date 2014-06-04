@@ -20,6 +20,7 @@ import           System.IO            as Import (readFile)
 import           SharedTypes          as Import
 import           Yesod.WebSockets     as Import (webSockets)
 import           Network.WebSockets   as Import (WebSocketsData(..))
+import           Debug.Trace          as Import (trace)
 import Data.Aeson                     as Import (eitherDecode, (.:?))
 import Control.Concurrent.MVar        as Import 
 

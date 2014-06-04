@@ -1,0 +1,15 @@
+//TOMS LAPTOP
+//var VMX_SERVER='http://vm-x.com/vmx/';
+
+
+var IPCAM_PROXY;
+IPCAM_PROXY = 'crosshack.php';
+//var VMX_SERVER='http://vmx:slapperdoodle@vm-x.com/vmx/';
+var VMX_SERVER;
+VMX_SERVER = 'http://vmx:slapperdoodle@127.0.0.1/vmx/';
+var YESOD_SERVER;
+YESOD_SERVER = 'http://198.199.96.132/';
+
+//vmx:slapperdoodle
+var VMX_DEV_AUTH_HEADER;
+VMX_DEV_AUTH_HEADER = "Basic dm14OnNsYXBwZXJkb29kbGU=";
