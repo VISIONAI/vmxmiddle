@@ -26,6 +26,9 @@ import Yesod.WebSockets
 import Data.Map.Strict as Map (member, (!), insert) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
+import Control.Exception (try)
+import System.IO.Error
+
 releaseLock :: SessionId -> Handler ()
 releaseLock sid = do
     App {..} <- getYesod
@@ -75,16 +78,25 @@ type OutputPipe = FilePath
 
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
-    let f =  LBS.unpack $ encode v
+    waitLock sid
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    waitLock sid
-    file <-  lift $ openFile i WriteMode
-    lift $ hPutStr file f
+    fileE <-  lift $ try (openFile i WriteMode)
+    file <- case fileE of
+                -- An IOError here means the process that was supposed
+                -- to read from the pipe died before it could, and matlab
+                -- won't read again until we eat its (now useless) output
+                Left (e :: IOError)->   do
+                    _ <- lift $ drainFifo o
+                    lift $ openFile i WriteMode >>= return
+                Right file -> return file
+    lift $ hPutStr file payload
     lift $ hClose file
-    ret' <- trace "draining fifo" $ lift $ drainFifo o
+    ret <- lift $ drainFifo o
     releaseLock sid
-    return ret'
+    return ret
+    where
+        payload = LBS.unpack $ encode v
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 

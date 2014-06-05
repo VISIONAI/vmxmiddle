@@ -14,7 +14,7 @@ optionsSessionParamsR _ = do
 
 getSessionParamsR :: SessionId -> Handler String
 getSessionParamsR sid = do
-    trace "adding a header????" $ addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Access-Control-Allow-Origin" "*"
      -- trace "start of get session params" $ liftIO $ print sid
     addHeader "Content-Type" "application/json"
     let req = object ["command" .= update_params, "session_id" .= ("sessions/" ++ sid)]
