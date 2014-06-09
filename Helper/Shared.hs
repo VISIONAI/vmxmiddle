@@ -28,6 +28,11 @@ import Yesod.WebSockets
 import Data.Map.Strict as Map (member, (!), insert) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
+<<<<<<< HEAD
+=======
+import Control.Exception (try)
+import System.IO.Error
+
 releaseLock :: SessionId -> Handler ()
 releaseLock sid = do
     App {..} <- getYesod
@@ -77,18 +82,107 @@ type OutputPipe = FilePath
 
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
-    let f =  LBS.unpack $ encode v
+    waitLock sid
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    file <- lift $ openFileBlocking i WriteMode
-    lift $ hPutStr file f
+    fileE <-  lift $ try (openFile i WriteMode)
+    file <- case fileE of
+                -- An IOError here means the process that was supposed
+                -- to read from the pipe died before it could, and matlab
+                -- won't read again until we eat its (now useless) output
+                Left (e :: IOError)->   do
+                    _ <- lift $ drainFifo o
+                    lift $ openFile i WriteMode >>= return
+                Right file -> return file
+    lift $ hPutStr file payload
     lift $ hClose file
-    ret' <- lift $ drainFifo o
-    return ret'
+    ret <- lift $ drainFifo o
+    releaseLock sid
+    return ret
+    where
+        payload = LBS.unpack $ encode v
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 
-lockFilePath sid = fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
+lockFilePath sid =  fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
+
+data HTTPVerb = 
+    GET   |
+    POST  |
+    PUT   |
+    DELETE
+
+data ResourceV = 
+    Model          |
+    EditModel      |
+    Session        |
+    ProcessImage   |
+    SessionParams
+    
+    
+instance WebSocketsData Value where
+   toLazyByteString v = encode v
+   fromLazyByteString s = do
+        case decode s of
+            Just val -> val
+            Nothing -> object []
+
+
+list_sessions :: Handler Value
+list_sessions = do
+    sessions <-  sp >>= lift.getDirectoryContents 
+    let sessions' = filter notDots sessions
+
+    out <- sequence $ map getSessionInfo sessions'
+    return $ object ["data" .= out]
+    where
+        sp = fmap (++ "sessions/") wwwDir 
+        getSessionInfo :: FilePath -> Handler Value
+        getSessionInfo fp = do
+            sp' <- sp
+            modelJson <- lift $ readFile (sp' ++ fp ++ "/model.json")
+            return $ object ["session" .= fp, "model" .= makeJson modelJson]
+        makeJson :: String -> Value
+        makeJson s = do
+            -- String -> Char8 bystring
+            let packed = C.pack s
+            -- Char8 -> Lazy bytestring
+            let chunked = L.fromChunks [packed]
+            let eJ :: Either String Value = eitherDecode chunked
+            case eJ of
+                Right r -> r
+                -- TODO .. properly handle errors
+                Left _ -> undefined
+        notDots :: FilePath -> Bool
+        notDots fp = case fp of
+                        "." -> False
+                        ".." -> False
+                        ".DS_Store" -> False
+                        _ -> True
+
+
+
+makeJson :: String -> Value
+makeJson s = do
+    -- String -> Char8 bystring
+    let packed = C.pack s
+    -- Char8 -> Lazy bytestring
+    let chunked = L.fromChunks [packed]
+    let eJ :: Either String Value = eitherDecode chunked
+    case eJ of
+        Right r -> r
+        -- TODO .. properly handle errors
+        Left _ -> undefined
+
+processImage :: SessionId -> String -> Value -> Int -> Handler String
+processImage sid image params time = do
+   let req = object ["command" .= command, "image" .= image, "params" .= params, "time" .= time]
+   response <- getPipeResponse req sid
+   return response
+   where
+        command :: String
+        command = "process_image"
+    
 
 data HTTPVerb = 
     GET   |
