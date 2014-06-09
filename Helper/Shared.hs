@@ -28,8 +28,6 @@ import Yesod.WebSockets
 import Data.Map.Strict as Map (member, (!), insert) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
-<<<<<<< HEAD
-=======
 import Control.Exception (try)
 import System.IO.Error
 
@@ -120,13 +118,6 @@ data ResourceV =
     SessionParams
     
     
-instance WebSocketsData Value where
-   toLazyByteString v = encode v
-   fromLazyByteString s = do
-        case decode s of
-            Just val -> val
-            Nothing -> object []
-
 
 list_sessions :: Handler Value
 list_sessions = do
@@ -162,17 +153,6 @@ list_sessions = do
 
 
 
-makeJson :: String -> Value
-makeJson s = do
-    -- String -> Char8 bystring
-    let packed = C.pack s
-    -- Char8 -> Lazy bytestring
-    let chunked = L.fromChunks [packed]
-    let eJ :: Either String Value = eitherDecode chunked
-    case eJ of
-        Right r -> r
-        -- TODO .. properly handle errors
-        Left _ -> undefined
 
 processImage :: SessionId -> String -> Value -> Int -> Handler String
 processImage sid image params time = do
@@ -184,19 +164,6 @@ processImage sid image params time = do
         command = "process_image"
     
 
-data HTTPVerb = 
-    GET   |
-    POST  |
-    PUT   |
-    DELETE
-
-data ResourceV = 
-    Model          |
-    EditModel      |
-    Session        |
-    ProcessImage   |
-    SessionParams
-    
     
 instance WebSocketsData Value where
    toLazyByteString v = encode v
@@ -206,37 +173,6 @@ instance WebSocketsData Value where
             Nothing -> object []
 
 
-list_sessions :: Handler Value
-list_sessions = do
-    sessions <-  sp >>= lift.getDirectoryContents 
-    let sessions' = filter notDots sessions
-
-    out <- sequence $ map getSessionInfo sessions'
-    return $ object ["data" .= out]
-    where
-        sp = fmap (++ "sessions/") wwwDir 
-        getSessionInfo :: FilePath -> Handler Value
-        getSessionInfo fp = do
-            sp' <- sp
-            modelJson <- lift $ readFile (sp' ++ fp ++ "/model.json")
-            return $ object ["session" .= fp, "model" .= makeJson modelJson]
-        makeJson :: String -> Value
-        makeJson s = do
-            -- String -> Char8 bystring
-            let packed = C.pack s
-            -- Char8 -> Lazy bytestring
-            let chunked = L.fromChunks [packed]
-            let eJ :: Either String Value = eitherDecode chunked
-            case eJ of
-                Right r -> r
-                -- TODO .. properly handle errors
-                Left _ -> undefined
-        notDots :: FilePath -> Bool
-        notDots fp = case fp of
-                        "." -> False
-                        ".." -> False
-                        ".DS_Store" -> False
-                        _ -> True
 
 
 
@@ -252,13 +188,5 @@ makeJson s = do
         -- TODO .. properly handle errors
         Left _ -> undefined
 
-processImage :: SessionId -> String -> Value -> Int -> Handler String
-processImage sid image params time = do
-   let req = object ["command" .= command, "image" .= image, "params" .= params, "time" .= time]
-   response <- getPipeResponse req sid
-   return response
-   where
-        command :: String
-        command = "process_image"
     
 
