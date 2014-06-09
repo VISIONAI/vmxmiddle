@@ -3,7 +3,7 @@ Default: &defaults
   port: 3000
   approot: "http://localhost:3000"
   copyright: Insert copyright statement here
-  wwwdir: "/www/vmx"
+  wwwdir: "/www/vmx/"
   vmxpath: "/vmx/build/run_VMXserver.sh"
   matlabpath: "/vmx/build/MATLAB/R2013a/v81"
   #analytics: UA-YOURCODE
