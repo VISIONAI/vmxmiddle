@@ -128,7 +128,7 @@ postModelR = do
 
 list_models :: IO Value
 list_models = do
-    models <- readProcess "sh" ["-c","ls /www/vmx/models/*mat"]  ""
+    models <- readProcess "sh" ["-c","ls /www/vmx/models/*mat 2> /dev/null || true"]  ""
     response <- sequence $ fmap readFile $ getJsonFiles' models
     response' <- sequence $  fmap makeJson response
     return $ object ["data" .= response']
