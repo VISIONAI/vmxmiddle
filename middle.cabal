@@ -105,7 +105,7 @@ executable         middle
                      , middle
                      , yesod
 
-    ghc-options:       -threaded -O2 -rtsopts -prof -caf-all
+    ghc-options:       -threaded -O2 
 
 
 
