@@ -100,8 +100,8 @@ getPipeResponse v sid = do
     where
         payload = LBS.unpack $ encode v
 
-getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe_input")  wwwDir 
-getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe_output")  wwwDir 
+getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
+getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
 lockFilePath sid =  fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
 
 data HTTPVerb = 
