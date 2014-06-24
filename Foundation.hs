@@ -183,12 +183,12 @@ vmxExecutable = do
     extra <- getExtra
     case extraVmxPath extra of
         Just theDir -> return theDir
-        Nothing  -> return "/home/g/build/run_VMXserver.sh"
+        Nothing  -> return "/home/g/build/run_VMXserver_local.sh"
 
 matlabPath :: Handler String
 matlabPath = do
     extra <- getExtra
     case extraMatlabPath extra of
         Just theDir -> return theDir
-        Nothing  -> return "/home/g/build/MATLAB/R2013a"
+        Nothing  -> return "/home/g/build/MATLAB/R2014a/v83"
 
