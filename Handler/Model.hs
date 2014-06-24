@@ -71,20 +71,19 @@ instance FromJSON CreateModelCommand where
 
 data CreateModelSelection = CreateModelSelection {
     selectionBB :: [Float],
-    selectionIcon :: String,
     selectionImage :: String,
     selectionTime :: Int
 }
 
 instance FromJSON CreateModelSelection where
     parseJSON (Object o) = do
-        CreateModelSelection <$> (o .: "bb") <*> (o .: "icon") <*> (o .: "image") <*> (o .: "time")
+        CreateModelSelection <$> (o .: "bb") <*> (o .: "image") <*> (o .: "time")
     parseJSON _ = mzero
 
 
 instance ToJSON CreateModelSelection where
-    toJSON (CreateModelSelection bb icon image time) =
-            object ["bb" .= bb, "icon" .= icon, "image" .= image, "time" .= time]
+    toJSON (CreateModelSelection bb image time) =
+            object ["bb" .= bb, "image" .= image, "time" .= time]
 
 
 --create new model
@@ -95,10 +94,10 @@ postModelR = do
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
     let saf = (selectionsAndFiles (createModelSelections cmc) sid 1 wwwDir')
-    liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
+    --no longer writing images to disk, so this can be cleaned up quite a bit
+    --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
     let mlSelections = map (\(path, selection) -> object ["bb" .= selectionBB selection
-                                                         ,"icon" .= selectionIcon selection
-                                                         , "image" .= fixPath path wwwDir'
+                                                         , "image" .= selectionImage selection
                                                          , "time" .= selectionTime selection
                                                          ]) saf
     let req = object ["cls"        .= createModelCls cmc,
