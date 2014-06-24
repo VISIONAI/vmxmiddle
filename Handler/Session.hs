@@ -37,7 +37,6 @@ postSessionR = do
     return sessionId
 
 type ModelName = String
--- this probably should receive a modelName directly rather than a CreateSessionCommand
 createSession :: Maybe ModelName -> Handler String
 createSession modelNameM = do
     sid   <- liftIO getSessionId
@@ -49,10 +48,11 @@ createSession modelNameM = do
     outLogPath' <- outLogPath sid
     vmxExecutable' <- vmxExecutable
     matlabRuntime' <- matlabPath
+    wwwDir' <- wwwDir
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
     _  <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
     log'        <- lift $ openFile outLogPath' AppendMode
-    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', sessionPath', inputPipePath', outputPipePath', modelPath])
+    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid])
                          {std_out = UseHandle log', std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
     return fromBrain
@@ -71,9 +71,9 @@ createSession modelNameM = do
         outputPipePath  sid = fmap (++ "/pipe_output") (sessionPath sid) >>= return
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
-        modelPath = case modelNameM of
-                Just m -> "models/" ++ m ++ ".mat"
-                Nothing -> ""
+        --modelPath = case modelNameM of
+        --        Just m -> "models/" ++ m ++ ".mat"
+        --        Nothing -> ""
 
 
 --list all sessions
