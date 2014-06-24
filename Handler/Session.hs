@@ -37,6 +37,8 @@ postSessionR = do
     return sessionId
 
 type ModelName = String
+
+-- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
 createSession :: Maybe ModelName -> Handler String
 createSession modelNameM = do
     sid   <- liftIO getSessionId
@@ -50,7 +52,6 @@ createSession modelNameM = do
     matlabRuntime' <- matlabPath
     wwwDir' <- wwwDir
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
-    _  <- lift $ createNamedPipe outputPipePath' (accessModes .|. namedPipeMode)
     log'        <- lift $ openFile outLogPath' AppendMode
     _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid])
                          {std_out = UseHandle log', std_err = UseHandle log'}
@@ -66,9 +67,9 @@ createSession modelNameM = do
             dir <- wwwDir 
             return $ dir ++ "sessions/" ++ sid
         inputPipePath :: SessionId -> Handler String
-        inputPipePath  sid = fmap (++ "/pipe_input") (sessionPath sid)>>= return
+        inputPipePath  sid = fmap (++ "/pipe") (sessionPath sid)>>= return
         outputPipePath :: SessionId -> Handler String
-        outputPipePath  sid = fmap (++ "/pipe_output") (sessionPath sid) >>= return
+        outputPipePath  sid = fmap (++ "/pipe") (sessionPath sid) >>= return
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
         --modelPath = case modelNameM of
