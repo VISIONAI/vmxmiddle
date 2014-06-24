@@ -17,10 +17,10 @@ getSessionParamsR sid = do
     addHeader "Access-Control-Allow-Origin" "*"
      -- trace "start of get session params" $ liftIO $ print sid
     addHeader "Content-Type" "application/json"
-    let req = object ["command" .= update_params, "session_id" .= ("sessions/" ++ sid)]
+    let req = object ["command" .= command, "session_id" .= ("sessions/" ++ sid)]
     response <- getPipeResponse req sid
     return response
     where
-        update_params :: String
-        update_params = "update_params"
+        command :: String
+        command = "get_params"
 
