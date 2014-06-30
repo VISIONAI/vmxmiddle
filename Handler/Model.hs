@@ -36,6 +36,10 @@ getModelR = do
     addHeader "Access-Control-Allow-Origin" "*"
     liftIO $ list_models >>= return
 
+type ModelName = String
+deleteModelEntityR :: ModelName -> Handler ()
+deleteModelEntityR m = delVMXFolder $ "models/" <> m
+
 data SaveModelCommand = SaveModelCommand {
     saveModelSid :: String
 }
