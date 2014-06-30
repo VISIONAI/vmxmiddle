@@ -32,16 +32,19 @@ postProcessImageR :: SessionId -> Handler String
 postProcessImageR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
-   start <- liftIO $ getCPUTime
    (pic :: ProcessImageCommand) <- requireJsonBody
-   after_parse <- liftIO $ getCPUTime
-   liftIO $ print "time to parse request (in httppost)"
-   liftIO $ print't start after_parse
    val <- processImage sid (picImage pic) (processImageParams pic) (picTime pic)
-   after_process <- liftIO $ getCPUTime
-   liftIO $ print "time to process_image"
-   liftIO $ print't after_parse after_process
    return val
+
+deleteProcessImageR = deleteVMXSession
+
+deleteVMXSession :: SessionId -> Handler ()
+deleteVMXSession sid = do
+	-- stop process
+	exitVMXServer sid
+	delVMXFolder $ "sessions/" <> sid
+			
+	-- delete session files
 
 print't :: Integer -> Integer ->  IO String
 print't start end = printf "Computation time: %0.3f sec\n" $ diff start end

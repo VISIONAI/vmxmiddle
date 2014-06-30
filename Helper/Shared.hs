@@ -11,12 +11,14 @@ module Helper.Shared
     , processImage
     , waitLock
     , releaseLock
+    , exitVMXServer
+    , delVMXFolder
     ) where
 
 import Import
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
-import System.Directory (getDirectoryContents, createDirectory)
+import System.Directory (getDirectoryContents, createDirectory, removeDirectoryRecursive)
 import System.Process
 import System.IO
 import Control.Exception (evaluate)
@@ -162,6 +164,17 @@ processImage sid image params time = do
    where
         command :: String
         command = "process_image"
+
+exitVMXServer :: SessionId -> Handler String
+exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return
+	where 	
+		exit :: String
+		exit = "exit"
+
+delVMXFolder :: FilePath -> Handler ()
+delVMXFolder fp = do
+	wwwDir' <- wwwDir
+	liftIO $ removeDirectoryRecursive $ wwwDir' <> fp >>= return
     
 
     
