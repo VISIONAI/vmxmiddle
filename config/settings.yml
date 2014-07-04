@@ -5,7 +5,7 @@ Default: &defaults
   copyright: Insert copyright statement here
   wwwdir: "/www/vmx/"
   vmxpath: "/vmx/build/run_VMXserver_local.sh"
-  matlabpath: "/vmx/build/MATLAB/R2014a/v83"
+  matlabpath: "/ROOT/MATLAB/R2014a/v83"
   #analytics: UA-YOURCODE
 
 Development:
