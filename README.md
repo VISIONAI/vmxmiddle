@@ -1,7 +1,7 @@
 Build instructions using docker:
 
 
-```shell
+``` shell
 # start a postgresql database running in the background, call the container `db`
 docker run -d --name db gdoteof/d-postgres
 
@@ -30,10 +30,10 @@ docker run -d --name vmxmodels
 ```
 
 
-Now, tie it all together using gdoteof/d-vmxmiddle-dev (which contains no sensitive information, just the dependencies)
+Now, tie it all together using gdoteof/d-vmxmiddle (which contains no sensitive information, just the dependencies)
 
 
-```shell
+``` shell
 
 #make sure you have a copy of the vmxmiddle code
 git clone git@github.com:gdoteof/vmxmiddle.git
