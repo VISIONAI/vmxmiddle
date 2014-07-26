@@ -1,9 +1,9 @@
 Default: &defaults
-  user: middle
-  password: middle
-  host: localhost
+  user: docker
+  password: docker
+  host: db
   port: 5432
-  database: middle
+  database: docker
   poolsize: 10
 
 Development:
