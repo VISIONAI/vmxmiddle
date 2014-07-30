@@ -30,6 +30,7 @@ library
                      Handler.Model
                      Handler.WebSocket
                      Helper.Shared
+                     Helper.VMXTypes
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT

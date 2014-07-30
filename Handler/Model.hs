@@ -19,6 +19,7 @@ import Data.Aeson (eitherDecode, (.:?))
 import           Data.Typeable
 import           GHC.Generics
 import           Data.Data
+import           Helper.VMXTypes
 
 
 optionsModelR :: Handler ()
@@ -75,6 +76,8 @@ data CreateModelSelection = CreateModelSelection {
     selectionTime :: Int
 }
 
+
+
 instance FromJSON CreateModelSelection where
     parseJSON (Object o) = do
         CreateModelSelection <$> (o .: "bb") <*> (o .: "image") <*> (o .: "time")
@@ -83,7 +86,7 @@ instance FromJSON CreateModelSelection where
 
 instance ToJSON CreateModelSelection where
     toJSON (CreateModelSelection bb image time) =
-            object ["bb" .= bb, "image" .= image, "time" .= time]
+            object ["objects" .= bb, "image" .= image, "time" .= time]
 
 
 --create new model
@@ -91,19 +94,18 @@ postModelR :: Handler String
 postModelR = do
     headers
     cmc <- parseJsonBody_
+    let name = createModelCls cmc
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
     let saf = (selectionsAndFiles (createModelSelections cmc) sid 1 wwwDir')
     --no longer writing images to disk, so this can be cleaned up quite a bit
     --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
-    let mlSelections = map (\(path, selection) -> object ["bb" .= selectionBB selection
-                                                         , "image" .= selectionImage selection
-                                                         , "time" .= selectionTime selection
-                                                         ]) saf
-    let req = object ["cls"        .= createModelCls cmc,
+    let mlImages = map (\(path, selection) -> 
+                                VMXImage (selectionImage selection) (show $ selectionTime selection) [VMXObject name (selectionBB selection) Nothing Nothing]
+                           ) saf
+    let req = object ["name"       .= createModelCls cmc,
                       "params"     .= createModelParams cmc,
-                      "selections" .= mlSelections,
-                      "session_id" .= sid,
+                      "images"     .= mlImages,
                       "command"    .= ("create_model" :: String)
                      ]
     response <- getPipeResponse req sid
