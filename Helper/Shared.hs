@@ -32,6 +32,7 @@ import Data.IORef (atomicModifyIORef', readIORef)
 
 import Control.Exception (try)
 import System.IO.Error
+import Helper.VMXTypes
 
 releaseLock :: SessionId -> Handler ()
 releaseLock sid = do
@@ -156,9 +157,9 @@ list_sessions = do
 
 
 
-processImage :: SessionId -> String -> Value -> Int -> Handler String
-processImage sid image params time = do
-   let req = object ["command" .= command, "image" .= image, "params" .= params, "time" .= time]
+processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler String
+processImage sid image params name = do
+   let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
    response <- getPipeResponse req sid
    return response
    where

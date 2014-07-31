@@ -58,35 +58,19 @@ putModelR =  do
         save_model :: String = "save_model"
 
 data CreateModelCommand = CreateModelCommand {
-    createModelCls :: String,
+    createModelName :: String,
     createModelParams :: Value,
-    createModelSelections :: [CreateModelSelection],
+    createModelImages :: [VMXImage],
     createModelSid :: String
 }
 
 instance FromJSON CreateModelCommand where
     parseJSON (Object o) = do
-        CreateModelCommand <$> (o .: "cls") <*> (o .: "params") <*> (o .: "selections") <*> (o .: "session_id")
+        CreateModelCommand <$> (o .: "name") <*> (o .: "params") <*> (o .: "images") <*> (o .: "session_id")
     parseJSON _ = mzero
 
 
-data CreateModelSelection = CreateModelSelection {
-    selectionBB :: [Float],
-    selectionImage :: String,
-    selectionTime :: Int
-}
 
-
-
-instance FromJSON CreateModelSelection where
-    parseJSON (Object o) = do
-        CreateModelSelection <$> (o .: "bb") <*> (o .: "image") <*> (o .: "time")
-    parseJSON _ = mzero
-
-
-instance ToJSON CreateModelSelection where
-    toJSON (CreateModelSelection bb image time) =
-            object ["objects" .= bb, "image" .= image, "time" .= time]
 
 
 --create new model
@@ -94,18 +78,16 @@ postModelR :: Handler String
 postModelR = do
     headers
     cmc <- parseJsonBody_
-    let name = createModelCls cmc
+    let name = createModelName cmc
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
-    let saf = (selectionsAndFiles (createModelSelections cmc) sid 1 wwwDir')
+    let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
     --no longer writing images to disk, so this can be cleaned up quite a bit
     --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
-    let mlImages = map (\(path, selection) -> 
-                                VMXImage (selectionImage selection) (show $ selectionTime selection) [VMXObject name (selectionBB selection) Nothing Nothing]
-                           ) saf
-    let req = object ["name"       .= createModelCls cmc,
+    let images = map snd saf
+    let req = object ["name"       .= createModelName cmc,
                       "params"     .= createModelParams cmc,
-                      "images"     .= mlImages,
+                      "images"     .= images,
                       "command"    .= ("create_model" :: String)
                      ]
     response <- getPipeResponse req sid
@@ -113,14 +95,13 @@ postModelR = do
     where
         fixPath :: String -> FilePath -> String
         fixPath s base = S.replace base "" s
-        writeImage :: CreateModelSelection -> FilePath -> IO ()
+        writeImage :: VMXImage -> FilePath -> IO ()
         writeImage s p = do
-            let meat = (splitOn comma $ selectionImage s) !! 1
+            let meat = (splitOn comma $ vmxIImage s) !! 1
             img <-liftIO $  G.loadJpegByteString $  B64.decodeLenient $ C.pack $ meat
-            liftIO $ print $ "path is " ++ p
             liftIO $ G.saveJpegFile 95  p img
 
-        selectionsAndFiles :: [CreateModelSelection] -> SessionId -> Int -> FilePath -> [(FilePath, CreateModelSelection)]
+        selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
         selectionsAndFiles (x:xs) sid' count wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show count) ++ ".jpg", x) : (selectionsAndFiles xs sid' (count + 1) wwwDir')
         selectionsAndFiles [] _ _ _ = []
 
