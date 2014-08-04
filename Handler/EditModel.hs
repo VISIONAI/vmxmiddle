@@ -16,12 +16,14 @@ optionsEditModelR _ = do
 
 
 data EditModelCommand = EditModelCommand {
-    editModelSettings :: Value
+    editModelSettings :: Value,
+    editModelChanges  :: Maybe Value
 } 
 
 instance FromJSON EditModelCommand where
     parseJSON (Object o) = do
         EditModelCommand <$> (o .: "settings")
+                         <*> (o .:? "changes")
     parseJSON _ = mzero
 
 data EditModelResponse = EditModelResponse {
@@ -57,11 +59,11 @@ putEditModelR sid = do
     headers
     addHeader "Content-Type" "application/json"
     (eic :: EditModelCommand) <- requireJsonBody
-    let req = object ["command" .= command, "settings" .= (editModelSettings eic)]
+    let req = object ["command" .= command, "settings" .= (editModelSettings eic), "changes" .= (fromMaybe (object []) $ editModelChanges eic)]
     response <- getPipeResponse req sid
     return response
     where
         command :: String
-        command = "update_model"
+        command = "edit_model"
 
 
