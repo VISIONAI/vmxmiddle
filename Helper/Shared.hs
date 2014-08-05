@@ -86,14 +86,14 @@ getPipeResponse v sid = do
     waitLock sid
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    fileE <-  lift $ try (openFile i WriteMode)
+    fileE <-  lift $ try (openFileBlocking i WriteMode)
     file <- case fileE of
                 -- An IOError here means the process that was supposed
                 -- to read from the pipe died before it could, and matlab
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
-                    lift $ openFile i WriteMode >>= return
+                    lift $ openFileBlocking i WriteMode >>= return
                 Right file -> return file
     lift $ hPutStr file payload
     lift $ hClose file
