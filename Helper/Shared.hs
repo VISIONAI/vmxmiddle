@@ -65,12 +65,13 @@ waitLock sid = do
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    (i, out, e, _) <- runInteractiveProcess "bash" ["-c", "cat<"  <>  f] Nothing (Just [])
+    (i, out, e, p) <- runInteractiveProcess "bash" ["-c", "cat<"  <>  f] Nothing (Just [])
     hClose i
     hClose e
     hSetBinaryMode out False
     out' <- Control.Exception.evaluate (hGetContents out >>= \x -> length x `seq` return x)
     out'' <- out'
+    terminateProcess p
     return out''
 
 headers :: Handler ()
