@@ -15,12 +15,16 @@ import qualified          Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C
 import           Data.Text as T (pack,unpack, replace, Text, append)
 import qualified Data.ByteString.Lazy as L
-import Data.Aeson (eitherDecode, (.:?))
+import qualified Data.ByteString.Lazy.Char8 as LC
+import Data.Aeson (encode, eitherDecode, (.:?), decode)
 import           Data.Typeable
 import           GHC.Generics
 import           Data.Data
 import           Helper.VMXTypes
-
+import           System.Directory (getDirectoryContents)
+import           Data.Maybe (fromJust)
+import           System.IO.Unsafe (unsafePerformIO)
+import           Debug.Trace
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -32,10 +36,10 @@ optionsModelR = do
 
 
 --list all models
-getModelR :: Handler Value
+getModelR :: Handler String
 getModelR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    liftIO $ list_models >>= return
+    list_models >>= return
 
 data SaveModelCommand = SaveModelCommand {
     saveModelSid :: String
@@ -108,32 +112,87 @@ postModelR = do
         comma :: String
         comma = ","
 
-list_models :: IO Value
+list_models :: Handler String
 list_models = do
-    models <- readProcess "sh" ["-c","ls /www/vmx/models/*mat 2> /dev/null || true"]  ""
-    response <- sequence $ fmap readFile $ getJsonFiles' models
-    response' <- sequence $  fmap makeJson response
-    return $ object ["data" .= response']
+    extra <- getExtra
+    modelsDir  <- (++ "models/") <$> wwwDir
+    modelFolders <- liftIO $ getDirectoryContents modelsDir
+    let modelJsons = map (\x -> modelsDir ++ x) $ modelsFrom modelFolders
+    response <- liftIO $ sequence $ fmap readFile $ modelJsons
+    let (models  :: [ListModelResponse]) = map makeJson response
+    return $ LC.unpack $ encode $ object ["data" .= models]
     where
-        modelsPath base = base ++ "models/*.mat"
-        makeJson :: String -> IO VMXModel
+        modelsFrom []       = []
+        modelsFrom (".":r)  = modelsFrom r
+        modelsFrom ("..":r) = modelsFrom r
+        modelsFrom (x:r)    = (x ++ "/model.json") : modelsFrom r
+        makeJson :: String -> ListModelResponse
         makeJson s = do
             -- String -> Char8 bystring
             let packed = C.pack s
             -- Char8 -> Lazy bytestring
             let chunked = L.fromChunks [packed]
-            let eJ :: Either String VMXModel = eitherDecode chunked
+            let eJ :: Either String ListModelResponse = eitherDecode chunked
             case eJ of
-                Right r -> return r
+                Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                          liftIO $ print "slapper dodole"
-                          return undefined
-        getJsonFiles' :: String -> [FilePath]
-        getJsonFiles' m' = lines $ T.unpack $ T.replace ".mat" ".json" $ T.replace "models/" "models/summary/" $ T.pack m'
+                          ListModelResponse  "error" e [] [] e "error"  e  "error"  "error" 0 0  "error"  "error" 
+
+data ListModelResponse = ListModelResponse {
+    listModelName :: String,
+    listModelMeta :: String,
+    listModelSize :: [Int],
+    listModelHistory :: [String],
+    listModelDataset :: String,
+    listModelNetwork :: String,
+    listModelCompiled :: String,
+    listModelPos      :: String,
+    listModelStats    :: String,
+    listModelNumPos   :: Int,
+    listModelNumNeg   :: Int,
+    listModelStartTime :: String,
+    listModelEndTiem   :: String
+}
+
+
+instance FromJSON ListModelResponse where
+    parseJSON (Object o) = do
+        ListModelResponse <$> (o .: "name")
+                         <*> (o .: "meta")
+                         <*> (o .: "size")
+                         <*> (o .: "history")
+                         <*> (o .: "data_set")
+                         <*> (o .: "network")
+                         <*> (o .: "compiled")
+                         <*> (o .: "pos")
+                         <*> (o .: "stats")
+                         <*> (o .: "num_pos")
+                         <*> (o .: "num_neg")
+                         <*> (o .: "start_time")
+                         <*> (o .: "end_time")
+    parseJSON _ = mzero
+
+instance ToJSON ListModelResponse where
+    toJSON (ListModelResponse name meta size history dataset network compiled pos stats num_pos num_neg start_time end_time) = 
+        object ["name" .= name
+               , "meta" .= meta
+               , "size" .= size
+               , "history" .= history
+               , "dataset" .= dataset
+               , "network" .= network
+               , "compiled" .= compiled
+               , "pos" .= pos
+               , "stats" .= stats
+               , "num_pos" .= num_pos
+               , "num_neg" .= num_neg
+               , "start_time" .= start_time
+               , "end_time" .= end_time
+               ]
+        
 
 data VMXModel = VMXModel {
-    cls :: String,
+    name :: String,
     hg_size :: [Int],
     num_pos :: Int,
     num_neg :: Int,
