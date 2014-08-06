@@ -15,8 +15,8 @@ import Network.Wai.Middleware.RequestLogger
     ( mkRequestLogger, outputFormat, OutputFormat (..), IPAddrSource (..), destination
     )
 import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
-import qualified Database.Persist
-import Database.Persist.Sql (runMigration)
+-- import qualified Database.Persist
+-- import Database.Persist.Sql (runMigration)
 import Network.HTTP.Client.Conduit (newManager)
 import Yesod.Fay (getFaySite)
 import Control.Monad.Logger (runLoggingT)
@@ -75,10 +75,10 @@ makeFoundation :: AppConfig DefaultEnv Extra -> IO App
 makeFoundation conf = do
     manager <- newManager
     s <- staticSite
-    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
-              Database.Persist.loadConfig >>=
-              Database.Persist.applyEnv
-    p <- Database.Persist.createPoolConfig (dbconf :: Settings.PersistConf)
+--    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
+--              Database.Persist.loadConfig >>=
+--              Database.Persist.applyEnv
+--    p <- Database.Persist.createPoolConfig (dbconf :: Settings.PersistConf)
 
     loggerSet' <- newStdoutLoggerSet defaultBufSize
     (getter, updater) <- clockDateCacher
@@ -98,13 +98,14 @@ makeFoundation conf = do
     pipeLocks <- liftIO $ newIORef $ Map.fromList []
 
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s p manager dbconf onCommand logger pipeLocks
+--      foundation = App conf s p manager dbconf onCommand logger pipeLocks
+        foundation = App conf s manager onCommand logger pipeLocks
 
     -- Perform database migration using our application's logging settings.
-    runLoggingT
-        (Database.Persist.runPool dbconf (runMigration migrateAll) p)
-        (messageLoggerSource foundation logger)
-
+--     runLoggingT
+--         (Database.Persist.runPool dbconf (runMigration migrateAll) p)
+--         (messageLoggerSource foundation logger)
+-- 
     return foundation
 
 -- for yesod devel

@@ -126,6 +126,7 @@ list_models = do
         modelsFrom []       = []
         modelsFrom (".":r)  = modelsFrom r
         modelsFrom ("..":r) = modelsFrom r
+        modelsFrom (".DS_Store":r) = modelsFrom r
         modelsFrom (x:r)    = (x ++ "/model.json") : modelsFrom r
         modelsFrom' []       = []
         modelsFrom' (".":r)  = modelsFrom' r
