@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -119,20 +120,24 @@ list_models = do
     modelFolders <- liftIO $ getDirectoryContents modelsDir
     let modelJsons = map (\x -> modelsDir ++ x) $ modelsFrom modelFolders
     response <- liftIO $ sequence $ fmap readFile $ modelJsons
-    let (models  :: [ListModelResponse]) = map makeJson response
-    return $ LC.unpack $ encode $ object ["data" .= models]
+    let (models  :: [String -> ListModelResponse]) = map makeJson response
+    return $ LC.unpack $ encode $ object ["data" .= zipWith (\a b-> a b) models (modelsFrom' modelFolders)]
     where
         modelsFrom []       = []
         modelsFrom (".":r)  = modelsFrom r
         modelsFrom ("..":r) = modelsFrom r
         modelsFrom (x:r)    = (x ++ "/model.json") : modelsFrom r
-        makeJson :: String -> ListModelResponse
+        modelsFrom' []       = []
+        modelsFrom' (".":r)  = modelsFrom' r
+        modelsFrom' ("..":r) = modelsFrom' r
+        modelsFrom' (x:r)    = x : modelsFrom' r
+        makeJson :: String -> (String -> ListModelResponse)
         makeJson s = do
             -- String -> Char8 bystring
             let packed = C.pack s
             -- Char8 -> Lazy bytestring
             let chunked = L.fromChunks [packed]
-            let eJ :: Either String ListModelResponse = eitherDecode chunked
+            let eJ :: Either String (String -> ListModelResponse) = eitherDecode chunked
             case eJ of
                 Right r -> r
                 -- TODO .. properly handle errors
@@ -152,7 +157,8 @@ data ListModelResponse = ListModelResponse {
     listModelNumPos   :: Int,
     listModelNumNeg   :: Int,
     listModelStartTime :: String,
-    listModelEndTiem   :: String
+    listModelEndTiem   :: String,
+    listModelUUID      :: String
 }
 
 
@@ -171,10 +177,28 @@ instance FromJSON ListModelResponse where
                          <*> (o .: "num_neg")
                          <*> (o .: "start_time")
                          <*> (o .: "end_time")
+                         <*> (o .: "uuids")
+    parseJSON _ = mzero
+
+instance FromJSON (String -> ListModelResponse) where
+    parseJSON (Object o) = do
+        ListModelResponse <$> (o .: "name")
+                         <*> (o .: "meta")
+                         <*> (o .: "size")
+                         <*> (o .: "history")
+                         <*> (o .: "data_set")
+                         <*> (o .: "network")
+                         <*> (o .: "compiled")
+                         <*> (o .: "pos")
+                         <*> (o .: "stats")
+                         <*> (o .: "num_pos")
+                         <*> (o .: "num_neg")
+                         <*> (o .: "start_time")
+                         <*> (o .: "end_time")
     parseJSON _ = mzero
 
 instance ToJSON ListModelResponse where
-    toJSON (ListModelResponse name meta size history dataset network compiled pos stats num_pos num_neg start_time end_time) = 
+    toJSON (ListModelResponse name meta size history dataset network compiled pos stats num_pos num_neg start_time end_time uuid)= 
         object ["name" .= name
                , "meta" .= meta
                , "size" .= size
@@ -188,6 +212,7 @@ instance ToJSON ListModelResponse where
                , "num_neg" .= num_neg
                , "start_time" .= start_time
                , "end_time" .= end_time
+               , "uuid" .= uuid
                ]
         
 

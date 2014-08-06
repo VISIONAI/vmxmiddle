@@ -29,13 +29,13 @@ instance FromJSON VMXCommand where
   parseJSON j = do
       o <- {-# SCC "parse_vmxcommand" #-} parseJSON  j
       case H.toList (o :: Object) of
-          [("new_connection", Object o')]  -> CreateSession <$> o' .:? "model_name"
+          [("new_connection", Object o')]  -> CreateSession <$> o' .: "uuids"
           [("process_image",   Object o')] -> ProcessImage <$> (o' .: "session_id") <*> (o' .: "image") <*> (o' .: "params")
           [("list_sessions",   Object o')] -> return GetSessions
           _                      -> fail "Rule: unexpected format"
 
 
-data VMXCommand = CreateSession (Maybe String)  
+data VMXCommand = CreateSession [String]
                 | GetSessions 
                 | ProcessImage SessionId [VMXImage] VMXParams
                -- {
