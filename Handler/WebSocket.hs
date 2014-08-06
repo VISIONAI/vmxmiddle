@@ -5,6 +5,7 @@ module Handler.WebSocket (getWebSocketR) where
 
 import Import
 import Helper.Shared
+import Helper.VMXTypes
 import Yesod.WebSockets
 import Control.Monad(forever)
 import Control.Concurrent.STM
@@ -28,15 +29,15 @@ instance FromJSON VMXCommand where
   parseJSON j = do
       o <- {-# SCC "parse_vmxcommand" #-} parseJSON  j
       case H.toList (o :: Object) of
-          [("new_connection", Object o')]  -> CreateSession <$> o' .:? "model_name"
-          [("process_image",   Object o')] -> ProcessImage <$> (o' .: "session_id") <*> (o' .: "image") <*> (o' .: "params") <*> (o' .: "time")
+          [("new_connection", Object o')]  -> CreateSession <$> o' .: "uuids"
+          [("process_image",   Object o')] -> ProcessImage <$> (o' .: "session_id") <*> (o' .: "image") <*> (o' .: "params")
           [("list_sessions",   Object o')] -> return GetSessions
           _                      -> fail "Rule: unexpected format"
 
 
-data VMXCommand = CreateSession (Maybe String)  
+data VMXCommand = CreateSession [String]
                 | GetSessions 
-                | ProcessImage SessionId String Value Int
+                | ProcessImage SessionId [VMXImage] VMXParams
                -- {
                --     piSid'    :: SessionId
                --     picImage' :: String,
@@ -63,9 +64,9 @@ vmxWebSocket = {-# SCC "dowebsocketforever" #-}(forever $ {-# SCC "insideforever
                                     CreateSession model_name -> do
                                         (out :: String) <- lift $ createSession model_name
                                         sendTextData $ pack $ "{\"new_connection\":" <> out <> "}"
-                                    ProcessImage sid image params time -> do
+                                    ProcessImage sid images params -> do
                                         before_process_image <- liftIO $ getCPUTime
-                                        (out :: String) <- {-# SCC "processImage" #-} lift $ processImage sid image params time
+                                        (out :: String) <- {-# SCC "processImage" #-} lift $ processImage sid images params "weneedtogiveitaname"
                                         after_process_image <- liftIO $ getCPUTime
                                         liftIO $ print "time to process image"
                                         liftIO $ print't before_process_image after_process_image

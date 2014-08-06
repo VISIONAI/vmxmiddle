@@ -11,7 +11,7 @@ import Yesod.Default.Util (addStaticContentExternal)
 import Network.HTTP.Client.Conduit (Manager, HasHttpManager (getHttpManager))
 import qualified Settings
 import Settings.Development (development)
-import qualified Database.Persist
+-- import qualified Database.Persist
 import Database.Persist.Sql (SqlPersistT)
 import Settings.StaticFiles
 import Settings (widgetFile, Extra (..), SessionId)
@@ -30,9 +30,9 @@ import Data.IORef (IORef)
 data App = App
     { settings :: AppConfig DefaultEnv Extra
     , getStatic :: Static -- ^ Settings for static file serving.
-    , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
+    -- , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
     , httpManager :: Manager
-    , persistConfig :: Settings.PersistConf
+    -- , persistConfig :: Settings.PersistConf
     , fayCommandHandler :: CommandHandler App
     , appLogger :: Logger
     , pipeLocks      ::  IORef (Map String (MVar ()))
@@ -90,8 +90,6 @@ instance Yesod App where
         Just $ uncurry (joinPath y (Settings.staticRoot $ settings y)) $ renderRoute s
     urlRenderOverride _ _ = Nothing
 
-    -- The page to be redirected to when authentication is required.
-    authRoute _ = Just $ AuthR LoginR
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -116,43 +114,36 @@ instance Yesod App where
     makeLogger = return . appLogger
 
 instance YesodJquery App
-instance YesodFay App where
-
-    fayRoute = FaySiteR
-
-    yesodFayCommand render command = do
-        master <- getYesod
-        fayCommandHandler master render command
 
 -- How to run database actions.
-instance YesodPersist App where
-    type YesodPersistBackend App = SqlPersistT
-    runDB = defaultRunDB persistConfig connPool
-instance YesodPersistRunner App where
-    getDBRunner = defaultGetDBRunner connPool
+-- instance YesodPersist App where
+--     type YesodPersistBackend App = SqlPersistT
+--     runDB = defaultRunDB persistConfig connPool
+-- instance YesodPersistRunner App where
+--     getDBRunner = defaultGetDBRunner connPool
 
-instance YesodAuth App where
-    type AuthId App = UserId
-
-    -- Where to send a user after successful login
-    loginDest _ = HomeR
-    -- Where to send a user after logout
-    logoutDest _ = HomeR
-
-    getAuthId creds = runDB $ do
-        x <- getBy $ UniqueUser $ credsIdent creds
-        case x of
-            Just (Entity uid _) -> return $ Just uid
-            Nothing -> do
-                fmap Just $ insert User
-                    { userIdent = credsIdent creds
-                    , userPassword = Nothing
-                    }
-
-    -- You can add other plugins like BrowserID, email or OAuth here
-    authPlugins _ = [authBrowserId def, authGoogleEmail]
-
-    authHttpManager = httpManager
+-- instance YesodAuth App where
+--     type AuthId App = UserId
+-- 
+--     -- Where to send a user after successful login
+--     loginDest _ = HomeR
+--     -- Where to send a user after logout
+--     logoutDest _ = HomeR
+-- 
+--     getAuthId creds = runDB $ do
+--         x <- getBy $ UniqueUser $ credsIdent creds
+--         case x of
+--             Just (Entity uid _) -> return $ Just uid
+--             Nothing -> do
+--                 fmap Just $ insert User
+--                     { userIdent = credsIdent creds
+--                     , userPassword = Nothing
+--                     }
+-- 
+--     -- You can add other plugins like BrowserID, email or OAuth here
+--     authPlugins _ = [authBrowserId def, authGoogleEmail]
+-- 
+--     authHttpManager = httpManager
 
 -- This instance is required to use forms. You can modify renderMessage to
 -- achieve customized and internationalized form validation messages.

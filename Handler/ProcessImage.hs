@@ -3,6 +3,7 @@ module Handler.ProcessImage where
 
 import Import
 import Helper.Shared
+import Helper.VMXTypes
 
 import System.CPUTime
 import Text.Printf
@@ -17,14 +18,14 @@ optionsProcessImageR _ = do
     return ()
 
 data ProcessImageCommand =  ProcessImageCommand {
-    picImage :: String,
-    processImageParams   :: Value,
-    picTime :: Int
+    processImageName   :: String,
+    processImageImages :: [VMXImage],
+    processImageParams   :: VMXParams
 }
 
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
-        ProcessImageCommand <$> (o .: "image") <*> (o .: "params") <*> (o .: "time")
+        ProcessImageCommand "weneedtogiveitaname" <$> (o .: "images") <*> (o .: "params")
     parseJSON _ = mzero
 
 
@@ -33,7 +34,7 @@ postProcessImageR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
-   val <- processImage sid (picImage pic) (processImageParams pic) (picTime pic)
+   val <- processImage sid (processImageImages pic) (processImageParams pic) (processImageName pic)
    return val
 
 deleteProcessImageR = deleteVMXSession

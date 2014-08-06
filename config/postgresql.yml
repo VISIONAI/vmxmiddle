@@ -3,7 +3,7 @@ Default: &defaults
   password: docker
   host: db
   port: 5432
-  database: docker
+  database: vmxmiddle
   poolsize: 10
 
 Development:

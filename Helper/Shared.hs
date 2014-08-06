@@ -32,6 +32,7 @@ import Data.IORef (atomicModifyIORef', readIORef)
 
 import Control.Exception (try)
 import System.IO.Error
+import Helper.VMXTypes
 
 releaseLock :: SessionId -> Handler ()
 releaseLock sid = do
@@ -64,13 +65,8 @@ waitLock sid = do
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    (i, out, e, _) <- runInteractiveProcess "bash" ["-c", "cat<"  <>  f] Nothing (Just [])
-    hClose i
-    hClose e
-    hSetBinaryMode out False
-    out' <- Control.Exception.evaluate (hGetContents out >>= \x -> length x `seq` return x)
-    out'' <- out'
-    return out''
+    o <- readProcess "bash" ["-c", "cat<"  <>  f] []
+    return o
 
 headers :: Handler ()
 headers = do
@@ -85,14 +81,14 @@ getPipeResponse v sid = do
     waitLock sid
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    fileE <-  lift $ try (openFile i WriteMode)
+    fileE <-  lift $ try (openFileBlocking i WriteMode)
     file <- case fileE of
                 -- An IOError here means the process that was supposed
                 -- to read from the pipe died before it could, and matlab
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
-                    lift $ openFile i WriteMode >>= return
+                    lift $ openFileBlocking i WriteMode >>= return
                 Right file -> return file
     lift $ hPutStr file payload
     lift $ hClose file
@@ -156,9 +152,9 @@ list_sessions = do
 
 
 
-processImage :: SessionId -> String -> Value -> Int -> Handler String
-processImage sid image params time = do
-   let req = object ["command" .= command, "image" .= image, "params" .= params, "time" .= time]
+processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler String
+processImage sid image params name = do
+   let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
    response <- getPipeResponse req sid
    return response
    where
