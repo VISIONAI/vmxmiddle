@@ -36,14 +36,18 @@ postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    sessionId <- createSession (modelName csc)
+    sessionId <- createSession (modelUUIDS csc)
     return sessionId
 
 type ModelName = String
 
 -- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
-createSession :: Maybe ModelName -> Handler String
-createSession modelNameM = do
+createSession :: [String] -> Handler String
+createSession uuids = do
+    let name = case length uuids of
+                    0 -> "none"
+                    _ -> uuids !! 0
+    liftIO $ print name
     sid   <- liftIO getSessionId
     lift $ setEnv "MCR_CACHE_ROOT" "/tmp/mcr_cache" False
     sessionPath' <- sessionPath sid
@@ -56,7 +60,7 @@ createSession modelNameM = do
     wwwDir' <- wwwDir
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
     log'        <- lift $ openFile outLogPath' AppendMode
-    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid])
+    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid, name])
                          {std_out = UseHandle log', std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
     return fromBrain
@@ -114,13 +118,13 @@ list_sessions = do
 
 -- create a new session
 data CreateSessionCommand = CreateSessionCommand {
-        modelName :: Maybe String
+        modelUUIDS :: [String]
 } 
 
 
 
 instance FromJSON CreateSessionCommand where
-    parseJSON (Object o) = CreateSessionCommand <$> (o .:? "model_name")
+    parseJSON (Object o) = CreateSessionCommand <$> (o .: "uuids")
     parseJSON _ = mzero
 
 

@@ -1,3 +1,4 @@
+build
 dist*
 static/tmp/
 static/combined/
