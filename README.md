@@ -54,3 +54,9 @@ docker run -t -i \  # run in interactive mode and keep terminal open so we can v
 gdoteof/d-vmxmiddle \ # the docker imaqe which contains the dependencies for vmxmiddle
 /bin/bash -c "cd /code && yesod devel"  # inside the docker, move to the approot and yesod devel
 ```
+
+Build instructions for Mac OS X Build
+```
+sudo runghc Setup configure --user
+sudo runghc Setup build
+```
