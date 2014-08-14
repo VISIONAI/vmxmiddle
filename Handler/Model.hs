@@ -158,7 +158,7 @@ data ListModelResponse = ListModelResponse {
     listModelNumPos   :: Int,
     listModelNumNeg   :: Int,
     listModelStartTime :: String,
-    listModelEndTiem   :: String,
+    listModelEndTime   :: String,
     listModelUUID      :: String
 }
 
