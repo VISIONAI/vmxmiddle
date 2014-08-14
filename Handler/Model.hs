@@ -131,6 +131,7 @@ list_models = do
         modelsFrom' []       = []
         modelsFrom' (".":r)  = modelsFrom' r
         modelsFrom' ("..":r) = modelsFrom' r
+        modelsFrom' (".DS_Store":r) = modelsFrom' r
         modelsFrom' (x:r)    = x : modelsFrom' r
         makeJson :: String -> (String -> ListModelResponse)
         makeJson s = do
