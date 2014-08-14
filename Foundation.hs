@@ -14,7 +14,7 @@ import Settings.Development (development)
 -- import qualified Database.Persist
 import Database.Persist.Sql (SqlPersistT)
 import Settings.StaticFiles
-import Settings (widgetFile, Extra (..), SessionId)
+import Settings (widgetFile, Extra (..), SessionId, ModelId)
 import Model
 import Text.Hamlet (hamletFile)
 import Yesod.Fay

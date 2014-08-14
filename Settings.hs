@@ -96,3 +96,4 @@ parseExtra _ o = Extra
 
 
 type SessionId = String
+type ModelId   = String

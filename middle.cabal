@@ -29,6 +29,7 @@ library
                      Handler.EditModel
                      Handler.Model
                      Handler.WebSocket
+                     Handler.ModelImage
                      Helper.Shared
                      Helper.VMXTypes
 

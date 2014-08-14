@@ -214,6 +214,7 @@ instance ToJSON ListModelResponse where
                , "start_time" .= start_time
                , "end_time" .= end_time
                , "uuid" .= uuid
+               , "image" .= ("image.jpg" :: FilePath)
                ]
         
 
