@@ -131,6 +131,7 @@ list_models = do
         modelsFrom' []       = []
         modelsFrom' (".":r)  = modelsFrom' r
         modelsFrom' ("..":r) = modelsFrom' r
+        modelsFrom' (".DS_Store":r) = modelsFrom' r
         modelsFrom' (x:r)    = x : modelsFrom' r
         makeJson :: String -> (String -> ListModelResponse)
         makeJson s = do
@@ -143,7 +144,7 @@ list_models = do
                 Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                          ListModelResponse  "error" e [] [] e "error"  e  "error"  "error" 0 0  "error"  "error" 
+                          ListModelResponse  e e [] [] e "error"  (Just e)  "error"  (Just "error") 0 0  "error"  "error" 
 
 data ListModelResponse = ListModelResponse {
     listModelName :: String,
@@ -152,13 +153,13 @@ data ListModelResponse = ListModelResponse {
     listModelHistory :: [String],
     listModelDataset :: String,
     listModelNetwork :: String,
-    listModelCompiled :: String,
+    listModelCompiled :: Maybe String,
     listModelPos      :: String,
-    listModelStats    :: String,
+    listModelStats    :: Maybe String,
     listModelNumPos   :: Int,
     listModelNumNeg   :: Int,
     listModelStartTime :: String,
-    listModelEndTiem   :: String,
+    listModelEndTime   :: String,
     listModelUUID      :: String
 }
 
@@ -189,9 +190,9 @@ instance FromJSON (String -> ListModelResponse) where
                          <*> (o .: "history")
                          <*> (o .: "data_set")
                          <*> (o .: "network")
-                         <*> (o .: "compiled")
+                         <*> (o .:? "compiled")
                          <*> (o .: "pos")
-                         <*> (o .: "stats")
+                         <*> (o .:? "stats")
                          <*> (o .: "num_pos")
                          <*> (o .: "num_neg")
                          <*> (o .: "start_time")
