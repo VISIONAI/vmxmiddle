@@ -30,6 +30,7 @@ library
                      Handler.Model
                      Handler.WebSocket
                      Handler.ModelImage
+                     Handler.ModelViewer
                      Helper.Shared
                      Helper.VMXTypes
 
