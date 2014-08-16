@@ -5,6 +5,8 @@ import Import
 import Helper.Shared
 import Data.Aeson (decode')
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import Network.HTTP.Types (status400)
+
 
 optionsEditModelR :: SessionId -> Handler ()
 optionsEditModelR _ = do
@@ -19,7 +21,9 @@ data EditModelCommand = EditModelCommand {
     editModelSettings :: Value,
     editModelChanges  :: Maybe Value
 } 
-
+--TJM: Yesod just gives me "Malformed JSON" when I change settings to
+--settings2 in the payload.  How can I get the parsing error to be
+--returned and not something as generic as the default?
 instance FromJSON EditModelCommand where
     parseJSON (Object o) = do
         EditModelCommand <$> (o .: "settings")
@@ -46,8 +50,7 @@ postEditModelR sid = do
     let response' = decode' $ LBS.pack response
     case response' of
         Just x -> return $ object ["data" .= editModelData x]
-        Nothing -> do
-            return $ object ["error" .= ("invalid matlab json" :: String, "json" .= response)]
+        Nothing -> sendResponseStatus status400 $ object ["error" .= ("Invalid VMXserver json" :: String, "json" .= response)]
     where
         command :: String
         command = "show_model"
