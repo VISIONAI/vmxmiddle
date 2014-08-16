@@ -26,6 +26,7 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Yesod.WebSockets
+import Network.HTTP.Types (status400)
 
 import Data.Map.Strict as Map (member, (!), insert) 
 import Data.IORef (atomicModifyIORef', readIORef)
