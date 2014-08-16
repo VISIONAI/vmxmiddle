@@ -23,6 +23,11 @@ data ProcessImageCommand =  ProcessImageCommand {
     processImageParams   :: VMXParams
 }
 
+-- NOTE from TJM: "weeneedtogiveitname" is probably here because we
+-- can in theory give a process image command the name of the objects
+-- we only care about.. this make sense if we've loaded a bunch of
+-- models into one session, but only want the responses for "hand" and
+-- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
         ProcessImageCommand "weneedtogiveitaname" <$> (o .: "images") <*> (o .: "params")
