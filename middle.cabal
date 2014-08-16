@@ -97,6 +97,8 @@ library
                  , unordered-containers
                  , containers                   >= 0.5.0.0
                  , cabal-macosx
+                 , http-types
+
 
 
 executable         middle
