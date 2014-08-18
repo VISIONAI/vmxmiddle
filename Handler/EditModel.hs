@@ -3,7 +3,7 @@ module Handler.EditModel where
 
 import Import
 import Helper.Shared
-import Data.Aeson (decode', encode)
+import Data.Aeson (decode', encode, fromJSON)
 import Data.Aeson.Types (Result(..))
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Network.HTTP.Types (status400)
@@ -31,35 +31,39 @@ instance FromJSON EditModelCommand where
                          <*> (o .: "changes")
     parseJSON _ = mzero
 
-data EditModelResponse = EditModelResponse {
-    editModelData :: Value,
-    editModelMessage :: String
-}
+data EditModelResponse = EditModelResponse Value String | EditModelResponseError Integer String
+editModelData :: EditModelResponse -> Value
+editModelData (EditModelResponse d _ ) = d
+editModelMessage (EditModelResponse _ m ) = m
+
+instance ToJSON EditModelResponse where
+    toJSON (EditModelResponse d m)= 
+        object ["data" .= d
+               , "message" .= m
+               ]
+    toJSON (EditModelResponseError b m)= 
+        object ["error" .= b, "message" .= m]
+
 
 instance FromJSON EditModelResponse where
     parseJSON (Object o) = EditModelResponse <$> (o .: "data") <*> (o .: "message")
+      -- case o of
+      --   EditModelResponse d m -> EditModelResponse <$> (o .: "data") <*> (o .: "message")
+      --   EditModelResponseError b m -> EditModelResponseError <$> (o .: "error") <*> (o .: "message")
     parseJSON _ = mzero
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- this is a read against the current model running at the session
 postEditModelR :: SessionId -> Handler Value
-postEditModelR sid = do
-    headers
-    (eic :: EditModelCommand) <- requireJsonBody
-    let req = object ["command" .= command, "settings" .= (editModelSettings eic)]
-    response <- getPipeResponse req sid
-    let response' = decode' $ LBS.pack response
-    case response' of
-        Just x -> return $ object ["data" .= editModelData x]
-        Nothing -> sendResponseStatus status400 $ object ["error" .= ("Invalid VMXserver json" :: String, "json" .= response)]
-    where
-        command :: String
-        command = "show_model"
+postEditModelR sid = genericEditModel sid "show_model"
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- a write against the current model
-putEditModelR :: SessionId -> Handler String
-putEditModelR sid = do
+putEditModelR :: SessionId -> Handler Value
+putEditModelR sid = genericEditModel sid "edit_model"
+
+genericEditModel :: SessionId -> String -> Handler Value
+genericEditModel sid command = do
     headers
     addHeader "Content-Type" "application/json"
     (r :: Result EditModelCommand) <- parseJsonBody
@@ -70,10 +74,14 @@ putEditModelR sid = do
                          , "changes"  .= (editModelChanges eic)
                          ]
         response <- getPipeResponse req sid
-        return response
+        let (response' :: Maybe EditModelResponse) = decode' $ LBS.pack response
+        case response' of
+          Just r ->
+            case r of
+              EditModelResponse d m -> return $ toJSON r
+              EditModelResponseError b m -> sendResponseStatus status400 $ toJSON r
+          Nothing -> do
+            sendResponseStatus status400 $ object ["error" .= response]
       Error s -> sendResponseStatus status400 $ LBS.unpack $ encode $ object ["error" .= s]
-    where
-        command :: String
-        command = "edit_model"
 
 
