@@ -3,7 +3,8 @@ module Handler.EditModel where
 
 import Import
 import Helper.Shared
-import Data.Aeson (decode')
+import Data.Aeson (decode', encode)
+import Data.Aeson.Types (Result(..))
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Network.HTTP.Types (status400)
 
@@ -19,7 +20,7 @@ optionsEditModelR _ = do
 
 data EditModelCommand = EditModelCommand {
     editModelSettings :: Value,
-    editModelChanges  :: Maybe Value
+    editModelChanges  :: Value
 } 
 --TJM: Yesod just gives me "Malformed JSON" when I change settings to
 --settings2 in the payload.  How can I get the parsing error to be
@@ -27,7 +28,7 @@ data EditModelCommand = EditModelCommand {
 instance FromJSON EditModelCommand where
     parseJSON (Object o) = do
         EditModelCommand <$> (o .: "settings")
-                         <*> (o .:? "changes")
+                         <*> (o .: "changes")
     parseJSON _ = mzero
 
 data EditModelResponse = EditModelResponse {
@@ -61,10 +62,16 @@ putEditModelR :: SessionId -> Handler String
 putEditModelR sid = do
     headers
     addHeader "Content-Type" "application/json"
-    (eic :: EditModelCommand) <- requireJsonBody
-    let req = object ["command" .= command, "settings" .= (editModelSettings eic), "changes" .= (fromMaybe (object []) $ editModelChanges eic)]
-    response <- getPipeResponse req sid
-    return response
+    (r :: Result EditModelCommand) <- parseJsonBody
+    case r of
+      Success eic -> do
+        let req = object [ "command"  .= command
+                         , "settings" .= (editModelSettings eic)
+                         , "changes"  .= (editModelChanges eic)
+                         ]
+        response <- getPipeResponse req sid
+        return response
+      Error s -> sendResponseStatus status400 $ LBS.unpack $ encode $ object ["error" .= s]
     where
         command :: String
         command = "edit_model"
