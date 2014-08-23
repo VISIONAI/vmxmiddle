@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -26,6 +27,7 @@ import           System.Directory (getDirectoryContents)
 import           Data.Maybe (fromJust)
 import           System.IO.Unsafe (unsafePerformIO)
 import           Debug.Trace
+import qualified Data.Text.IO as DT (readFile)
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -119,8 +121,8 @@ list_models = do
     modelsDir  <- (++ "models/") <$> wwwDir
     modelFolders <- liftIO $ getDirectoryContents modelsDir
     let modelJsons = map (\x -> modelsDir ++ x) $ modelsFrom modelFolders
-    response <- liftIO $ sequence $ fmap readFile $ modelJsons
-    let (models  :: [String -> ListModelResponse]) = map makeJson response
+    response <- liftIO $ sequence $ fmap DT.readFile $ modelJsons
+    let (models  :: [String -> ListModelResponse]) = map makeJson (map unpack response)
     return $ LC.unpack $ encode $ object ["data" .= zipWith (\a b-> a b) models (modelsFrom' modelFolders)]
     where
         modelsFrom []       = []

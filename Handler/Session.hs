@@ -19,6 +19,7 @@ import Helper.Shared
 import Control.Exception (tryJust)
 import Control.Monad (guard)
 import System.IO.Error (isDoesNotExistError)
+import qualified Data.Text.IO as DT (readFile)
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -103,10 +104,10 @@ list_sessions = do
         getSessionInfo :: FilePath -> Handler Value
         getSessionInfo fp = do
             sp' <- sp
-            mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile  $ sp' ++ fp ++ "/model.json")
+            mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ fp ++ "/model.json")
             case mModelJson of
                 Right modelJson -> 
-                    return $ object ["session" .= fp, "model" .= makeJson modelJson]
+                    return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "error" .= True]
         notDots :: FilePath -> Bool
         notDots fp = case fp of
