@@ -87,18 +87,6 @@ instance Yesod App where
     urlRenderOverride _ _ = Nothing
 
 
-    -- This function creates static content files in the static folder
-    -- and names them based on a hash of their content. This allows
-    -- expiration dates to be set far in the future without worry of
-    -- users receiving stale content.
-    addStaticContent =
-        addStaticContentExternal Right genFileName Settings.staticDir (StaticR . flip StaticRoute [])
-      where
-        -- Generate a unique filename based on the content itself
-        genFileName lbs
-            | development = "autogen-" ++ base64md5 lbs
-            | otherwise   = base64md5 lbs
-
     -- Place Javascript at bottom of the body tag so the rest of the page loads first
     jsLoader _ = BottomOfBody
 
