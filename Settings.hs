@@ -29,6 +29,25 @@ type PersistConf = PostgresConf
 staticDir :: FilePath
 staticDir = "static"
 
+vmxStaticFolders :: [FilePath]
+vmxStaticFolders = map (\a -> (staticDir ++ "/" ++ a))
+    [ "bower_components"
+    , "css"
+    , "combined"
+    , "externs"
+    , "fonts"
+    , "partial"
+    ]
+vmxStaticFiles :: [FilePath]
+vmxStaticFiles = 
+    [ "_SpecRunner.html"
+    , "index.html"
+    , "models.html"
+    , "sessions.html"
+    , "tracker.html"
+    , "video.html"
+    ]
+
 -- | The base URL for your static files. As you can see by the default
 -- value, this can simply be "static" appended to your application root.
 -- A powerful optimization can be serving static files from a separate

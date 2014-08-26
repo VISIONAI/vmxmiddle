@@ -1,9 +1,9 @@
 module Settings.StaticFiles where
 
-import Prelude (IO)
+import Prelude (IO, map, FilePath, (++))
 import Yesod.Static
 import qualified Yesod.Static as Static
-import Settings (staticDir)
+import Settings (staticDir, vmxStaticFiles)
 import Settings.Development
 import Language.Haskell.TH (Q, Exp, Name)
 import Data.Default (def)
@@ -17,7 +17,16 @@ staticSite = if development then Static.staticDevel staticDir
 --   giving you compile-time verification that referenced files exist.
 --   Warning: any files added to your static directory during run-time can't be
 --   accessed this way. You'll have to use their FilePath or URL to access them.
-$(staticFiles Settings.staticDir)
+
+$(staticFilesList staticDir vmxStaticFiles)
+
+$(staticFiles "static/bower_components")
+$(staticFiles "static/css")
+$(staticFiles "static/combined")
+$(staticFiles "static/externs")
+$(staticFiles "static/partial")
+
+
 
 combineSettings :: CombineSettings
 combineSettings = def
