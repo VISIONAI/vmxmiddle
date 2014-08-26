@@ -66,7 +66,7 @@ waitLock sid = do
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    o <- readProcess "bash" ["-c", "cat<"  <>  f] []
+    (_, o, _) <- readProcessWithExitCode "bash" ["-c", "cat<"  <>  f] []
     return o
 
 headers :: Handler ()

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -8,7 +9,7 @@ module Handler.Model where
 
 import Import
 import Helper.Shared
-import Control.Monad (mzero)
+import Control.Monad (mzero,filterM)
 import qualified          Data.String.Utils  as S (replace)
 import           Data.List.Split (splitOn)
 import qualified Graphics.GD.ByteString as G
@@ -22,10 +23,12 @@ import           Data.Typeable
 import           GHC.Generics
 import           Data.Data
 import           Helper.VMXTypes
-import           System.Directory (getDirectoryContents)
+import           System.Directory (getDirectoryContents,doesFileExist)
 import           Data.Maybe (fromJust)
 import           System.IO.Unsafe (unsafePerformIO)
 import           Debug.Trace
+import qualified Data.Text.IO as DT (readFile)
+import           Control.Exception (try)
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -116,23 +119,18 @@ postModelR = do
 list_models :: Handler String
 list_models = do
     extra <- getExtra
-    modelsDir  <- (++ "models/") <$> wwwDir
-    modelFolders <- liftIO $ getDirectoryContents modelsDir
-    let modelJsons = map (\x -> modelsDir ++ x) $ modelsFrom modelFolders
-    response <- liftIO $ sequence $ fmap readFile $ modelJsons
-    let (models  :: [String -> ListModelResponse]) = map makeJson response
-    return $ LC.unpack $ encode $ object ["data" .= zipWith (\a b-> a b) models (modelsFrom' modelFolders)]
+    modelsDir      <- (++ "models/") <$> wwwDir
+    -- all folders in the models directory that don't start with a dot
+    modelFolders   <- fmap (filter $ not . startsWithDot) $ liftIO $ getDirectoryContents modelsDir
+    let modelJsons = map (\x -> modelsDir ++ x) $ jsonFilesFrom modelFolders
+    --  only the model.jsons that actually exist
+    modelJsons'    <- liftIO $  filterM doesFileExist modelJsons
+    response       <- liftIO $ sequence $ fmap DT.readFile$ modelJsons'
+    let models     = map makeJson (map unpack response)
+    return $ LC.unpack $ encode $ object ["data" .= zipWith (\a b-> a b) models (modelFolders)]
     where
-        modelsFrom []       = []
-        modelsFrom (".":r)  = modelsFrom r
-        modelsFrom ("..":r) = modelsFrom r
-        modelsFrom (".DS_Store":r) = modelsFrom r
-        modelsFrom (x:r)    = (x ++ "/model.json") : modelsFrom r
-        modelsFrom' []       = []
-        modelsFrom' (".":r)  = modelsFrom' r
-        modelsFrom' ("..":r) = modelsFrom' r
-        modelsFrom' (".DS_Store":r) = modelsFrom' r
-        modelsFrom' (x:r)    = x : modelsFrom' r
+        jsonFilesFrom folders = map (++ "/model.json") folders
+        startsWithDot (c:_)   = c == '.'
         makeJson :: String -> (String -> ListModelResponse)
         makeJson s = do
             -- String -> Char8 bystring
