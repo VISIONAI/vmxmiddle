@@ -18,16 +18,6 @@ staticSite = if development then Static.staticDevel staticDir
 --   Warning: any files added to your static directory during run-time can't be
 --   accessed this way. You'll have to use their FilePath or URL to access them.
 
-$(staticFilesList staticDir vmxStaticFiles)
-
-$(staticFiles "static/bower_components")
-$(staticFiles "static/css")
-$(staticFiles "static/combined")
-$(staticFiles "static/externs")
-$(staticFiles "static/partial")
-
-
-
 combineSettings :: CombineSettings
 combineSettings = def
 
