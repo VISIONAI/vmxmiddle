@@ -32,6 +32,8 @@ library
                      Handler.ModelImage
                      Handler.ModelViewer
                      Handler.SessionViewer
+                     Handler.VideoViewer
+                     Handler.RandomImage
                      Helper.Shared
                      Helper.VMXTypes
 
@@ -99,6 +101,8 @@ library
                  , containers                   >= 0.5.0.0
                  , cabal-macosx
                  , http-types
+                 , filepath
+                 , random
 
 
 
