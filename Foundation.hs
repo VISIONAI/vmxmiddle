@@ -158,7 +158,7 @@ vmxExecutable :: Handler String
 vmxExecutable = do
     extra <- getExtra
     case extraVmxPath extra of
-        Just theDir -> return theDir
+        Just theDir -> return $ theDir ++ "/run_VMXserver_local.sh"
         Nothing  -> return "/home/g/build/run_VMXserver_local.sh"
 
 matlabPath :: Handler String

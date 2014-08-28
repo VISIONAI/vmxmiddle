@@ -19,3 +19,4 @@
 /sessions.html SessionViewerR GET
 /video.html VideoViewerR GET
 /random RandomImageR GET OPTIONS
+/check CheckLicenseR GET

@@ -34,6 +34,7 @@ library
                      Handler.SessionViewer
                      Handler.VideoViewer
                      Handler.RandomImage
+                     Handler.CheckLicense
                      Helper.Shared
                      Helper.VMXTypes
 

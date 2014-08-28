@@ -4,7 +4,7 @@ Default: &defaults
   approot: "http://localhost:3000"
   copyright: Insert copyright statement here
   wwwdir: "/www/vmx/"
-  vmxpath: "/vmx/build/run_VMXserver_local.sh"
+  vmxpath: "/vmx/build"
   matlabpath: "/root/MATLAB/R2014a/v83"
   #analytics: UA-YOURCODE
 
