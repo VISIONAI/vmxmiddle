@@ -2,10 +2,10 @@ Default: &defaults
   host: "*4" # any IPv4 host
   port: 3000
   approot: "http://localhost:3000"
-  copyright: Insert copyright statement here
-  wwwdir: "/www/vmx/"
-  vmxpath: "/vmx/build/run_VMXserver_local.sh"
-  matlabpath: "/root/MATLAB/R2014a/v83"
+  copyright: Copyright vision.ai, LLC 2013-2014
+  wwwdir: "/www/vvv2/"
+  vmxpath: "/Users/tomasz/projects/VMXserver/build/run_VMXserver_local.sh"
+  matlabpath: "/Applications/MATLAB/MATLAB_Compiler_Runtime/v83/"
   #analytics: UA-YOURCODE
 
 Development:
