@@ -118,7 +118,10 @@ executable         middle
     build-depends:     base
                      , middle
                      , yesod
-
+                     , directory                     ==1.2.0.1
+                     , filepath
+                     , monad-control
+                     , mtl
     ghc-options:       -threaded -O2 
 
 
