@@ -47,6 +47,7 @@ import Handler.SessionViewer
 import Handler.VideoViewer
 import Handler.RandomImage
 import Handler.CheckLicense
+import Handler.ActivateLicense
 
 -- This line actually creates our YesodDispatch instance. It is the second half
 -- of the call to mkYesodData which occurs in Foundation.hs. Please see the
@@ -103,9 +104,11 @@ makeFoundation conf = do
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
     pipeLocks <- liftIO $ newIORef $ Map.fromList []
 
+    -- Keep track of the machineIdent string we get back from vmxserver
+    machineIdent <- liftIO $ newIORef Nothing
+
     let logger = Yesod.Core.Types.Logger loggerSet' getter
---      foundation = App conf s p manager dbconf onCommand logger pipeLocks
-        foundation = App conf s manager onCommand logger pipeLocks
+        foundation = App conf s manager onCommand logger pipeLocks machineIdent
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT

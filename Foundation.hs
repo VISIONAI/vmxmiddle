@@ -36,6 +36,7 @@ data App = App
     , fayCommandHandler :: CommandHandler App
     , appLogger :: Logger
     , pipeLocks      ::  IORef (Map String (MVar ()))
+    , machineIdent :: IORef (Maybe String)
     }
 
 instance HasHttpManager App where

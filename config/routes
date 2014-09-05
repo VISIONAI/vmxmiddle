@@ -20,3 +20,4 @@
 /video.html VideoViewerR GET
 /random RandomImageR GET OPTIONS
 /check CheckLicenseR GET
+/activate/#LicenseKey ActivateLicenseR POST

@@ -12,3 +12,8 @@ import Data.Typeable (Typeable)
 -- http://www.yesodweb.com/book/persistent/
 share [mkPersist sqlOnlySettings, mkMigrate "migrateAll"]
     $(persistFileWith lowerCaseSettings "config/models")
+
+
+
+type LicenseKey = String
+type License    = String
