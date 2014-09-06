@@ -38,7 +38,7 @@ getCheckLicenseR = do
     case exitCode of
         ExitSuccess    -> return $ object ["licensed" .= True]
         ExitFailure 11 -> do
-            let uuid = getUUID $ readJson $ last $ lines stdout
+            let uuid = getUUID . readJson . last . lines $ stdout
             setMachineIdent uuid
             return $ object ["licensed" .= False, "uuid" .= uuid]
         _  -> error "undefined exit code for vmxserver"
