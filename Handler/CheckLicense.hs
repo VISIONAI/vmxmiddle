@@ -11,7 +11,7 @@ import qualified Data.ByteString.Lazy as L
 import Data.Text (unpack)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
-import Data.List (last)
+import Data.List (last, head)
 import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
 
@@ -20,11 +20,12 @@ import Data.IORef (readIORef, writeIORef)
 
 
 data VMXServerMessage = VMXServerMessage {
-    message :: String
+    message :: String,
+    version :: Maybe String
 }
 
 instance FromJSON VMXServerMessage where
-    parseJSON (Object o) = VMXServerMessage <$> (o .: "message")
+    parseJSON (Object o) = VMXServerMessage <$> (o .: "message") <*> (o .:? "version")
     parseJSON _ = mzero
     
 
@@ -39,10 +40,15 @@ getCheckLicenseR = do
         ExitSuccess    -> return $ object ["licensed" .= True]
         ExitFailure 11 -> do
             let uuid = getUUID $ readJson $ last $ lines stdout
+            let version = getVersion $ readJson $ head $ lines stdout
             setMachineIdent uuid
-            return $ object ["licensed" .= False, "uuid" .= uuid]
+            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
         _  -> error "undefined exit code for vmxserver"
     where
+        getVersion :: VMXServerMessage -> String
+        getVersion s = fromMaybe "no version" $ version s
+        
+        
         getUUID :: VMXServerMessage -> String
         getUUID s =  reverse . takeWhile notSemi $ reverse . message $ s
             where
