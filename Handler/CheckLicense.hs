@@ -48,9 +48,6 @@ getCheckLicenseR = do
             where
                 notSemi :: (Char -> Bool)
                 notSemi = not . (== ';')
-                -- safe version of Prelude.tail
-                tail' [] = []
-                tail'  a  = tail a
         
         readJson :: String -> VMXServerMessage
         readJson s = do
