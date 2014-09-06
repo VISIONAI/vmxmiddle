@@ -39,8 +39,9 @@ getCheckLicenseR = do
     case exitCode of
         ExitSuccess    -> return $ object ["licensed" .= True]
         ExitFailure 11 -> do
-            let uuid = getUUID $ readJson $ last $ lines stdout
+            let uuid = getUUID . readJson . last . lines $ stdout
             let version = getVersion $ readJson $ head $ lines stdout
+
             setMachineIdent uuid
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
         _  -> error "undefined exit code for vmxserver"
@@ -54,9 +55,6 @@ getCheckLicenseR = do
             where
                 notSemi :: (Char -> Bool)
                 notSemi = not . (== ';')
-                -- safe version of Prelude.tail
-                tail' [] = []
-                tail'  a  = tail a
         
         readJson :: String -> VMXServerMessage
         readJson s = do
