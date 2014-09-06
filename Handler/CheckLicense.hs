@@ -44,7 +44,7 @@ getCheckLicenseR = do
         _  -> error "undefined exit code for vmxserver"
     where
         getUUID :: VMXServerMessage -> String
-        getUUID s = tail' $ dropWhile notSemi $ dropWhile notSemi $ message s
+        getUUID s =  reverse . takeWhile notSemi $ reverse . message $ s
             where
                 notSemi :: (Char -> Bool)
                 notSemi = not . (== ';')
