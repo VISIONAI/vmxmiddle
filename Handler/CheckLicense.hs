@@ -36,18 +36,20 @@ getCheckLicenseR = do
     matlabRuntime' <- matlabPath
     (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' [matlabRuntime', "licenseCheckSlug"] ""
     case exitCode of
-        ExitSuccess    -> return $ object ["licensed" .= True]
+        ExitSuccess    -> 
+                return $ object ["licensed" .= True]
         ExitFailure 11 -> do
-            let uuid = getUUID . readJson . last . lines $ stdout
-            setMachineIdent uuid
-            return $ object ["licensed" .= False, "uuid" .= uuid]
-        _  -> error "undefined exit code for vmxserver"
+                let uuid = getUUID . readJson . last . lines $ stdout
+                setMachineIdent uuid
+                return $ object ["licensed" .= False, "uuid" .= uuid]
+        ExitFailure _  -> 
+                error "undefined exit code for vmxserver"
     where
         getUUID :: VMXServerMessage -> String
         getUUID s =  reverse . takeWhile notSemi $ reverse . message $ s
-            where
-                notSemi :: (Char -> Bool)
-                notSemi = not . (== ';')
+
+        notSemi :: (Char -> Bool)
+        notSemi = not . (== ';')
         
         readJson :: String -> VMXServerMessage
         readJson s = do
