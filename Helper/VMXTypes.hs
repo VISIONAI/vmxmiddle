@@ -52,45 +52,43 @@ data CreateModel = CreateModel {
 }
 
 
-data VMXParams = VMXParams {  
-               
-               save_features                 ::      Bool
-,              threshold                     ::      Double
-,              train_max_negatives_in_cache  ::      Int
-,              nms_threshold                 ::      Double
+data VMXParams = VMXParams {                 
+               train_max_negatives           ::      Int
+,              train_max_positives           ::      Int
+,              detect_max_overlap            ::      Double
 ,              detect_add_flip               ::      Bool
 ,              levels_per_octave             ::      Int
-,              ilearn_threshold              ::      Double
-,              ilearn_iterations             ::      Int
+,              learn_threshold               ::      Double
+,              learn_iterations              ::      Int
 ,              max_windows                   ::      Int
 ,              max_image_size                ::      Int
-,              ilearn_max_positives          ::      Int
-,              sbin                          ::      Int
-,              max_template_dim              ::      Int
+,              learn_max_positives           ::      Int
+,              cell_size                     ::      Int
+,              initialize_max_cells          ::      Int
 ,              crop_radius                   ::      Int
 ,              crop_threshold                ::      Double
 ,              display_threshold             ::      Double
 ,              jpeg_quality                  ::      Int
 ,              initialize_add_flip           ::      Bool
-,              ilearn                        ::      Bool
+,              learn_mode                    ::      Bool
 } deriving (Generic, Typeable)
 instance ToJSON   VMXParams
 instance FromJSON VMXParams where
     parseJSON (Object o) =
-        VMXParams  False (-10000) (2000) <$> (o .: "nms_threshold") 
+        VMXParams  (2000) (2000) <$> (o .: "detect_max_overlap") 
                          <*> (o .: "detect_add_flip") 
                          <*> (o .: "levels_per_octave") 
-                         <*> (o .: "ilearn_threshold")
-                         <*> (o .: "ilearn_iterations")
+                         <*> (o .: "learn_threshold")
+                         <*> (o .: "learn_iterations")
                          <*> (o .: "max_windows")
                          <*> (o .: "max_image_size")
-                         <*> (o .: "ilearn_max_positives")
-                         <*> (o .: "sbin")
-                         <*> (o .: "max_template_dim")
+                         <*> (o .: "learn_max_positives")
+                         <*> (o .: "cell_size")
+                         <*> (o .: "initialize_max_cells")
                          <*> (o .: "crop_radius")
                          <*> (o .: "crop_threshold")
                          <*> (o .: "display_threshold")
                          <*> (o .: "jpeg_quality")
                          <*> (o .: "initialize_add_flip")
-                         <*> (o .: "ilearn")
+                         <*> (o .: "learn_mode")
     parseJSON _ = mzero

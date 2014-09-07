@@ -11,7 +11,7 @@ import qualified Data.ByteString.Lazy as L
 import Data.Text (unpack)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
-import Data.List (last)
+import Data.List (last, head)
 import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
 
@@ -20,11 +20,14 @@ import Data.IORef (readIORef, writeIORef)
 
 
 data VMXServerMessage = VMXServerMessage {
-    message :: String
+    message :: String,
+    version :: String,
+    machine :: String,
+    user :: String
 }
 
 instance FromJSON VMXServerMessage where
-    parseJSON (Object o) = VMXServerMessage <$> (o .: "message")
+    parseJSON (Object o) = VMXServerMessage <$> (o .: "message") <*> (o .: "version") <*> (o .: "machine") <*> (o .: "user")
     parseJSON _ = mzero
     
 
@@ -35,21 +38,29 @@ getCheckLicenseR = do
     vmxExecutable' <- vmxExecutable
     matlabRuntime' <- matlabPath
     (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' [matlabRuntime', "licenseCheckSlug"] ""
-    case exitCode of
-        ExitSuccess    -> 
-                return $ object ["licensed" .= True]
-        ExitFailure 11 -> do
-                let uuid = getUUID . readJson . last . lines $ stdout
-                setMachineIdent uuid
-                return $ object ["licensed" .= False, "uuid" .= uuid]
-        ExitFailure _  -> 
-                error "undefined exit code for vmxserver"
-    where
-        getUUID :: VMXServerMessage -> String
-        getUUID s =  reverse . takeWhile notSemi $ reverse . message $ s
+    let uuid = getUUID . readJson . head . lines $ stdout
+    let version = getVersion $ readJson $ head $ lines stdout
+    -- liftIO $ print $ show . head . lines $ stdout
+    setMachineIdent uuid
 
-        notSemi :: (Char -> Bool)
-        notSemi = not . (== ';')
+    case exitCode of
+        ExitSuccess    -> return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
+        ExitFailure 11 -> do
+            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
+        ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
+        ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable'
+        ExitFailure 133  -> error $ "Error 126: Cannot Start " <> show vmxExecutable'
+        ExitFailure x  -> error $ "Undefined exit code " <> show x
+    where
+        getVersion :: VMXServerMessage -> String
+        getVersion s = version s
+        
+        
+        getUUID :: VMXServerMessage -> String
+        getUUID s =  reverse . takeWhile notSemi $ reverse . machine $ s
+            where
+                notSemi :: (Char -> Bool)
+                notSemi = not . (== ';')
         
         readJson :: String -> VMXServerMessage
         readJson s = do
@@ -60,7 +71,7 @@ getCheckLicenseR = do
                 Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                         undefined 
+                         VMXServerMessage e e e e
 
 setMachineIdent :: String -> Handler ()
 setMachineIdent  ident = do
