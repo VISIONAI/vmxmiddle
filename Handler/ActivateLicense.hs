@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE OverloadedStrings  #-}
 module Handler.ActivateLicense where
 
 import Import
@@ -6,7 +7,8 @@ import Data.Conduit (($$+-))
 import Data.Conduit.Attoparsec  (sinkParser)
 import Data.Aeson.Parser (json)
 import Data.Aeson        (decode, encode, Result (..), fromJSON )
-import Network.HTTP.Conduit (http, method, withManager, parseUrl, Response (..))
+import Network.HTTP.Conduit (http, method, withManager, parseUrl, Response (..), HttpException (..) )
+import Network.HTTP.Types (Status (..) )
 import Handler.CheckLicense
 import qualified Data.Text.Lazy.IO as DTL (writeFile)
 import qualified Data.Text.IO as DT (readFile)
@@ -14,6 +16,7 @@ import qualified Data.ByteString.Char8 as C (pack)
 import qualified Data.ByteString.Lazy as L (fromChunks)
 import Data.Text.Lazy.Encoding (decodeASCII)
 import Data.Maybe (fromJust)
+import Control.Exception as X hiding (Handler)
 
 data ActivateResponse = ActivateResponse String
 
@@ -74,24 +77,30 @@ writeLicense l key = do
 
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
+    addHeader "Access-Control-Allow-Origin" "*"
     ident' <- getMachineIdent
     val <- case ident' of 
         Nothing -> error "no ident"
         Just uuid -> do 
-            liftIO $ withManager $ \manager -> do
+            liftIO $ handle catchException $
+                withManager $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
                     let req = req' { method = "POST"}
-                    res <- http req manager
+                    res <- (http req manager) 
                     resValue <- responseBody res $$+- sinkParser json
-                    return resValue
+                    return resValue 
+
     case fromJSON val of
         Success (ActivateResponse license) -> do
-            liftIO $ print $ "license is " <> license
             writeLicense license key
             return val
         Error s ->
-            error s
+            return $ object ["error" .= s]
     return val
+    where
+        catchException e@(StatusCodeException (Status 403 _) _ _) = return $ object ["error" .= ("key_already_used" :: String)]
+        catchException e@(StatusCodeException (Status 404 _) _ _) = return $ object ["error" .= ("key_unknown" :: String)]
+        catchException e@(StatusCodeException _ _ _) = return $ object ["error" .= ("unknown_error" :: String)]
     
 
 
