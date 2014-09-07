@@ -8,6 +8,8 @@ cp static/index.html dist/build/middle.app/Contents/MacOS/static/
 cp static/dist/* dist/build/middle.app/Contents/MacOS/static/dist/
 cp static/fonts/* dist/build/middle.app/Contents/MacOS/static/fonts/
 
-
 mkdir dist/build/middle.app/Contents/MacOS/config/
 cp config/*.yml dist/build/middle.app/Contents/MacOS/config/
+
+#strip binary
+strip dist/build/middle.app/Contents/MacOS/middle
