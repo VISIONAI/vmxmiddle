@@ -18,9 +18,9 @@ main :: IO ()
 main = do
   exec_path <- getExecutablePath
   setCurrentDirectory ( takeDirectory exec_path)
+  putStrLn "Welcome to VMXMiddle (c) 2013-2014 vision.ai, LLC"
+  putStrLn "Please visit http://localhost:3000 in your browser"
   do
     cwd <- getCurrentDirectory
-    liftIO (print "Welcome to VMXMiddle v1.0 (c) 2013-2014 vision.ai, LLC")
-     --liftIO ( print ("cwd is " ++ cwd))
     defaultMainLog (withArgs ["Production"] (fromArgs parseExtra)) makeApplication
 
