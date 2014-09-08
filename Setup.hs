@@ -11,7 +11,7 @@ main = do
 
 guiApps :: [MacApp]
 guiApps = [MacApp "middle"
-                  (Just "resources/WxHello.icns")
+                  (Just "resources/vmxicon.icns")
                   Nothing -- Build a default Info.plist for the icon.
                   [] -- No other resources.
                   [] -- No other binaries.
