@@ -14,6 +14,7 @@ import Data.Bits ((.|.))
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
 import System.Posix.Env(setEnv)
+import Data.Aeson (decode)
 
 import Helper.Shared
 import Control.Exception (tryJust)
@@ -97,7 +98,7 @@ list_sessions :: Handler Value
 list_sessions = do
     sessions <-  sp >>= lift.getDirectoryContents 
     let sessions'' = filter notDots sessions
-    sessions' <- liftIO $ filterM notDead sessions''
+    sessions' <- filterM notDead sessions''
     liftIO $ print sessions'
 
 
@@ -113,17 +114,35 @@ list_sessions = do
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "error" .= True]
-        notDead :: FilePath -> IO Bool
+        notDead :: FilePath -> Handler Bool
         notDead sessionDir = do
-            (_, out, _) <- readProcessWithExitCode ("ps") ["a"] ""
-            let running = filter (isInfixOf sessionDir) $ lines out
-            return . not . null $ running
+          (_, mhout, _, ph)  <- liftIO $ createProcess (shell $ "ps aux | grep VMXserver | grep -v grep | grep " <> sessionDir) {std_out = CreatePipe}
+          _ <- liftIO $ waitForProcess ph
+          case mhout of
+              Nothing -> do
+                  return False
+              Just hout -> do
+                out <- liftIO $ hGetContents hout
+                liftIO $ hClose hout
+                return . not . null . lines $ out
+        --check if running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
-                        "." -> False
-                        ".." -> False
+                        "."         -> False
+                        ".."        -> False
                         ".DS_Store" -> False
                         _ -> True
+
+-- create a new session
+data VmxSessionFile = VmxSessionFile {
+        pid :: String
+} 
+
+
+
+instance FromJSON VmxSessionFile where
+    parseJSON (Object o) = VmxSessionFile <$> (o .: "pid")
+    parseJSON _ = mzero
 
 
 -- create a new session
