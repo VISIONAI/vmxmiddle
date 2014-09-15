@@ -17,9 +17,10 @@ import System.Posix.Env(setEnv)
 
 import Helper.Shared
 import Control.Exception (tryJust)
-import Control.Monad (guard)
+import Control.Monad (guard, filterM)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
+import Data.List (isInfixOf)
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -95,7 +96,10 @@ getSessionR = do
 list_sessions :: Handler Value
 list_sessions = do
     sessions <-  sp >>= lift.getDirectoryContents 
-    let sessions' = filter notDots sessions
+    let sessions'' = filter notDots sessions
+    sessions' <- liftIO $ filterM notDead sessions''
+    liftIO $ print sessions'
+
 
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
@@ -109,6 +113,11 @@ list_sessions = do
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "error" .= True]
+        notDead :: FilePath -> IO Bool
+        notDead sessionDir = do
+            (_, out, _) <- readProcessWithExitCode ("ps") ["a"] ""
+            let running = filter (isInfixOf sessionDir) $ lines out
+            return . not . null $ running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
                         "." -> False
