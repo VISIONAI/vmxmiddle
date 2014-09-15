@@ -17,11 +17,11 @@ import System.Posix.Env(setEnv)
 import Data.Aeson (decode)
 
 import Helper.Shared
-import Control.Exception (tryJust)
+import Control.Exception (tryJust, evaluate)
 import Control.Monad (guard, filterM)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
-import Data.List (isInfixOf)
+import Data.List (head)
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -120,11 +120,13 @@ list_sessions = do
           _ <- liftIO $ waitForProcess ph
           case mhout of
               Nothing -> do
+                  liftIO $ print "NOTHING??!?!?"
                   return False
               Just hout -> do
-                out <- liftIO $ hGetContents hout
+                out <- liftIO $ sequence [hGetContents hout]
+                len <- lift $ evaluate (length . lines . head $ out)
                 liftIO $ hClose hout
-                return . not . null . lines $ out
+                return . not $ (len == 0)
         --check if running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
