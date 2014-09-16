@@ -22,6 +22,7 @@ import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
+import System.Directory     (getCurrentDirectory)
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -147,7 +148,19 @@ getExtra = fmap (appExtra . settings) getYesod
 --
 -- https://github.com/yesodweb/yesod/wiki/Sending-email
 
+getVmxPrefix :: Char -> String -> String
+getVmxPrefix '/' _ = ""
+getVmxPrefix _ cwd = cwd ++ "/"
 
+-- Does nothing for absolute locations (Starting with /) but will
+-- prepend the current work directory if the specief path is not
+-- relative (not starging with a /)
+finalPath :: String -> String -> String
+finalPath cwd s = do
+  let firstChar = head s
+  let prefix = getVmxPrefix firstChar cwd
+  prefix ++ s
+  
 wwwDir :: Handler String
 wwwDir = do
     extra <- getExtra
@@ -158,8 +171,9 @@ wwwDir = do
 vmxExecutable :: Handler String
 vmxExecutable = do
     extra <- getExtra
+    cwd <- liftIO $ getCurrentDirectory
     case extraVmxPath extra of
-        Just theDir -> return $ theDir ++ "/run_VMXserver_local.sh"
+        Just theDir -> return $ finalPath cwd $ theDir ++ "/run_VMXserver_local.sh"
         Nothing  -> return "/home/g/build/run_VMXserver_local.sh"
 
 matlabPath :: Handler String
