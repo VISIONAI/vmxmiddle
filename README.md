@@ -1,4 +1,8 @@
-Build instructions using docker:
+VMXmiddle is the REST API layer between VMXServer and VMXAppBuilder,
+because it is sandwiched between the algorithmic back-end and the GUI
+front-ent, it is called "middle"
+
+## Build instructions using docker:
 
 
 ``` shell
@@ -55,8 +59,14 @@ gdoteof/d-vmxmiddle \ # the docker imaqe which contains the dependencies for vmx
 /bin/bash -c "cd /code && yesod devel"  # inside the docker, move to the approot and yesod devel
 ```
 
-Build instructions for Mac OS X Build
+## Build instructions for Mac OS X Build
 ```
 sudo runghc Setup configure --user
 sudo runghc Setup build
+```
+
+or simply
+```
+./build_mac.sh
+./build_dmg.sh
 ```
