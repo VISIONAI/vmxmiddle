@@ -84,6 +84,7 @@ library
                  , monad-logger                  >= 0.3        && < 0.4
                  , fast-logger                   >= 2.1.4      && < 2.2
                  , wai-logger                    >= 2.1        && < 2.2
+                 , wai                           >= 3.0
                  -- everything past this comment is beyond pure yesod
                  , process                      
                  , unix                      
