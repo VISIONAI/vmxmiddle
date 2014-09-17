@@ -17,7 +17,6 @@ import Settings.StaticFiles
 import Settings (widgetFile, Extra (..), SessionId, ModelId)
 import Model
 import Text.Hamlet (hamletFile)
-import Yesod.Fay
 import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
@@ -34,7 +33,6 @@ data App = App
     -- , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
     , httpManager :: Manager
     -- , persistConfig :: Settings.PersistConf
-    , fayCommandHandler :: CommandHandler App
     , appLogger :: Logger
     , pipeLocks      ::  IORef (Map String (MVar ()))
     , machineIdent :: IORef (Maybe String)
@@ -100,7 +98,6 @@ instance Yesod App where
 
     makeLogger = return . appLogger
 
-instance YesodJquery App
 
 -- How to run database actions.
 -- instance YesodPersist App where

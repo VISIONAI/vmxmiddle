@@ -8,7 +8,6 @@ module Settings where
 import Prelude
 import Text.Shakespeare.Text (st)
 import Language.Haskell.TH.Syntax
-import Database.Persist.Postgresql (PostgresConf)
 import Yesod.Default.Config
 import Yesod.Default.Util
 import Data.Text (Text)
@@ -17,10 +16,7 @@ import Control.Applicative
 import Settings.Development
 import Data.Default (def)
 import Text.Hamlet
-import Yesod.Fay
 
--- | Which Persistent backend this site is using.
-type PersistConf = PostgresConf
 
 -- Static setting below. Changing these requires a recompile
 
@@ -85,16 +81,6 @@ widgetFile = (if development then widgetFileReload
                              else widgetFileNoReload)
               widgetFileSettings
 
-fayFile' :: Exp -> FayFile
-fayFile' staticR moduleName
-    | development = fayFileReload settings
-    | otherwise   = fayFileProd settings
-  where
-    settings = (yesodFaySettings moduleName)
-        { yfsSeparateRuntime = Just ("static", staticR)
-        -- , yfsPostProcess = readProcess "java" ["-jar", "closure-compiler.jar"]
-        , yfsExternal = Just ("static", staticR)
-        }
 
 data Extra = Extra
     { extraCopyright :: Text

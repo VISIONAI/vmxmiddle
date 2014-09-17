@@ -12,7 +12,7 @@ Flag library-only
     Default:       False
 
 library
-    hs-source-dirs: ., fay-shared
+    hs-source-dirs: .
     exposed-modules: Application
                      Foundation
                      Import
@@ -20,8 +20,6 @@ library
                      Settings
                      Settings.StaticFiles
                      Settings.Development
-                     SharedTypes
-                     Handler.Fay
                      Handler.Home
                      Handler.Session
                      Handler.ProcessImage
@@ -41,7 +39,7 @@ library
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT
-        ghc-options:   -Wall -O0
+        ghc-options:   -Wall -O0 
     else
         ghc-options:   -Wall -O2
 
@@ -66,14 +64,11 @@ library
                  , yesod-auth                    >= 1.3        && < 1.4
                  , yesod-static                  >= 1.2        && < 1.3
                  , yesod-form                    >= 1.3        && < 1.4
-                 , yesod-fay                     >= 0.5.0.1
                  , yesod-websockets              >= 0.1.0.0
                  , websockets
-                 , fay                           >= 0.16
                  , bytestring                    >= 0.9        && < 0.11
                  , text                          >= 0.11       && < 2.0
                  , persistent                    >= 1.3        && < 1.4
-                 , persistent-postgresql
                  , persistent-template           >= 1.3        && < 1.4
                  , template-haskell
                  , shakespeare                   >= 2.0        && < 2.1
@@ -106,6 +101,7 @@ library
                  , filepath
                  , random
                  , conduit-extra
+                 , aeson-pretty
 
 
 
