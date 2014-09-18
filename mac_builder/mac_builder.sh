@@ -13,12 +13,11 @@ mkdir $D/Contents/MacOS/
 mkdir $D/Contents/Resources
 mkdir $D/Contents/Frameworks
 
-touch $D/Contents/Info.plist
-touch $D/Contents/Resources/something.icns
+cp ~/projects/vmxmiddle/mac_builder/Info.plist $D/Contents/Info.plist
+cp ~/projects/VMXassets/vmxicon2.icns $D/Contents/Resources/VMX.icns
 
-cp $original $D/Contents/MacOS/vmx
-
-F=$D/Contents/MacOS/vmx
+cp $original $D/Contents/MacOS/VMX
+F=$D/Contents/MacOS/VMX
 
 #strip binary
 strip $F
@@ -88,5 +87,11 @@ for i in $LIBS; do
     
 done
 
+## We should be creating a proper plist file
 
+
+## We should be setting up the icon
+
+
+#cp ~/projects/cvmx/VMX $D/Contents/MacOS
 
