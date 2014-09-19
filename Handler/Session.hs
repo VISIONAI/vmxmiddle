@@ -99,7 +99,7 @@ list_sessions = do
     sessions <-  sp >>= lift.getDirectoryContents 
     let sessions'' = filter notDots sessions
     psOutput <- liftIO $ readProcess "ps" ["aux"] ""
-    sessions' <- filterM (notDead psOutput) sessions''
+    let sessions' = filter (notDead psOutput) sessions''
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
     where
@@ -112,10 +112,10 @@ list_sessions = do
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "error" .= True]
-        notDead :: String -> FilePath -> Handler Bool
+        notDead :: String -> FilePath -> Bool
         notDead psOutput sessionDir = do
             let possible = filter (isInfixOf sessionDir) (lines psOutput)
-            return (not . null $ filter (isInfixOf "VMXServer") possible)
+            (not . null $ filter (isInfixOf "VMXServer") possible)
         --check if running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
