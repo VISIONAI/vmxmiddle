@@ -22,6 +22,9 @@ F=$D/Contents/MacOS/VMX
 #strip binary
 strip $F
 
+mkdir $D/Contents/MacOS/assets/
+mkdir $D/Contents/MacOS/assets/sessions/
+mkdir $D/Contents/MacOS/assets/models/
 
 mkdir $D/Contents/MacOS/static
 mkdir $D/Contents/MacOS/static/dist/
@@ -39,6 +42,8 @@ cp config/settings.yml $D/Contents/MacOS/config/
 #copy over VMXserver
 cp -R /Users/tomasz/projects/VMXserver/build $D/Contents/MacOS/
 
+#copy over initial network
+cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
 
 #clean up libs
 LIBS=`otool -L ${F} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
