@@ -51,24 +51,25 @@ LIBS=`otool -L ${F} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
 for i in $LIBS; do
     echo "i is" $i
     LOCAL_LIB='@executable_path/../Frameworks/'`basename $i`
-    echo "LL is" $LOCAL_LIB
+    #echo "LL is" $LOCAL_LIB
+    echo install_name_tool -change $i $LOCAL_LIB $F
     install_name_tool -change $i $LOCAL_LIB $F
     cp ${i} $D/Contents/Frameworks/
     LIBS2=`otool -L ${i} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
     for j in $LIBS2; do
-        echo "i j is " $i $j
+        #echo "i j is " $i $j
         cp ${j} $D/Contents/Frameworks/
         LIBS3=`otool -L ${j} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
         for k in $LIBS3; do
-            echo "j k is " $j $k
+            #echo "j k is " $j $k
             cp ${k} $D/Contents/Frameworks/
             LIBS4=`otool -L ${k} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
             for l in $LIBS4; do
-                echo "k l is " $k $l
+                #echo "k l is " $k $l
                 cp ${l} $D/Contents/Frameworks/
                 LIBS5=`otool -L ${l} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
                 for m in $LIBS5; do
-                    echo "l m is " $l $m
+                    #echo "l m is " $l $m
                     cp ${m} $D/Contents/Frameworks/
                 done
 
