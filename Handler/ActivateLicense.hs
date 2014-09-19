@@ -17,6 +17,7 @@ import qualified Data.ByteString.Lazy as L (fromChunks)
 import Data.Text.Lazy.Encoding (decodeASCII)
 import Data.Maybe (fromJust)
 import Control.Exception as X hiding (Handler)
+import Data.Aeson.Encode.Pretty (encodePretty)
 
 data ActivateResponse = ActivateResponse String
 
@@ -61,7 +62,7 @@ writeLicense l key = do
     c' <- liftIO $ readJson . unpack <$> DT.readFile path 
     case c' of
         VMXServerConfig _ _ models sessions apps log_images perform_tests mcr vmxdata pretrained -> 
-            liftIO $ DTL.writeFile path $ decodeASCII $ encode $
+            liftIO $ DTL.writeFile path $ decodeASCII $ encodePretty $
                 VMXServerConfig key l models sessions apps log_images perform_tests mcr vmxdata pretrained
     where
         readJson :: String -> VMXServerConfig
