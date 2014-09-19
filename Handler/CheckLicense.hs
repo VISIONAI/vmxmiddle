@@ -4,7 +4,7 @@ module Handler.CheckLicense where
 
 import Import
 import Data.Aeson(decode)
-import qualified Data.Text.IO as DT (readFile)
+import qualified Data.Text.IO as DT (readFile,writeFile)
 import Data.Maybe (fromMaybe)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
@@ -14,6 +14,7 @@ import System.Exit (ExitCode(..))
 import Data.List (last, head)
 import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
+import System.Directory (doesFileExist)
 
 
 
@@ -35,9 +36,22 @@ instance FromJSON VMXServerMessage where
 
 getCheckLicenseR :: Handler Value
 getCheckLicenseR = do
+    extra <-getExtra
+    let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/.vmxlicense"
+    licensed <- liftIO $ doesFileExist path
+        
     vmxExecutable' <- vmxExecutable
     matlabRuntime' <- matlabPath
-    (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' [matlabRuntime', "licenseCheckSlug"] ""
+    (exitCode, stdout) <-
+                case licensed of 
+                    True -> do
+                        stdout <- liftIO $ DT.readFile path
+                        return (ExitSuccess, unpack stdout)
+                    False -> do 
+                        (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  
+                                    vmxExecutable' [matlabRuntime', "licenseCheckSlug"] "" 
+                        liftIO $ DT.writeFile path (pack . head . lines $ stdout)
+                        return (exitCode, stdout)
     let uuid = getUUID . readJson . head . lines $ stdout
     let version = getVersion $ readJson $ head $ lines stdout
     -- liftIO $ print $ show . head . lines $ stdout
