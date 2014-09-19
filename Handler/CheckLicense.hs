@@ -50,7 +50,6 @@ getCheckLicenseR = do
                     False -> do 
                         (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  
                                     vmxExecutable' [matlabRuntime', "licenseCheckSlug"] "" 
-                        liftIO $ DT.writeFile path (pack . head . lines $ stdout)
                         return (exitCode, stdout)
     let uuid = getUUID . readJson . head . lines $ stdout
     let version = getVersion $ readJson $ head $ lines stdout
@@ -58,7 +57,9 @@ getCheckLicenseR = do
     setMachineIdent uuid
 
     case exitCode of
-        ExitSuccess    -> return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
+        ExitSuccess    -> do
+            liftIO $ DT.writeFile path (pack . head . lines $ stdout)
+            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
         ExitFailure 11 -> do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
         ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
