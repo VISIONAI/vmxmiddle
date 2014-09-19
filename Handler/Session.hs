@@ -21,7 +21,7 @@ import Control.Exception (tryJust, evaluate)
 import Control.Monad (guard, filterM)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
-import Data.List (head)
+import Data.List (head,isInfixOf)
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -98,10 +98,8 @@ list_sessions :: Handler Value
 list_sessions = do
     sessions <-  sp >>= lift.getDirectoryContents 
     let sessions'' = filter notDots sessions
-    sessions' <- filterM notDead sessions''
-    liftIO $ print sessions'
-
-
+    psOutput <- liftIO $ readProcess "ps" ["aux"] ""
+    sessions' <- filterM (notDead psOutput) sessions''
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
     where
@@ -114,19 +112,10 @@ list_sessions = do
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "error" .= True]
-        notDead :: FilePath -> Handler Bool
-        notDead sessionDir = do
-          (_, mhout, _, ph)  <- liftIO $ createProcess (shell $ "ps aux | grep VMXserver | grep -v grep | grep " <> sessionDir) {std_out = CreatePipe}
-          _ <- liftIO $ waitForProcess ph
-          case mhout of
-              Nothing -> do
-                  liftIO $ print "NOTHING??!?!?"
-                  return False
-              Just hout -> do
-                out <- liftIO $ sequence [hGetContents hout]
-                len <- lift $ evaluate (length . lines . head $ out)
-                liftIO $ hClose hout
-                return . not $ (len == 0)
+        notDead :: String -> FilePath -> Handler Bool
+        notDead psOutput sessionDir = do
+            let possible = filter (isInfixOf sessionDir) (lines psOutput)
+            return (not . null $ filter (isInfixOf "VMXServer") possible)
         --check if running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
