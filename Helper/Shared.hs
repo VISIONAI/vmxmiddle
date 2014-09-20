@@ -21,14 +21,14 @@ import qualified Data.ByteString.Char8 as C
 import System.Directory (getDirectoryContents, createDirectory, removeDirectoryRecursive)
 import System.Process
 import System.IO
-import Control.Exception (evaluate)
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Yesod.WebSockets
 import Network.HTTP.Types (status400)
+import Control.Exception (evaluate)
 
-import Data.Map.Strict as Map (member, (!), insert) 
+import Data.Map.Strict as Map (member, (!), insert, toList) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
 import Control.Exception (try)
@@ -66,8 +66,16 @@ waitLock sid = do
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    (_, o, _) <- readProcessWithExitCode "bash" ["-c", "cat<"  <>  f] []
-    return o
+    hdl <- openFileBlocking f ReadMode
+    t <- hIsEOF hdl
+    if t then do
+            hClose hdl
+            drainFifo f
+         else do
+            o <- hGetContents hdl
+            _ <- evaluate (length o)
+            hClose hdl
+            return o
 
 headers :: Handler ()
 headers = do
@@ -89,15 +97,16 @@ getPipeResponse v sid = do
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
+                    liftIO $ print "we are doings omethign wonky here.. if you see this right before an error it's a good hint"
                     lift $ openFileBlocking i WriteMode >>= return
                 Right file -> return file
-    lift $ hPutStr file payload
+    lift $ L.hPutStr file payload
     lift $ hClose file
     ret <- lift $ drainFifo o
     releaseLock sid
     return ret
     where
-        payload = LBS.unpack $ encode v
+        payload = encode v
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 

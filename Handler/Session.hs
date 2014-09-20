@@ -17,7 +17,7 @@ import System.Posix.Env(setEnv)
 import Data.Aeson (decode)
 
 import Helper.Shared
-import Control.Exception (tryJust, evaluate)
+import Control.Exception (tryJust)
 import Control.Monad (guard, filterM)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
