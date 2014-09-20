@@ -115,7 +115,7 @@ list_sessions = do
         notDead :: String -> FilePath -> Bool
         notDead psOutput sessionDir = do
             let possible = filter (isInfixOf sessionDir) (lines psOutput)
-            (not . null $ filter (isInfixOf "VMXServer") possible)
+            (not . null $ filter (isInfixOf "VMXserver") possible)
         --check if running
         notDots :: FilePath -> Bool
         notDots fp = case fp of
