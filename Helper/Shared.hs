@@ -13,6 +13,7 @@ module Helper.Shared
     , releaseLock
     , exitVMXServer
     , delVMXFolder
+    , addLock
     ) where
 
 import Import
@@ -28,40 +29,38 @@ import Yesod.WebSockets
 import Network.HTTP.Types (status400)
 import Control.Exception (evaluate)
 
-import Data.Map.Strict as Map (member, (!), insert, toList) 
+import Data.Map.Strict as SM (member, (!), insert, toList, Map (..)) 
 import Data.IORef (atomicModifyIORef', readIORef)
 
 import Control.Exception (try)
 import System.IO.Error
 import Helper.VMXTypes
 
-releaseLock :: SessionId -> Handler ()
-releaseLock sid = do
-    App {..} <- getYesod
-    currentLocks <- liftIO $ readIORef pipeLocks
-    liftIO $ takeMVar (currentLocks ! sid)
 
-waitLock :: SessionId -> Handler ()
-waitLock sid = do
-    App {..}   <- getYesod
-    currentLocks <- liftIO $ readIORef pipeLocks
-    locks <- if (member sid currentLocks)
-                        then return currentLocks
-                        else do
-                            -- no semaphores exist for this session id
-                            l <- liftIO $ newEmptyMVar
-                            newLocks <- liftIO $ atomicModifyIORef' pipeLocks $
-                                    \lks -> do
-                                        -- update our list of semaphores to include the one we made for this sid
-                                        let locks' = Map.insert sid l lks
-                                        (locks',locks')
-                            return newLocks
+import Control.Concurrent.STM.TMVar
+import Control.Monad.STM
+import Debug.Trace
+import System.IO.Unsafe ( unsafePerformIO )
+releaseLock :: SessionId -> LockMap -> STM ()
+releaseLock sid locks = do
+    takeTMVar (locks ! sid)
 
-    let lock = locks ! sid
-    liftIO $ putMVar lock ()
+type LockMap = SM.Map String (TMVar ())
+
+addLock :: TMVar LockMap -> SessionId -> TMVar () -> STM ()
+addLock lm sid newLock = do
+    lockMap <- trace "taking LockMap" $ takeTMVar  lm
+    let newMap = if (member sid lockMap)
+                        then error "trying to add a lock that already exists"
+                        else SM.insert sid newLock lockMap
+    trace "putting LockMap back" $ putTMVar lm newMap
     return ()
-            
 
+waitLock :: SessionId -> LockMap -> STM ()
+waitLock sid locks = do
+    if member sid locks
+        then putTMVar (locks ! sid)  ()
+        else trace "retrying.." retry
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
@@ -87,24 +86,41 @@ type OutputPipe = FilePath
 
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
-    waitLock sid
+    App _ _ _ _ lm  _  <- getYesod
+    locks' <- liftIO . atomically $ takeTMVar lm
+
+    -- make sure we have a lock for this one
+    liftIO $ if member sid locks'
+        then do
+            atomically $ putTMVar lm locks'
+        else do
+            newLock <- newEmptyTMVarIO
+            atomically $ do
+                putTMVar lm locks'
+                addLock lm sid newLock
+
+    locks <- liftIO . atomically $ takeTMVar lm
+
+    liftIO . atomically $ waitLock sid locks
+    liftIO . atomically $ putTMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
     fileE <-  lift $ try (openFileBlocking i WriteMode)
-    file <- case fileE of
+    case fileE of
                 -- An IOError here means the process that was supposed
                 -- to read from the pipe died before it could, and matlab
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
-                    liftIO $ print "we are doings omethign wonky here.. if you see this right before an error it's a good hint"
-                    lift $ openFileBlocking i WriteMode >>= return
-                Right file -> return file
-    lift $ L.hPutStr file payload
-    lift $ hClose file
-    ret <- lift $ drainFifo o
-    releaseLock sid
-    return ret
+                    liftIO . atomically $ releaseLock sid locks
+                    error $ show e
+                    --lift $ openFileBlocking i WriteMode >>= return
+                Right fileHandle -> do
+                    lift $ L.hPutStr fileHandle payload
+                    lift $ hClose fileHandle
+                    ret <- lift $ drainFifo o
+                    liftIO . atomically $ releaseLock sid locks
+                    return ret
     where
         payload = encode v
 

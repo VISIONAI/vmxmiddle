@@ -29,6 +29,8 @@ import Yesod.Core.Types (loggerSet, Logger (Logger))
 import Control.Concurrent.MVar       
 import qualified Data.Map.Strict as Map
 import Data.IORef (newIORef)
+import Control.Concurrent.STM (STM (..), newTVarIO, TMVar, newTMVar, atomically)
+
 
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
@@ -100,7 +102,7 @@ makeFoundation conf = do
     _ <- forkIO updateLoop
 
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
-    pipeLocks <- liftIO $ newIORef $ Map.fromList []
+    pipeLocks <- liftIO $ atomically $ newTMVar $ Map.fromList []
 
     -- Keep track of the machineIdent string we get back from vmxserver
     machineIdent <- liftIO $ newIORef Nothing
