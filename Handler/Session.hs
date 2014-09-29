@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Handler.Session where
@@ -23,6 +24,9 @@ import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
 import Data.List (head,isInfixOf)
 
+import Control.Concurrent.STM.TMVar
+import Control.Monad.STM
+
 optionsSessionR :: Handler ()
 optionsSessionR = do
     addHeader "Allow" "Get, Put"
@@ -39,13 +43,19 @@ postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    sessionId <- createSession (modelUUIDS csc)
-    return sessionId
+    (sessionId, payLoad) <- createSession (modelUUIDS csc)
+    App {..} <- getYesod
+    liftIO $ do
+        print "postSessioNR: making new TMVar"
+        newLock <- newEmptyTMVarIO
+        print "postSessionR: going into addLock"
+        atomically $ addLock pipeLocks sessionId newLock
+    return payLoad
 
 type ModelName = String
 
 -- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
-createSession :: [String] -> Handler String
+createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
     let name = case length uuids of
                     0 -> "none"
@@ -66,7 +76,7 @@ createSession uuids = do
     _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid, name])
                          {std_out = UseHandle log', std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
-    return fromBrain
+    return (sid, fromBrain)
     where
         getSessionId :: IO String
         getSessionId = do

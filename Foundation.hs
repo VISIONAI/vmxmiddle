@@ -22,6 +22,7 @@ import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
 import System.Directory     (getCurrentDirectory)
+import Control.Concurrent.STM (STM (..), newTVarIO, TMVar (..))
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -34,7 +35,7 @@ data App = App
     , httpManager :: Manager
     -- , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , pipeLocks      ::  IORef (Map String (MVar ()))
+    , pipeLocks      ::  TMVar (Map String (TMVar ()))
     , machineIdent :: IORef (Maybe String)
     }
 
