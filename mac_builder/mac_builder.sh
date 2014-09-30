@@ -59,7 +59,7 @@ mkdir $D/Contents/MacOS/config/
 cp config/settings.yml $D/Contents/MacOS/config/
 
 #copy over VMXserver
-cp -R /Users/tomasz/projects/VMXserver/build $D/Contents/MacOS/
+cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $D/Contents/MacOS/
 
 #copy over initial network
 cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
@@ -111,7 +111,7 @@ for i in $LIBS; do
     done    
 done
 
-echo "VMXmiddle_bin_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
+echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
 
 ## We should be creating a proper plist file
 
