@@ -59,11 +59,11 @@ createSession uuids = do
     outputPipePath' <- outputPipePath sid
     outLogPath' <- outLogPath sid
     vmxExecutable' <- vmxExecutable
-    matlabRuntime' <- matlabPath
+
     wwwDir' <- wwwDir
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
     log'        <- lift $ openFile outLogPath' AppendMode
-    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid, name])
+    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', wwwDir', sid, name])
                          {std_out = UseHandle log', std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
     return fromBrain
