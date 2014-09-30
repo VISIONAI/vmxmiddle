@@ -171,13 +171,6 @@ vmxExecutable = do
     extra <- getExtra
     cwd <- liftIO $ getCurrentDirectory
     case extraVmxPath extra of
-        Just theDir -> return $ finalPath cwd $ theDir ++ "/run_VMXserver_local.sh"
-        Nothing  -> return "/home/g/build/run_VMXserver_local.sh"
-
-matlabPath :: Handler String
-matlabPath = do
-    extra <- getExtra
-    case extraMatlabPath extra of
-        Just theDir -> return theDir
-        Nothing  -> return "/home/g/build/MATLAB/R2014a/v83"
+        Just theDir -> return $ finalPath cwd $ theDir ++ "/VMXserver"
+        Nothing  -> return "/home/g/VMXserver/VMXserver"
 
