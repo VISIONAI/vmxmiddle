@@ -84,7 +84,7 @@ library
                  , monad-logger                  >= 0.3        && < 0.4
                  , fast-logger                   >= 2.1.4      && < 2.2
                  , wai-logger                    >= 2.1        && < 2.2
-                 , wai                           >= 3.0
+                 , wai
                  -- everything past this comment is beyond pure yesod
                  , process                      
                  , unix                      
@@ -96,7 +96,7 @@ library
                  , stm
                  , syb
                  , unordered-containers
-                 , containers                   >= 0.5.0.0
+                 , containers
                  , cabal-macosx
                  , http-types
                  , filepath
@@ -135,7 +135,6 @@ test-suite test
                  , yesod-core
                  , yesod
                  , persistent
-                 , persistent-postgresql
                  , resourcet
                  , monad-logger
                  , transformers

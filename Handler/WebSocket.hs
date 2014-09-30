@@ -62,7 +62,7 @@ vmxWebSocket = {-# SCC "dowebsocketforever" #-}(forever $ {-# SCC "insideforever
                             Right command' -> {-# SCC "parse_command" #-}
                                 case command' of
                                     CreateSession model_name -> do
-                                        (out :: String) <- lift $ createSession model_name
+                                        (sessionId, out :: String) <- lift $ createSession model_name
                                         sendTextData $ pack $ "{\"new_connection\":" <> out <> "}"
                                     ProcessImage sid images params -> do
                                         before_process_image <- liftIO $ getCPUTime
