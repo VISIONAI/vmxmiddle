@@ -87,7 +87,6 @@ data Extra = Extra
     , extraAnalytics :: Maybe Text -- ^ Google Analytics
     , extraWwwDir    :: Maybe String
     , extraVmxPath    :: Maybe String
-    , extraMatlabPath    :: Maybe String
     } deriving Show
 
 parseExtra :: DefaultEnv -> Object -> Parser Extra
@@ -96,7 +95,6 @@ parseExtra _ o = Extra
     <*> o .:? "analytics"
     <*> o .:? "wwwdir"
     <*> o .:? "vmxpath"
-    <*> o .:? "matlabpath"
 
 
 
