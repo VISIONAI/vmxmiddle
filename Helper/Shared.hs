@@ -58,10 +58,7 @@ addLock lm sid newLock = do
     return ()
 
 waitLock :: SessionId -> LockMap -> STM ()
-waitLock sid locks = do
-    if member sid locks
-        then takeTMVar (locks ! sid)
-        else retry
+waitLock sid locks = takeTMVar (locks ! sid)
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
@@ -73,8 +70,10 @@ drainFifo f = do
             trace ("fifo not ready, dropping calling drainfifo again") $ drainFifo f
          else do
             o <- trace ("getting contents from " ++ f) $ hGetContents hdl
-            _ <- trace ("forcing strict IO on " ++ f)  $ evaluate (length o)
+            theLength <- trace ("forcing strict IO on " ++ f)  $ evaluate (length o)
+            liftIO $ print $ "the length is " ++ show theLength ++ " for " ++ f
             trace ("closing the handler after successful drain on " ++ f) $ hClose hdl
+            liftIO $ print $ "in theory we closed the Handle for " ++ f
             return o
 
 headers :: Handler ()
@@ -120,7 +119,7 @@ getPipeResponse v sid = do
                     error $ show e
                     --lift $ openFileBlocking i WriteMode >>= return
                 Right fileHandle -> do
-                    trace ("GPR: writing payload to pipe with " ++ sid) $ lift $ L.hPutStr fileHandle payload
+                    trace ("GPR: writing payload to pipe with " ++ sid) $ liftIO $ L.hPutStr fileHandle payload
                     trace ("GPR: closing pipe with " ++ sid) $ lift $ hClose fileHandle
                     ret <- trace ("GPR: draining fifo for " ++ sid) $ lift $ drainFifo o
                     trace ("GPR: releasing lock for " ++ sid) $ liftIO $ print "null"
