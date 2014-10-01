@@ -63,15 +63,17 @@ waitLock sid locks = takeTMVar (locks ! sid)
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    hdl <- trace ("trying to open " ++ f ++ "in drainDifo") $ openFileBlocking f ReadMode
+    hdl <- openFileBlocking f ReadMode
+    mode <- liftIO $ hGetBuffering hdl
+    hSetBuffering hdl LineBuffering
     t <- hIsEOF hdl
     if t then do
-            trace ("fifo not ready, dropping handler") $ hClose hdl
-            trace ("fifo not ready, dropping calling drainfifo again") $ drainFifo f
+            hClose hdl
+            drainFifo f
          else do
             o <- trace ("getting contents from " ++ f) $ hGetContents hdl
+            liftIO $ print $ "before the evaluate for " ++ f
             theLength <- trace ("forcing strict IO on " ++ f)  $ evaluate (length o)
-            liftIO $ print $ "the length is " ++ show theLength ++ " for " ++ f
             trace ("closing the handler after successful drain on " ++ f) $ hClose hdl
             liftIO $ print $ "in theory we closed the Handle for " ++ f
             return o
@@ -89,7 +91,7 @@ getPipeResponse v sid = do
     App _ _ _ _ lm  _  <- getYesod
     locks' <- liftIO . atomically $ takeTMVar lm
 
-    trace ("GPR: preprocessing LockMap for valid sid=" ++ sid) $ liftIO $ print "null"
+    liftIO $ print "null"
     -- make sure we have a lock for this one
     liftIO $ if member sid locks'
         then do
@@ -102,13 +104,11 @@ getPipeResponse v sid = do
 
     locks <- liftIO . atomically $ takeTMVar lm
 
-    trace ("GPR: taking the lock for " ++ sid) $ liftIO $ print "null"
     liftIO . atomically $ waitLock sid locks
-    trace ("GPR: putting the LockMap back for " ++ sid) $ liftIO $ print "null"
     liftIO . atomically $ putTMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    fileE <-  trace ("GPR: trying to open the file for writing with " ++ sid) $ lift $ try (openFileBlocking i WriteMode)
+    fileE <-  lift $ try (openFileBlocking i WriteMode)
     case fileE of
                 -- An IOError here means the process that was supposed
                 -- to read from the pipe died before it could, and matlab
@@ -119,10 +119,10 @@ getPipeResponse v sid = do
                     error $ show e
                     --lift $ openFileBlocking i WriteMode >>= return
                 Right fileHandle -> do
-                    trace ("GPR: writing payload to pipe with " ++ sid) $ liftIO $ L.hPutStr fileHandle payload
-                    trace ("GPR: closing pipe with " ++ sid) $ lift $ hClose fileHandle
-                    ret <- trace ("GPR: draining fifo for " ++ sid) $ lift $ drainFifo o
-                    trace ("GPR: releasing lock for " ++ sid) $ liftIO $ print "null"
+                    liftIO $ L.hPutStr fileHandle payload
+                    lift $ hClose fileHandle
+                    ret <- lift $ drainFifo o
+                    liftIO $ print "null"
                     liftIO . atomically $ releaseLock sid locks
                     return ret
     where
