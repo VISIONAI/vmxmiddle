@@ -42,27 +42,26 @@ import Control.Monad.STM
 import Debug.Trace
 import System.IO.Unsafe ( unsafePerformIO )
 import GHC.Conc.Sync (unsafeIOToSTM)
-releaseLock :: SessionId -> LockMap -> STM ()
-releaseLock sid locks = do
-    takeTMVar (locks ! sid)
 
 type LockMap = SM.Map String (TMVar ())
 
+releaseLock :: SessionId -> LockMap -> STM ()
+releaseLock sid locks = putTMVar (locks ! sid) ()
+
 addLock :: TMVar LockMap -> SessionId -> TMVar () -> STM ()
 addLock lm sid newLock = do
-    lockMap <- trace "taking LockMap" $ takeTMVar  lm
+    lockMap <- takeTMVar  lm
     let newMap = if (member sid lockMap)
                         then error "trying to add a lock that already exists"
                         else SM.insert sid newLock lockMap
-    trace "putting LockMap back" $ putTMVar lm newMap
+    putTMVar lm newMap
     return ()
 
 waitLock :: SessionId -> LockMap -> STM ()
 waitLock sid locks = do
-    unsafeIOToSTM $ liftIO $ print $ "entering waitLock with sid = " ++ sid
     if member sid locks
-        then trace ("taking lock for " ++ sid) $ putTMVar (locks ! sid)  ()
-        else trace "retrying.." retry
+        then takeTMVar (locks ! sid)
+        else retry
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
@@ -89,23 +88,25 @@ type OutputPipe = FilePath
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
     App _ _ _ _ lm  _  <- getYesod
-    locks' <- trace ("GPR: getting the LockMap first time for " ++ sid) $ liftIO . atomically $ takeTMVar lm
+    locks' <- liftIO . atomically $ takeTMVar lm
 
+    trace ("GPR: preprocessing LockMap for valid sid=" ++ sid) $ liftIO $ print "null"
     -- make sure we have a lock for this one
     liftIO $ if member sid locks'
         then do
-            trace ("GPR: we already have a lock for " ++ sid ++ " so putting LockMap back unchanged") $ atomically $ putTMVar lm locks'
+            atomically $ putTMVar lm locks'
         else do
-            trace ("GPR: need a lock for " ++ sid) $ print "...null print statement..."
-            newLock <- trace ("GPR: creating a lock for " ++ sid) $ newEmptyTMVarIO
+            newLock <- newTMVarIO ()
             atomically $ do
-                trace ("GPR/automically: putting the LockMap back for " ++ sid) $ putTMVar lm locks'
-                trace ("GPR/automically: adding the lock to the LockMap for " ++ sid) $ addLock lm sid newLock
+                putTMVar lm locks'
+                addLock lm sid newLock
 
-    locks <- trace ("GPR: getting the LockMap after we know it has our sid for " ++ sid) $ liftIO . atomically $ takeTMVar lm
+    locks <- liftIO . atomically $ takeTMVar lm
 
-    trace ("GPR: getting lock for " ++ sid) $ liftIO . atomically $ waitLock sid locks
-    trace ("GPR: putting the LockMap back for " ++ sid) $ liftIO . atomically $ putTMVar lm locks
+    trace ("GPR: taking the lock for " ++ sid) $ liftIO $ print "null"
+    liftIO . atomically $ waitLock sid locks
+    trace ("GPR: putting the LockMap back for " ++ sid) $ liftIO $ print "null"
+    liftIO . atomically $ putTMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
     fileE <-  trace ("GPR: trying to open the file for writing with " ++ sid) $ lift $ try (openFileBlocking i WriteMode)
@@ -122,7 +123,8 @@ getPipeResponse v sid = do
                     trace ("GPR: writing payload to pipe with " ++ sid) $ lift $ L.hPutStr fileHandle payload
                     trace ("GPR: closing pipe with " ++ sid) $ lift $ hClose fileHandle
                     ret <- trace ("GPR: draining fifo for " ++ sid) $ lift $ drainFifo o
-                    trace ("GPR: releasing lock for " ++ sid) $ liftIO . atomically $ releaseLock sid locks
+                    trace ("GPR: releasing lock for " ++ sid) $ liftIO $ print "null"
+                    liftIO . atomically $ releaseLock sid locks
                     return ret
     where
         payload = encode v

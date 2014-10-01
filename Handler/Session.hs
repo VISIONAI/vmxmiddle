@@ -45,11 +45,6 @@ postSessionR = do
     (csc :: CreateSessionCommand ) <- requireJsonBody
     (sessionId, payLoad) <- createSession (modelUUIDS csc)
     App {..} <- getYesod
-    liftIO $ do
-        print "postSessioNR: making new TMVar"
-        newLock <- newEmptyTMVarIO
-        print "postSessionR: going into addLock"
-        atomically $ addLock pipeLocks sessionId newLock
     return payLoad
 
 type ModelName = String
