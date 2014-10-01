@@ -41,6 +41,7 @@ import Control.Concurrent.STM.TMVar
 import Control.Monad.STM
 import Debug.Trace
 import System.IO.Unsafe ( unsafePerformIO )
+import GHC.Conc.Sync (unsafeIOToSTM)
 releaseLock :: SessionId -> LockMap -> STM ()
 releaseLock sid locks = do
     takeTMVar (locks ! sid)
@@ -58,22 +59,23 @@ addLock lm sid newLock = do
 
 waitLock :: SessionId -> LockMap -> STM ()
 waitLock sid locks = do
+    unsafeIOToSTM $ liftIO $ print $ "entering waitLock with sid = " ++ sid
     if member sid locks
-        then putTMVar (locks ! sid)  ()
+        then trace ("taking lock for " ++ sid) $ putTMVar (locks ! sid)  ()
         else trace "retrying.." retry
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
-    hdl <- openFileBlocking f ReadMode
+    hdl <- trace ("trying to open " ++ f ++ "in drainDifo") $ openFileBlocking f ReadMode
     t <- hIsEOF hdl
     if t then do
-            hClose hdl
-            drainFifo f
+            trace ("fifo not ready, dropping handler") $ hClose hdl
+            trace ("fifo not ready, dropping calling drainfifo again") $ drainFifo f
          else do
-            o <- hGetContents hdl
-            _ <- evaluate (length o)
-            hClose hdl
+            o <- trace ("getting contents from " ++ f) $ hGetContents hdl
+            _ <- trace ("forcing strict IO on " ++ f)  $ evaluate (length o)
+            trace ("closing the handler after successful drain on " ++ f) $ hClose hdl
             return o
 
 headers :: Handler ()
@@ -87,25 +89,26 @@ type OutputPipe = FilePath
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
     App _ _ _ _ lm  _  <- getYesod
-    locks' <- liftIO . atomically $ takeTMVar lm
+    locks' <- trace ("GPR: getting the LockMap first time for " ++ sid) $ liftIO . atomically $ takeTMVar lm
 
     -- make sure we have a lock for this one
     liftIO $ if member sid locks'
         then do
-            atomically $ putTMVar lm locks'
+            trace ("GPR: we already have a lock for " ++ sid ++ " so putting LockMap back unchanged") $ atomically $ putTMVar lm locks'
         else do
-            newLock <- newEmptyTMVarIO
+            trace ("GPR: need a lock for " ++ sid) $ print "...null print statement..."
+            newLock <- trace ("GPR: creating a lock for " ++ sid) $ newEmptyTMVarIO
             atomically $ do
-                putTMVar lm locks'
-                addLock lm sid newLock
+                trace ("GPR/automically: putting the LockMap back for " ++ sid) $ putTMVar lm locks'
+                trace ("GPR/automically: adding the lock to the LockMap for " ++ sid) $ addLock lm sid newLock
 
-    locks <- liftIO . atomically $ takeTMVar lm
+    locks <- trace ("GPR: getting the LockMap after we know it has our sid for " ++ sid) $ liftIO . atomically $ takeTMVar lm
 
-    liftIO . atomically $ waitLock sid locks
-    liftIO . atomically $ putTMVar lm locks
+    trace ("GPR: getting lock for " ++ sid) $ liftIO . atomically $ waitLock sid locks
+    trace ("GPR: putting the LockMap back for " ++ sid) $ liftIO . atomically $ putTMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
-    fileE <-  lift $ try (openFileBlocking i WriteMode)
+    fileE <-  trace ("GPR: trying to open the file for writing with " ++ sid) $ lift $ try (openFileBlocking i WriteMode)
     case fileE of
                 -- An IOError here means the process that was supposed
                 -- to read from the pipe died before it could, and matlab
@@ -116,10 +119,10 @@ getPipeResponse v sid = do
                     error $ show e
                     --lift $ openFileBlocking i WriteMode >>= return
                 Right fileHandle -> do
-                    lift $ L.hPutStr fileHandle payload
-                    lift $ hClose fileHandle
-                    ret <- lift $ drainFifo o
-                    liftIO . atomically $ releaseLock sid locks
+                    trace ("GPR: writing payload to pipe with " ++ sid) $ lift $ L.hPutStr fileHandle payload
+                    trace ("GPR: closing pipe with " ++ sid) $ lift $ hClose fileHandle
+                    ret <- trace ("GPR: draining fifo for " ++ sid) $ lift $ drainFifo o
+                    trace ("GPR: releasing lock for " ++ sid) $ liftIO . atomically $ releaseLock sid locks
                     return ret
     where
         payload = encode v
