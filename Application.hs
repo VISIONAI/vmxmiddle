@@ -102,7 +102,7 @@ makeFoundation conf = do
     _ <- forkIO updateLoop
 
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
-    pipeLocks <- liftIO $ atomically $ newTMVar $ Map.fromList []
+    pipeLocks <- liftIO $ newMVar $ Map.fromList []
 
     -- Keep track of the machineIdent string we get back from vmxserver
     machineIdent <- liftIO $ newIORef Nothing

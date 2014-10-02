@@ -44,29 +44,28 @@ import Debug.Trace
 import System.IO.Unsafe ( unsafePerformIO )
 import GHC.Conc.Sync (unsafeIOToSTM)
 
-type LockMap = SM.Map String (TMVar ())
+type LockMap = SM.Map String (MVar ())
 
-releaseLock :: SessionId -> LockMap -> STM ()
-releaseLock sid locks = putTMVar (locks ! sid) ()
+releaseLock :: SessionId -> LockMap -> IO ()
+releaseLock sid locks = putMVar (locks ! sid) ()
 
-addLock :: TMVar LockMap -> SessionId -> TMVar () -> STM ()
+addLock :: MVar LockMap -> SessionId -> MVar () -> IO ()
 addLock lm sid newLock = do
-    lockMap <- takeTMVar  lm
+    lockMap <- takeMVar  lm
     let newMap = if (member sid lockMap)
                         then error "trying to add a lock that already exists"
                         else SM.insert sid newLock lockMap
-    putTMVar lm newMap
+    putMVar lm newMap
     return ()
 
-waitLock :: SessionId -> LockMap -> STM ()
-waitLock sid locks = takeTMVar (locks ! sid)
+waitLock :: SessionId -> LockMap -> IO ()
+waitLock sid locks = takeMVar (locks ! sid)
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
 drainFifo f = do
     hdl <- openFileBlocking f ReadMode
-    o <- trace ("getting contents from " ++ f) $ Data.Text.IO.hGetContents hdl
-    print $ "in theory we closed the Handle for " ++ f
+    o   <- Data.Text.IO.hGetContents hdl
     return $ unpack o
 
 headers :: Handler ()
@@ -80,23 +79,21 @@ type OutputPipe = FilePath
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
     App _ _ _ _ lm  _  <- getYesod
-    locks' <- liftIO . atomically $ takeTMVar lm
+    locks' <- liftIO $ takeMVar lm
 
-    liftIO $ print "null"
     -- make sure we have a lock for this one
     liftIO $ if member sid locks'
         then do
-            atomically $ putTMVar lm locks'
+            putMVar lm locks'
         else do
-            newLock <- newTMVarIO ()
-            atomically $ do
-                putTMVar lm locks'
-                addLock lm sid newLock
+            newLock <- liftIO $ newMVar ()
+            putMVar lm locks'
+            addLock lm sid newLock
 
-    locks <- liftIO . atomically $ takeTMVar lm
+    locks <- liftIO $ takeMVar lm
 
-    liftIO . atomically $ waitLock sid locks
-    liftIO . atomically $ putTMVar lm locks
+    liftIO  $ waitLock sid locks
+    liftIO  $ putMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
     fileE <-  lift $ try (openFileBlocking i WriteMode)
@@ -106,15 +103,14 @@ getPipeResponse v sid = do
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
-                    liftIO . atomically $ releaseLock sid locks
+                    liftIO  $ releaseLock sid locks
                     error $ show e
                     --lift $ openFileBlocking i WriteMode >>= return
                 Right fileHandle -> do
                     liftIO $ L.hPutStr fileHandle payload
                     lift $ hClose fileHandle
                     ret <- lift $ drainFifo o
-                    liftIO $ print "null"
-                    liftIO . atomically $ releaseLock sid locks
+                    liftIO $ releaseLock sid locks
                     return ret
     where
         payload = encode v
