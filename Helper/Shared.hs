@@ -36,6 +36,7 @@ import Control.Exception (try)
 import System.IO.Error
 import Helper.VMXTypes
 
+import Data.Text.IO (hGetContents)
 
 import Control.Concurrent.STM.TMVar
 import Control.Monad.STM
@@ -71,12 +72,9 @@ drainFifo f = do
             hClose hdl
             drainFifo f
          else do
-            o <- trace ("getting contents from " ++ f) $ hGetContents hdl
-            liftIO $ print $ "before the evaluate for " ++ f
-            theLength <- trace ("forcing strict IO on " ++ f)  $ evaluate (length o)
-            trace ("closing the handler after successful drain on " ++ f) $ hClose hdl
+            o <- trace ("getting contents from " ++ f) $ Data.Text.IO.hGetContents hdl
             liftIO $ print $ "in theory we closed the Handle for " ++ f
-            return o
+            return $ unpack o
 
 headers :: Handler ()
 headers = do
