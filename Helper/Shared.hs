@@ -65,16 +65,9 @@ waitLock sid locks = takeTMVar (locks ! sid)
 drainFifo :: FilePath -> IO String
 drainFifo f = do
     hdl <- openFileBlocking f ReadMode
-    mode <- liftIO $ hGetBuffering hdl
-    hSetBuffering hdl LineBuffering
-    t <- hIsEOF hdl
-    if t then do
-            hClose hdl
-            drainFifo f
-         else do
-            o <- trace ("getting contents from " ++ f) $ Data.Text.IO.hGetContents hdl
-            liftIO $ print $ "in theory we closed the Handle for " ++ f
-            return $ unpack o
+    o <- trace ("getting contents from " ++ f) $ Data.Text.IO.hGetContents hdl
+    print $ "in theory we closed the Handle for " ++ f
+    return $ unpack o
 
 headers :: Handler ()
 headers = do
