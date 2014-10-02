@@ -30,8 +30,9 @@ instance FromJSON VMXServerConfig  where
                                             <*> (o .: "license")
                                             <*> (o .: "models")
                                             <*> (o .: "sessions")
-                                            <*> (o .: "apps")
                                             <*> (o .: "log_images")
+                                            <*> (o .: "log_memory")
+                                            <*> (o .: "display_images")
                                             <*> (o .: "perform_tests")
                                             <*> (o .: "MCR")
                                             <*> (o .: "data")
@@ -39,18 +40,19 @@ instance FromJSON VMXServerConfig  where
     parseJSON _ = mzero
 
 instance ToJSON VMXServerConfig where
-    toJSON (VMXServerConfig user license models sessions apps log_images perform_tests mcr vmxdata pretrained) =
-        object ["user" .= user, "license" .= license, "models" .= models, "sessions" .= sessions, "apps" .= apps, "log_images" .= log_images, "perform_tests" .= perform_tests, "MCR" .= mcr, "data" .= vmxdata, "pretrained" .= pretrained]
+    toJSON (VMXServerConfig user license models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained) =
+        object ["user" .= user, "license" .= license, "models" .= models, "sessions" .= sessions, "log_images" .= log_images, "log_memory" .= log_memory, "display_images" .= display_images, "perform_tests" .= perform_tests, "MCR" .= mcr, "data" .= vmxdata, "pretrained" .= pretrained]
 
 data VMXServerConfig = VMXServerConfig {
     user            :: String,
     license         :: String,
-    models          :: [String],
-    sessions        :: [String],
-    apps            :: [String],
+    models          :: String,
+    sessions        :: String,
     log_images      :: Bool,
+    log_memory      :: Bool,
+    display_images  :: Bool,
     perform_tests   :: Bool,
-    mcr             :: [String],
+    mcr             :: String,
     vmxdata         :: String,
     pretrained      :: String
 }
@@ -58,12 +60,12 @@ data VMXServerConfig = VMXServerConfig {
 writeLicense :: License -> LicenseKey -> Handler ()
 writeLicense l key = do
     extra <-getExtra
-    let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/VMXServerConfig.json"
+    let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/config.json"
     c' <- liftIO $ readJson . unpack <$> DT.readFile path 
     case c' of
-        VMXServerConfig _ _ models sessions apps log_images perform_tests mcr vmxdata pretrained -> 
+        VMXServerConfig _ _ models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained -> 
             liftIO $ DTL.writeFile path $ decodeASCII $ encodePretty $
-                VMXServerConfig key l models sessions apps log_images perform_tests mcr vmxdata pretrained
+                VMXServerConfig key l models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained
     where
         readJson :: String -> VMXServerConfig
         readJson s = do
@@ -74,7 +76,7 @@ writeLicense l key = do
                 Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                         VMXServerConfig e e [] [] [] False False [] e e
+                         VMXServerConfig e e "" "" False False False False "" e e
 
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
