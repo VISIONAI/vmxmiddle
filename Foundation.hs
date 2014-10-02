@@ -35,7 +35,8 @@ data App = App
     , httpManager :: Manager
     -- , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , pipeLocks      ::  MVar (Map String (MVar ()))
+    , portMap      ::  MVar (Map String (MVar Int))
+    , lastPort     :: MVar Int
     , machineIdent :: IORef (Maybe String)
     }
 

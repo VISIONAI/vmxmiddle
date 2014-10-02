@@ -79,7 +79,7 @@ makeApplication conf = do
 -- | Loads up any necessary settings, creates your foundation datatype, and
 -- performs some initialization.
 makeFoundation :: AppConfig DefaultEnv Extra -> IO App
-makeFoundation conf = do
+makeFoundation conf@(AppConfig _ port _ _ _) = do
     manager <- newManager
     s <- staticSite
 --    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
@@ -102,13 +102,16 @@ makeFoundation conf = do
     _ <- forkIO updateLoop
 
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
-    pipeLocks <- liftIO $ newMVar $ Map.fromList []
+    portMap <- liftIO $ newMVar $ Map.fromList []
 
     -- Keep track of the machineIdent string we get back from vmxserver
     machineIdent <- liftIO $ newIORef Nothing
 
+
+    lastPort <- liftIO $ newMVar (port + 2000)
+
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger pipeLocks machineIdent
+        foundation = App conf s manager logger portMap lastPort machineIdent
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT

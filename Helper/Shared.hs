@@ -10,7 +10,7 @@ module Helper.Shared
     , makeJson
     , processImage
     , waitLock
-    , releaseLock
+    , releasePort
     , exitVMXServer
     , delVMXFolder
     , addLock
@@ -44,22 +44,36 @@ import Debug.Trace
 import System.IO.Unsafe ( unsafePerformIO )
 import GHC.Conc.Sync (unsafeIOToSTM)
 
-type LockMap = SM.Map String (MVar ())
+import Data.Maybe (fromJust)
 
-releaseLock :: SessionId -> LockMap -> IO ()
-releaseLock sid locks = putMVar (locks ! sid) ()
+type LockMap = SM.Map String (MVar Int)
 
-addLock :: MVar LockMap -> SessionId -> MVar () -> IO ()
-addLock lm sid newLock = do
-    lockMap <- takeMVar  lm
-    let newMap = if (member sid lockMap)
+type Port = Int
+
+releasePort :: SessionId -> LockMap -> Port -> IO ()
+releasePort sid locks port = putMVar (locks ! sid) port >> return ()
+
+addLock :: MVar LockMap -> SessionId -> Handler LockMap
+addLock portMap' sid = do
+    portMap <- liftIO $ takeMVar portMap'
+    newMap <- if (member sid portMap)
                         then error "trying to add a lock that already exists"
-                        else SM.insert sid newLock lockMap
-    putMVar lm newMap
-    return ()
+                        else do
+                            port <- nextPort
+                            newLock <- liftIO $ newMVar port
+                            return $ SM.insert sid newLock portMap
+    liftIO $ putMVar portMap' newMap
+    return portMap
 
-waitLock :: SessionId -> LockMap -> IO ()
-waitLock sid locks = takeMVar (locks ! sid)
+nextPort :: Handler Int
+nextPort = do
+    App _ _ _ _ _ lastPort'  _  <- getYesod
+    np <- liftIO $ (+1) <$> takeMVar lastPort'
+    liftIO $ putMVar lastPort' np
+    return np
+
+waitLock :: SessionId -> LockMap -> IO Int
+waitLock sid locks = takeMVar (locks ! sid) >>= return
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
 drainFifo :: FilePath -> IO String
@@ -78,21 +92,17 @@ type OutputPipe = FilePath
 
 getPipeResponse :: Value -> SessionId -> Handler String
 getPipeResponse v sid = do
-    App _ _ _ _ lm  _  <- getYesod
+    App _ _ _ _ lm _ _  <- getYesod
     locks' <- liftIO $ takeMVar lm
 
     -- make sure we have a lock for this one
-    liftIO $ if member sid locks'
-        then do
-            putMVar lm locks'
-        else do
-            newLock <- liftIO $ newMVar ()
-            putMVar lm locks'
-            addLock lm sid newLock
+    locks <- if member sid locks'
+                    then return locks'
+                    else addLock lm sid
 
     locks <- liftIO $ takeMVar lm
 
-    liftIO  $ waitLock sid locks
+    port <- liftIO  $ waitLock sid locks
     liftIO  $ putMVar lm locks
     i    <- getInputPipe  sid
     o    <- getOutputPipe sid
@@ -103,14 +113,14 @@ getPipeResponse v sid = do
                 -- won't read again until we eat its (now useless) output
                 Left (e :: IOError)->   do
                     _ <- lift $ drainFifo o
-                    liftIO  $ releaseLock sid locks
+                    liftIO  $ releasePort sid locks port
                     error $ show e
                     --lift $ openFileBlocking i WriteMode >>= return
                 Right fileHandle -> do
                     liftIO $ L.hPutStr fileHandle payload
                     lift $ hClose fileHandle
                     ret <- lift $ drainFifo o
-                    liftIO $ releaseLock sid locks
+                    liftIO $ releasePort sid locks port
                     return ret
     where
         payload = encode v
