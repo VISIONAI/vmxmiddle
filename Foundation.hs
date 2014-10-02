@@ -35,7 +35,7 @@ data App = App
     , httpManager :: Manager
     -- , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , pipeLocks      ::  TMVar (Map String (TMVar ()))
+    , pipeLocks      ::  MVar (Map String (MVar ()))
     , machineIdent :: IORef (Maybe String)
     }
 
