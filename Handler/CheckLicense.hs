@@ -41,7 +41,7 @@ getCheckLicenseR = do
     licensed <- liftIO $ doesFileExist path
         
     vmxExecutable' <- vmxExecutable
-    matlabRuntime' <- matlabPath
+
     (exitCode, stdout) <-
                 case licensed of 
                     True -> do
@@ -49,7 +49,7 @@ getCheckLicenseR = do
                         return (ExitSuccess, unpack stdout)
                     False -> do 
                         (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  
-                                    vmxExecutable' [matlabRuntime', "licenseCheckSlug"] "" 
+                                    vmxExecutable' ["-check"] "" 
                         return (exitCode, stdout)
     let uuid = getUUID . readJson . head . lines $ stdout
     let version = getVersion $ readJson $ head $ lines stdout
@@ -64,7 +64,7 @@ getCheckLicenseR = do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
         ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
         ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable'
-        ExitFailure 133  -> error $ "Error 126: Cannot Start " <> show vmxExecutable'
+        ExitFailure 133  -> error $ "Error 33: Cannot Start " <> show vmxExecutable'
         ExitFailure x  -> error $ "Undefined exit code " <> show x
     where
         getVersion :: VMXServerMessage -> String

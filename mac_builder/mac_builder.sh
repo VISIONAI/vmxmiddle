@@ -1,6 +1,25 @@
+echo 'Welcome to Mac Builder of VMX Middle'
 
-#here we
-echo 'Welcome to Mac Builder'
+if [ `uname` == "Darwin" ]; then
+    echo "Inside Mac"
+    PLATFORM="Mac"
+else
+    #inside virtual box
+    echo "Inside Virtual Box Linux Environment"    
+    PLATFORM="Linux"
+fi
+
+BRANCH_NAME=`git branch | grep "*" | awk '{print($2)}'`
+if [ $BRANCH_NAME == "master" ]; then
+    BRANCH_NAME=""
+else
+    BRANCH_NAME=$BRANCH_NAME"-"
+fi
+DATER=`date "+%Y-%m-%d"`
+HASH=`git --no-pager log --format='%h' -n 1`
+
+
+cabal clean && cabal configure && cabal build
 
 original='/Users/tomasz/projects/vmxmiddle/dist/build/middle/middle'
 
@@ -40,7 +59,7 @@ mkdir $D/Contents/MacOS/config/
 cp config/settings.yml $D/Contents/MacOS/config/
 
 #copy over VMXserver
-cp -R /Users/tomasz/projects/VMXserver/build $D/Contents/MacOS/
+cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $D/Contents/MacOS/
 
 #copy over initial network
 cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
@@ -89,9 +108,10 @@ for i in $LIBS; do
         #LOCAL_LIB='./'`basename $j`
         LOCAL_LIB='@executable_path/../Frameworks/'`basename $j`
         install_name_tool -change $j $LOCAL_LIB $i
-    done
-    
+    done    
 done
+
+echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
 
 ## We should be creating a proper plist file
 
