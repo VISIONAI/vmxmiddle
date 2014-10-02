@@ -69,7 +69,7 @@ createSession uuids = do
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
     log'        <- lift $ openFile outLogPath' AppendMode
     _          <- lift $ createProcess (shell $ unwords [vmxExecutable', wwwDir', sid, name])
-                         {std_out = UseHandle log', std_err = UseHandle log'}
+                         {std_out = UseHandle log'} --, std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
     return (sid, fromBrain)
     where
