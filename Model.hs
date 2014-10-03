@@ -17,3 +17,4 @@ share [mkPersist sqlOnlySettings, mkMigrate "migrateAll"]
 
 type LicenseKey = String
 type License    = String
+type Url        = String

@@ -21,3 +21,4 @@
 /random RandomImageR GET OPTIONS
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
+/forward/#Url ForwardR GET
