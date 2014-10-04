@@ -18,8 +18,6 @@ import           Settings.Development as Import
 import           Settings.StaticFiles as Import
 import           System.Process       as Import (readProcess)
 import           System.IO            as Import (readFile)
-import           Yesod.WebSockets     as Import (webSockets)
-import           Network.WebSockets   as Import (WebSocketsData(..))
 import Data.Aeson                     as Import (eitherDecode, (.:?))
 import Control.Concurrent.MVar        as Import 
 

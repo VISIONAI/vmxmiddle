@@ -8,14 +8,14 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
-import System.Directory (getDirectoryContents, createDirectory)
+import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
 import Control.Monad (mzero)
 import System.Posix.Files (namedPipeMode, createNamedPipe, accessModes, namedPipeMode)
 import Data.Bits ((.|.))
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
 import System.Posix.Env(setEnv)
-import Data.Aeson (decode)
+import Data.Aeson (decode, encode)
 
 import Helper.Shared
 import Control.Exception (tryJust)
@@ -26,6 +26,8 @@ import Data.List (head,isInfixOf)
 
 import Control.Concurrent.STM.TMVar
 import Control.Monad.STM
+
+import Control.Concurrent (threadDelay)
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -45,11 +47,6 @@ postSessionR = do
     (csc :: CreateSessionCommand ) <- requireJsonBody
     (sessionId, payLoad) <- createSession (modelUUIDS csc)
     App {..} <- getYesod
-    liftIO $ do
-        print "postSessioNR: making new TMVar"
-        newLock <- newEmptyTMVarIO
-        print "postSessionR: going into addLock"
-        atomically $ addLock pipeLocks sessionId newLock
     return payLoad
 
 type ModelName = String
@@ -57,27 +54,45 @@ type ModelName = String
 -- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
 createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
-    let name = case length uuids of
-                    0 -> "none"
-                    _ -> uuids !! 0
-    liftIO $ print name
-    sid   <- liftIO getSessionId
-    lift $ setEnv "MCR_CACHE_ROOT" "/tmp/mcr_cache" False
-    sessionPath' <- sessionPath sid
-    lift $ createDirectory sessionPath' 
-    inputPipePath' <- inputPipePath sid
+
+    sid             <- liftIO getSessionId
+    sessionPath'    <- sessionPath sid
+    lift $    createDirectory sessionPath' 
+
+    inputPipePath'  <- inputPipePath sid
     outputPipePath' <- outputPipePath sid
-    outLogPath' <- outLogPath sid
-    vmxExecutable' <- vmxExecutable
-    matlabRuntime' <- matlabPath
-    wwwDir' <- wwwDir
+    outLogPath'     <- outLogPath sid
+    vmxExecutable'  <- vmxExecutable
+
+    port <- addLock sid Nothing
+
+    dataDir <- wwwDir
+
+
+
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
-    log'        <- lift $ openFile outLogPath' AppendMode
-    _          <- lift $ createProcess (shell $ unwords [vmxExecutable', matlabRuntime', wwwDir', sid, name])
-                         {std_out = UseHandle log', std_err = UseHandle log'}
+
+    let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
+    liftIO $ print "the line is"
+    liftIO $ print shellLine
+    log'    <- lift $ openFile outLogPath' AppendMode
+    _       <- lift $ createProcess (shell $ shellLine)
+                         {std_out = UseHandle log'} --, std_err = UseHandle log'}
     fromBrain      <- liftIO $ drainFifo outputPipePath'
-    return (sid, fromBrain)
+    liftIO $ waitForFile (sessionPath' ++ "/url")
+    return $ (sid, C.unpack $ C.concat $ L.toChunks $ encode $ object ["data" .= object ["session_id" .= sid]])
     where
+        waitForFile :: FilePath -> IO ()
+        waitForFile f = do
+            ready <- doesFileExist f
+            if ready
+                then return ()
+                else do
+                    threadDelay 200
+                    waitForFile f
+        name = case length uuids of
+                0 -> "none"
+                _ -> uuids !! 0
         getSessionId :: IO String
         getSessionId = do
             seed <- U4.nextRandom
@@ -88,8 +103,7 @@ createSession uuids = do
             return $ dir ++ "sessions/" ++ sid
         inputPipePath :: SessionId -> Handler String
         inputPipePath  sid = fmap (++ "/pipe") (sessionPath sid)>>= return
-        outputPipePath :: SessionId -> Handler String
-        outputPipePath  sid = fmap (++ "/pipe") (sessionPath sid) >>= return
+        outputPipePath  = inputPipePath
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
         --modelPath = case modelNameM of
