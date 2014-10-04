@@ -11,10 +11,6 @@ import System.FilePath ((</>))
 import System.Random
 
 
-getRandom a = do {
-  x <- randomRIO(0,100);
-  return x;
-  }
 
 -- Import System.Random (randomRIO)
 
@@ -30,9 +26,11 @@ pick xs = do
 --     index <- randomRIO (0, length xs - 1)
 --     return (xs !! index)
   
+fileEnding :: String -> String
 fileEnding x = reverse $ take 4 $ reverse x
 
 
+last9 :: forall a. [a] -> [a]
 last9 x = reverse $ take 9 $ reverse x
 
 

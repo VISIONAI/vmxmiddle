@@ -5,8 +5,6 @@ import Import
 import Helper.Shared
 import Helper.VMXTypes
 
-import System.CPUTime
-import Text.Printf
 
 
 optionsProcessImageR :: SessionId -> Handler ()
@@ -42,18 +40,15 @@ postProcessImageR sid = do
    val <- processImage sid (processImageImages pic) (processImageParams pic) (processImageName pic)
    return val
 
+deleteProcessImageR :: SessionId -> Handler ()
 deleteProcessImageR = deleteVMXSession
 
 deleteVMXSession :: SessionId -> Handler ()
 deleteVMXSession sid = do
 	-- stop process
-	exitVMXServer sid
+	_ <- exitVMXServer sid
 	delVMXFolder $ "sessions/" <> sid
 			
 	-- delete session files
 
-print't :: Integer -> Integer ->  IO String
-print't start end = printf "Computation time: %0.3f sec\n" $ diff start end
 
-diff ::Integer -> Integer -> Double
-diff start end = fromIntegral (end - start) / (10^12)

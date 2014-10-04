@@ -3,7 +3,7 @@ module Handler.EditModel where
 
 import Import
 import Helper.Shared
-import Data.Aeson (decode', encode, fromJSON)
+import Data.Aeson (decode', encode)
 import Data.Aeson.Types (Result(..))
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Network.HTTP.Types (status400)
@@ -34,7 +34,8 @@ instance FromJSON EditModelCommand where
 data EditModelResponse = EditModelResponse Value String | EditModelResponseError Integer String
 editModelData :: EditModelResponse -> Value
 editModelData (EditModelResponse d _ ) = d
-editModelMessage (EditModelResponse _ m ) = m
+editModelData (EditModelResponseError _ _ ) = undefined
+
 
 instance ToJSON EditModelResponse where
     toJSON (EditModelResponse d m)= 
@@ -74,12 +75,12 @@ genericEditModel sid command = do
                          , "changes"  .= (editModelChanges eic)
                          ]
         response <- getPipeResponse req sid
-        let (response' :: Maybe EditModelResponse) = decode' $ LBS.pack response
-        case response' of
-          Just r ->
-            case r of
-              EditModelResponse d m -> return $ toJSON r
-              EditModelResponseError b m -> sendResponseStatus status400 $ toJSON r
+        let (mbResponse :: Maybe EditModelResponse) = decode' $ LBS.pack response
+        case mbResponse of
+          Just response' ->
+            case response' of
+              EditModelResponse _ _ -> return $ toJSON response'
+              EditModelResponseError _ _ -> sendResponseStatus status400 $ toJSON response'
           Nothing -> do
             sendResponseStatus status400 $ object ["error" .= response]
       Error s -> sendResponseStatus status400 $ LBS.unpack $ encode $ object ["error" .= s]

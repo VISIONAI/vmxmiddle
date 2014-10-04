@@ -9,23 +9,19 @@ import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
 import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
-import Control.Monad (mzero)
 import System.Posix.Files (namedPipeMode, createNamedPipe, accessModes, namedPipeMode)
 import Data.Bits ((.|.))
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
-import System.Posix.Env(setEnv)
-import Data.Aeson (decode, encode)
+import Data.Aeson (encode)
 
 import Helper.Shared
 import Control.Exception (tryJust)
-import Control.Monad (guard, filterM)
+import Control.Monad (guard)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
-import Data.List (head,isInfixOf)
+import Data.List (isInfixOf)
 
-import Control.Concurrent.STM.TMVar
-import Control.Monad.STM
 
 import Control.Concurrent (threadDelay)
 
@@ -45,7 +41,7 @@ postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    (sessionId, payLoad) <- createSession (modelUUIDS csc)
+    (_, payLoad) <- createSession (modelUUIDS csc)
     App {..} <- getYesod
     return payLoad
 
@@ -60,8 +56,8 @@ createSession uuids = do
     lift $    createDirectory sessionPath' 
 
     inputPipePath'  <- inputPipePath sid
-    outputPipePath' <- outputPipePath sid
     outLogPath'     <- outLogPath sid
+
     vmxExecutable'  <- vmxExecutable
 
     port <- addLock sid Nothing
@@ -73,12 +69,10 @@ createSession uuids = do
     _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
 
     let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
-    liftIO $ print "the line is"
-    liftIO $ print shellLine
+
     log'    <- lift $ openFile outLogPath' AppendMode
     _       <- lift $ createProcess (shell $ shellLine)
                          {std_out = UseHandle log'} --, std_err = UseHandle log'}
-    fromBrain      <- liftIO $ drainFifo outputPipePath'
     liftIO $ waitForFile (sessionPath' ++ "/url")
     return $ (sid, C.unpack $ C.concat $ L.toChunks $ encode $ object ["data" .= object ["session_id" .= sid]])
     where
@@ -103,7 +97,6 @@ createSession uuids = do
             return $ dir ++ "sessions/" ++ sid
         inputPipePath :: SessionId -> Handler String
         inputPipePath  sid = fmap (++ "/pipe") (sessionPath sid)>>= return
-        outputPipePath  = inputPipePath
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
         --modelPath = case modelNameM of

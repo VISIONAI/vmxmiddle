@@ -6,7 +6,7 @@ import Import
 import Data.Conduit (($$+-))
 import Data.Conduit.Attoparsec  (sinkParser)
 import Data.Aeson.Parser (json)
-import Data.Aeson        (decode, encode, Result (..), fromJSON )
+import Data.Aeson        (Result (..), fromJSON )
 import Network.HTTP.Conduit (http, method, withManager, parseUrl, Response (..), HttpException (..) )
 import Network.HTTP.Types (Status (..) )
 import Handler.CheckLicense
@@ -14,8 +14,7 @@ import qualified Data.Text.Lazy.IO as DTL (writeFile)
 import qualified Data.Text.IO as DT (readFile)
 import qualified Data.ByteString.Char8 as C (pack)
 import qualified Data.ByteString.Lazy as L (fromChunks)
-import Data.Text.Lazy.Encoding (decodeASCII)
-import Data.Maybe (fromJust)
+import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception as X hiding (Handler)
 import Data.Aeson.Encode.Pretty (encodePretty)
 
@@ -40,8 +39,8 @@ instance FromJSON VMXServerConfig  where
     parseJSON _ = mzero
 
 instance ToJSON VMXServerConfig where
-    toJSON (VMXServerConfig user license models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained) =
-        object ["user" .= user, "license" .= license, "models" .= models, "sessions" .= sessions, "log_images" .= log_images, "log_memory" .= log_memory, "display_images" .= display_images, "perform_tests" .= perform_tests, "MCR" .= mcr, "data" .= vmxdata, "pretrained" .= pretrained]
+    toJSON (VMXServerConfig user' license' models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained') =
+        object ["user" .= user', "license" .= license', "models" .= models', "sessions" .= sessions', "log_images" .= log_images', "log_memory" .= log_memory', "display_images" .= display_images', "perform_tests" .= perform_tests', "MCR" .= mcr', "data" .= vmxdata', "pretrained" .= pretrained']
 
 data VMXServerConfig = VMXServerConfig {
     user            :: String,
@@ -63,9 +62,9 @@ writeLicense l key = do
     let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/config.json"
     c' <- liftIO $ readJson . unpack <$> DT.readFile path 
     case c' of
-        VMXServerConfig _ _ models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained -> 
-            liftIO $ DTL.writeFile path $ decodeASCII $ encodePretty $
-                VMXServerConfig key l models sessions log_images log_memory display_images perform_tests mcr vmxdata pretrained
+        VMXServerConfig _ _ models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained' -> 
+            liftIO $ DTL.writeFile path $ decodeUtf8 $ encodePretty $
+                VMXServerConfig key l models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained'
     where
         readJson :: String -> VMXServerConfig
         readJson s = do
@@ -93,17 +92,18 @@ postActivateLicenseR key = do
                     resValue <- responseBody res $$+- sinkParser json
                     return resValue 
 
-    case fromJSON val of
-        Success (ActivateResponse license) -> do
-            writeLicense license key
+    _ <- case fromJSON val of
+        Success (ActivateResponse licenseFile) -> do
+            writeLicense licenseFile key
             return val
         Error s ->
             return $ object ["error" .= s]
     return val
     where
-        catchException e@(StatusCodeException (Status 403 _) _ _) = return $ object ["error" .= ("key_already_used" :: String)]
-        catchException e@(StatusCodeException (Status 404 _) _ _) = return $ object ["error" .= ("key_unknown" :: String)]
-        catchException e@(StatusCodeException _ _ _) = return $ object ["error" .= ("unknown_error" :: String)]
+        catchException (StatusCodeException (Status 403 _) _ _) = return $ object ["error" .= ("key_already_used" :: String)]
+        catchException (StatusCodeException (Status 404 _) _ _) = return $ object ["error" .= ("key_unknown" :: String)]
+        catchException (StatusCodeException _ _ _) = return $ object ["error" .= ("unknown_error" :: String)]
+        catchException _                           = return $ object ["error" .= ("non StatusCode unknown error" :: String)]
     
 
 

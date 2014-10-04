@@ -6,8 +6,6 @@ module Application
     ) where
 
 import Import
-import Settings
-import Yesod.Auth
 import Yesod.Default.Config
 import Yesod.Default.Main
 import Yesod.Default.Handlers
@@ -18,7 +16,6 @@ import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
 -- import qualified Database.Persist
 -- import Database.Persist.Sql (runMigration)
 import Network.HTTP.Client.Conduit (newManager)
-import Control.Monad.Logger (runLoggingT)
 import Control.Concurrent (forkIO, threadDelay)
 import System.Log.FastLogger (newStdoutLoggerSet, defaultBufSize, flushLogStr)
 import Network.Wai.Logger (clockDateCacher)
@@ -26,10 +23,8 @@ import Data.Default (def)
 import Yesod.Core.Types (loggerSet, Logger (Logger))
 
 -- Imports for map of SessionIds to MVars
-import Control.Concurrent.MVar       
 import qualified Data.Map.Strict as Map
 import Data.IORef (newIORef)
-import Control.Concurrent.STM (STM (..), newTVarIO, TMVar, newTMVar, atomically)
 
 
 -- Import all relevant handler modules here.
@@ -78,7 +73,7 @@ makeApplication conf = do
 -- | Loads up any necessary settings, creates your foundation datatype, and
 -- performs some initialization.
 makeFoundation :: AppConfig DefaultEnv Extra -> IO App
-makeFoundation conf@(AppConfig _ port _ _ _) = do
+makeFoundation conf = do
     manager <- newManager
     s <- staticSite
 --    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
@@ -101,15 +96,15 @@ makeFoundation conf@(AppConfig _ port _ _ _) = do
     _ <- forkIO updateLoop
 
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
-    portMap <- liftIO $ newMVar $ Map.fromList []
+    portMapMVar <- liftIO $ newMVar $ Map.fromList []
 
     -- Keep track of the machineIdent string we get back from vmxserver
-    machineIdent <- liftIO $ newIORef Nothing
+    machineIdentIORef <- liftIO $ newIORef Nothing
 
 
 
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger portMap machineIdent
+        foundation = App conf s manager logger portMapMVar machineIdentIORef
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT

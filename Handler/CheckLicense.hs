@@ -3,15 +3,11 @@
 module Handler.CheckLicense where
 
 import Import
-import Data.Aeson(decode)
 import qualified Data.Text.IO as DT (readFile,writeFile)
-import Data.Maybe (fromMaybe)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
-import Data.Text (unpack)
-import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
-import Data.List (last, head)
+import qualified Data.List as List (head)
 import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
 import System.Directory (doesFileExist)
@@ -20,7 +16,6 @@ import Data.Text.IO (hGetContents)
 import System.Process
 
 
-import System.Posix.Env(setEnv)
 
 
 
@@ -59,16 +54,14 @@ getCheckLicenseR = do
                         exitCode <- liftIO $ waitForProcess hdl
                         --(exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' ["-check"] "" 
                         return (exitCode, unpack stdout)
-    liftIO $ print $ "the output was " ++ stdout
-    liftIO $ print $ "hi tom" 
-    let uuid = getUUID . readJson . head . lines $ stdout
-    let version = getVersion $ readJson $ head $ lines stdout
+    let uuid = getUUID . readJson . List.head . lines $ stdout
+    let version = getVersion $ readJson $ List.head $ lines stdout
     -- liftIO $ print $ show . head . lines $ stdout
     setMachineIdent uuid
 
     case exitCode of
         ExitSuccess    -> do
-            liftIO $ DT.writeFile licensePath (pack . head . lines $ stdout)
+            liftIO $ DT.writeFile licensePath (pack . List.head . lines $ stdout)
             return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
         ExitFailure 11 -> do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]

@@ -23,36 +23,23 @@ import Network.Socket (sClose)
 import System.Random
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
-import System.Directory (getDirectoryContents, createDirectory, removeDirectoryRecursive)
-import System.Process
+import System.Directory (removeDirectoryRecursive)
 import System.IO
-import qualified Data.ByteString.Lazy.Char8 as LBS
-import Data.Aeson (encode,decode)
+import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
-import Network.HTTP.Types (status400)
 import Control.Exception  as Ex hiding (Handler) 
 
-import Data.Map.Strict as SM (member, (!), insert, toList, Map (..)) 
-import Data.IORef (atomicModifyIORef', readIORef)
+import Data.Map.Strict as SM (member, (!), insert,  Map) 
 
-import Control.Exception (try)
-import System.IO.Error
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
 
-import Control.Concurrent.STM.TMVar
-import Control.Monad.STM
-import Debug.Trace
-import System.IO.Unsafe ( unsafePerformIO )
-import GHC.Conc.Sync (unsafeIOToSTM)
 
-import Data.Maybe (fromJust)
 
 
 import Network.HTTP.Conduit
 import Data.Conduit
-import Data.Conduit.Binary (sinkFile)
 
 import Data.Conduit.List (consume)
 
@@ -144,7 +131,6 @@ getPortResponse input sessionId = do
 
     req' <- liftIO $ parseUrl path
 
-    let sv = encode input
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
@@ -204,56 +190,11 @@ getPipeResponse = getPortResponse
 --    where
 --        payload = encode v
 
-getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
-getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
-lockFilePath sid =  fmap (++ "sessions/" ++ sid ++ "/modelupdate.lock") wwwDir
 
-data HTTPVerb = 
-    GET   |
-    POST  |
-    PUT   |
-    DELETE
 
-data ResourceV = 
-    Model          |
-    EditModel      |
-    Session        |
-    ProcessImage   |
-    SessionParams
     
     
 
-list_sessions :: Handler Value
-list_sessions = do
-    sessions <-  sp >>= lift.getDirectoryContents 
-    let sessions' = filter notDots sessions
-
-    out <- sequence $ map getSessionInfo sessions'
-    return $ object ["data" .= out]
-    where
-        sp = fmap (++ "sessions/") wwwDir 
-        getSessionInfo :: FilePath -> Handler Value
-        getSessionInfo fp = do
-            sp' <- sp
-            modelJson <- lift $ readFile (sp' ++ fp ++ "/model.json")
-            return $ object ["session" .= fp, "model" .= makeJson modelJson]
-        makeJson :: String -> Value
-        makeJson s = do
-            -- String -> Char8 bystring
-            let packed = C.pack s
-            -- Char8 -> Lazy bytestring
-            let chunked = L.fromChunks [packed]
-            let eJ :: Either String Value = eitherDecode chunked
-            case eJ of
-                Right r -> r
-                -- TODO .. properly handle errors
-                Left _ -> undefined
-        notDots :: FilePath -> Bool
-        notDots fp = case fp of
-                        "." -> False
-                        ".." -> False
-                        ".DS_Store" -> False
-                        _ -> True
 
 
 

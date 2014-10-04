@@ -9,26 +9,17 @@ module Handler.Model where
 
 import Import
 import Helper.Shared
-import Control.Monad (mzero,filterM)
-import qualified          Data.String.Utils  as S (replace)
-import           Data.List.Split (splitOn)
-import qualified Graphics.GD.ByteString as G
-import qualified          Data.ByteString.Base64 as B64
+import Control.Monad (filterM)
 import qualified Data.ByteString.Char8 as C
-import           Data.Text as T (pack,unpack, replace, Text, append)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as LC
-import Data.Aeson (encode, eitherDecode, (.:?), decode)
+import Data.Aeson (encode)
 import           Data.Typeable
 import           GHC.Generics
 import           Data.Data
 import           Helper.VMXTypes
 import           System.Directory (getDirectoryContents,doesFileExist)
-import           Data.Maybe (fromJust)
-import           System.IO.Unsafe (unsafePerformIO)
-import           Debug.Trace
 import qualified Data.Text.IO as DT (readFile)
-import           Control.Exception (try)
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -85,8 +76,7 @@ instance FromJSON CreateModelCommand where
 postModelR :: Handler String
 postModelR = do
     headers
-    cmc <- parseJsonBody_
-    let name = createModelName cmc
+    cmc <- requireJsonBody
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
     let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
@@ -101,24 +91,12 @@ postModelR = do
     response <- getPipeResponse req sid
     return response
     where
-        fixPath :: String -> FilePath -> String
-        fixPath s base = S.replace base "" s
-        writeImage :: VMXImage -> FilePath -> IO ()
-        writeImage s p = do
-            let meat = (splitOn comma $ vmxIImage s) !! 1
-            img <-liftIO $  G.loadJpegByteString $  B64.decodeLenient $ C.pack $ meat
-            liftIO $ G.saveJpegFile 95  p img
-
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
-        selectionsAndFiles (x:xs) sid' count wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show count) ++ ".jpg", x) : (selectionsAndFiles xs sid' (count + 1) wwwDir')
+        selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')
         selectionsAndFiles [] _ _ _ = []
-
-        comma :: String
-        comma = ","
 
 list_models :: Handler String
 list_models = do
-    extra <- getExtra
     modelsDir      <- (++ "models/") <$> wwwDir
     -- all folders in the models directory that don't start with a dot
     modelFolders   <- fmap (filter $ not . startsWithDot) $ liftIO $ getDirectoryContents modelsDir
@@ -126,13 +104,14 @@ list_models = do
     --  only the model.jsons that actually exist
     modelJsons'    <- liftIO $  filterM doesFileExist modelJsons
     response       <- liftIO $ sequence $ fmap DT.readFile$ modelJsons'
-    let models     = map makeJson (map unpack response)
+    let models     = map makeJson' (map unpack response)
     return $ LC.unpack $ encode $ object ["data" .= zipWith (\a b-> a b) models (modelFolders)]
     where
         jsonFilesFrom folders = map (++ "/model.json") folders
         startsWithDot (c:_)   = c == '.'
-        makeJson :: String -> (String -> ListModelResponse)
-        makeJson s = do
+        startsWithDot _       = undefined
+        makeJson' :: String -> (String -> ListModelResponse)
+        makeJson' s = do
             -- String -> Char8 bystring
             let packed = C.pack s
             -- Char8 -> Lazy bytestring
@@ -198,22 +177,22 @@ instance FromJSON (String -> ListModelResponse) where
     parseJSON _ = mzero
 
 instance ToJSON ListModelResponse where
-    toJSON (ListModelResponse name meta size history dataset network compiled pos stats num_pos num_neg start_time end_time uuid)= 
-        object ["name" .= name
-               , "meta" .= meta
-               , "size" .= size
-               , "history" .= history
-               , "dataset" .= dataset
-               , "network" .= network
-               , "compiled" .= compiled
-               , "pos" .= pos
-               , "stats" .= stats
-               , "num_pos" .= num_pos
-               , "num_neg" .= num_neg
-               , "start_time" .= start_time
-               , "end_time" .= end_time
-               , "uuid" .= uuid
-               , "image" .= ("models/" <> uuid <> "/image.jpg")
+    toJSON (ListModelResponse name' meta' size' history' dataset' network' compiled' pos' stats' num_pos' num_neg' start_time' end_time' uuid')= 
+        object ["name" .= name'
+               , "meta" .= meta'
+               , "size" .= size'
+               , "history" .= history'
+               , "dataset" .= dataset'
+               , "network" .= network'
+               , "compiled" .= compiled'
+               , "pos" .= pos'
+               , "stats" .= stats'
+               , "num_pos" .= num_pos'
+               , "num_neg" .= num_neg'
+               , "start_time" .= start_time'
+               , "end_time" .= end_time'
+               , "uuid" .= uuid'
+               , "image" .= ("models/" <> uuid' <> "/image.jpg")
                ]
         
 
