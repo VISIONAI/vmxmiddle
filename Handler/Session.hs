@@ -9,8 +9,6 @@ import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
 import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
-import System.Posix.Files (namedPipeMode, createNamedPipe, accessModes, namedPipeMode)
-import Data.Bits ((.|.))
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
 import Data.Aeson (encode)
@@ -50,32 +48,26 @@ type ModelName = String
 -- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
 createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
-
     sid             <- liftIO getSessionId
     sessionPath'    <- sessionPath sid
-    lift $    createDirectory sessionPath' 
+    lift $ 
+        createDirectory sessionPath' 
 
-    inputPipePath'  <- inputPipePath sid
     outLogPath'     <- outLogPath sid
-
     vmxExecutable'  <- vmxExecutable
-
-    port <- addLock sid Nothing
-
-    dataDir <- wwwDir
-
-
-
-    _  <- lift $ createNamedPipe inputPipePath'  (accessModes .|. namedPipeMode)
+    port            <- addLock sid Nothing
+    dataDir         <- wwwDir
 
     let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
 
     log'    <- lift $ openFile outLogPath' AppendMode
     _       <- lift $ createProcess (shell $ shellLine)
                          {std_out = UseHandle log'} --, std_err = UseHandle log'}
-    liftIO $ waitForFile (sessionPath' ++ "/url")
-    return $ (sid, C.unpack $ C.concat $ L.toChunks $ encode $ object ["data" .= object ["session_id" .= sid]])
+    liftIO $ 
+        waitForFile (sessionPath' ++ "/url")
+    return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])
     where
+        asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> IO ()
         waitForFile f = do
             ready <- doesFileExist f
@@ -95,8 +87,6 @@ createSession uuids = do
         sessionPath  sid = do
             dir <- wwwDir 
             return $ dir ++ "sessions/" ++ sid
-        inputPipePath :: SessionId -> Handler String
-        inputPipePath  sid = fmap (++ "/pipe") (sessionPath sid)>>= return
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
         --modelPath = case modelNameM of
