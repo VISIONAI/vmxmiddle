@@ -45,7 +45,6 @@ postSessionR = do
 
 type ModelName = String
 
--- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
 createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
     sid             <- liftIO getSessionId
@@ -62,7 +61,7 @@ createSession uuids = do
 
     log'    <- lift $ openFile outLogPath' AppendMode
     _       <- lift $ createProcess (shell $ shellLine)
-                         {std_out = UseHandle log'} --, std_err = UseHandle log'}
+                         {std_out = UseHandle log'}
     liftIO $ 
         waitForFile (sessionPath' ++ "/url")
     return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])

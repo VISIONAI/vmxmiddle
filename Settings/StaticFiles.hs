@@ -3,7 +3,7 @@ module Settings.StaticFiles where
 import Prelude (IO, map, FilePath, (++))
 import Yesod.Static
 import qualified Yesod.Static as Static
-import Settings (staticDir, vmxStaticFiles)
+import Settings (staticDir)
 import Settings.Development
 import Language.Haskell.TH (Q, Exp, Name)
 import Data.Default (def)

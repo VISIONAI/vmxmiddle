@@ -81,10 +81,10 @@ addLock sid mbPort= do
 
 nextPort :: Handler Int
 nextPort = do
-    tryPort <- liftIO $ randomRIO (1025, 65000)
-    valid <- liftIO $ checkPort tryPort
+    aPort <- liftIO $ randomRIO (1025, 65000)
+    valid <- liftIO $ checkPort aPort
     if valid
-        then return tryPort
+        then return aPort
         else nextPort
 
 waitLock :: SessionId -> LockMap -> IO Int
