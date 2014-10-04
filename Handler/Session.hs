@@ -54,7 +54,6 @@ type ModelName = String
 -- no launching a new session became simpler, only using one pipe.. this function could be cleaned up a lot
 createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
-    App _ _ _ _ portMap' _  <- getYesod
 
     sid             <- liftIO getSessionId
     sessionPath'    <- sessionPath sid
@@ -65,7 +64,7 @@ createSession uuids = do
     outLogPath'     <- outLogPath sid
     vmxExecutable'  <- vmxExecutable
 
-    port <- addLock portMap' sid
+    port <- addLock sid Nothing
 
     dataDir <- wwwDir
 

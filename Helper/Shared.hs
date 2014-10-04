@@ -63,16 +63,33 @@ type Port = Int
 releasePort :: SessionId -> LockMap -> Port -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
-addLock :: MVar LockMap -> SessionId -> Handler Port
-addLock portMap' sid = do
+addLock :: SessionId -> Maybe Port -> Handler Port
+addLock sid mbPort= do
+    App _ _ _ _ portMap' _  <- getYesod
     portMap <- liftIO $ takeMVar portMap'
-    if (member sid portMap)
-        then error "trying to add a lock that already exists"
-        else do
-            port <- nextPort
-            newLock <- liftIO $ newMVar port
-            liftIO $ putMVar portMap' $ SM.insert sid newLock portMap
-            return port
+    (port, newMap) <- case mbPort of 
+                Just requestedPort -> do  
+                    if (member sid portMap) 
+                        then do -- requested specific port, but we already have one
+                            existingPort <- liftIO $ readMVar (portMap ! sid)
+                            if existingPort == requestedPort 
+                                then return (requestedPort, portMap) 
+                                else error "requesting a different port than current port"
+                        else do -- requested a specific Port and we don't have one
+                            newLock <- liftIO $ newMVar requestedPort
+                            return $ (requestedPort, SM.insert sid newLock portMap)
+                Nothing ->
+                    if (member sid portMap) --we already have a port, but lets just give it to them
+                        then do 
+                            existingPort <- liftIO $ readMVar (portMap ! sid)
+                            return (existingPort, portMap)
+                    else do
+                        newPort <- nextPort
+                        newLock <- liftIO $ newMVar newPort
+                        return $ (newPort, SM.insert sid newLock portMap)
+    liftIO $ putMVar portMap' newMap
+    return port
+            
             
 
 nextPort :: Handler Int
@@ -101,6 +118,12 @@ headers = do
 type InputPipe = FilePath
 type OutputPipe = FilePath
 
+
+sessionToPath :: SessionId -> Handler FilePath
+sessionToPath sid = do
+    dataDir <- wwwDir
+    return $ dataDir ++ "/sessions/" ++ sid ++ "/"
+
 getPortResponse :: Value -> SessionId -> Handler String
 getPortResponse input sessionId = do
     App _ _ manager _ portMap' _  <- getYesod
@@ -109,7 +132,9 @@ getPortResponse input sessionId = do
         if member sessionId pm
             then return pm
             else do
-                error "We don't have the port, geoff should read it from the file in this case"
+                path <- (++ "/url") <$> sessionToPath sessionId
+                port <- liftIO $ readFile path
+                error "something"
 
     port <- liftIO $ waitLock sessionId portMap
     liftIO $ putMVar portMap' portMap
