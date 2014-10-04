@@ -26,7 +26,6 @@ library
                      Handler.SessionParams
                      Handler.EditModel
                      Handler.Model
-                     Handler.WebSocket
                      Handler.ModelImage
                      Handler.ModelViewer
                      Handler.SessionViewer
@@ -64,8 +63,6 @@ library
                  , yesod-auth                    >= 1.3        && < 1.4
                  , yesod-static                  >= 1.2        && < 1.3
                  , yesod-form                    >= 1.3        && < 1.4
-                 , yesod-websockets              >= 0.1.0.0
-                 , websockets
                  , bytestring                    >= 0.9        && < 0.11
                  , text                          >= 0.11       && < 2.0
                  , persistent                    >= 1.3        && < 1.4
@@ -103,6 +100,8 @@ library
                  , random
                  , conduit-extra
                  , aeson-pretty
+                 , streaming-commons
+                 , network
 
 
 

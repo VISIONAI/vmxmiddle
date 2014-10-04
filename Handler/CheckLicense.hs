@@ -15,8 +15,12 @@ import Data.List (last, head)
 import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
 import System.Directory (doesFileExist)
+import Data.Text.IO (hGetContents)
+
+import System.Process
 
 
+import System.Posix.Env(setEnv)
 
 
 
@@ -37,20 +41,26 @@ instance FromJSON VMXServerMessage where
 getCheckLicenseR :: Handler Value
 getCheckLicenseR = do
     extra <-getExtra
-    let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/.vmxlicense"
-    licensed <- liftIO $ doesFileExist path
+    let vmxPath     = (fromMaybe "/vmx/build" $ extraVmxPath extra)
+        licensePath = vmxPath ++ "/.vmxlicense"
+    licensed <- liftIO . doesFileExist $ licensePath
         
     vmxExecutable' <- vmxExecutable
+
 
     (exitCode, stdout) <-
                 case licensed of 
                     True -> do
-                        stdout <- liftIO $ DT.readFile path
+                        stdout <- liftIO $ DT.readFile licensePath
                         return (ExitSuccess, unpack stdout)
                     False -> do 
-                        (exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  
-                                    vmxExecutable' ["-check"] "" 
-                        return (exitCode, stdout)
+                        (_, Just stdoutHdl, _, hdl) <- liftIO $ createProcess (proc vmxExecutable' ["-check"]) {std_out =CreatePipe}
+                        stdout <- liftIO $ Data.Text.IO.hGetContents stdoutHdl 
+                        exitCode <- liftIO $ waitForProcess hdl
+                        --(exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' ["-check"] "" 
+                        return (exitCode, unpack stdout)
+    liftIO $ print $ "the output was " ++ stdout
+    liftIO $ print $ "hi tom" 
     let uuid = getUUID . readJson . head . lines $ stdout
     let version = getVersion $ readJson $ head $ lines stdout
     -- liftIO $ print $ show . head . lines $ stdout
@@ -58,7 +68,7 @@ getCheckLicenseR = do
 
     case exitCode of
         ExitSuccess    -> do
-            liftIO $ DT.writeFile path (pack . head . lines $ stdout)
+            liftIO $ DT.writeFile licensePath (pack . head . lines $ stdout)
             return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
         ExitFailure 11 -> do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]

@@ -14,9 +14,13 @@ module Helper.Shared
     , exitVMXServer
     , delVMXFolder
     , addLock
+    , nextPort
     ) where
 
 import Import
+import Data.Streaming.Network (bindPortTCP)
+import Network.Socket (sClose)
+import System.Random
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import System.Directory (getDirectoryContents, createDirectory, removeDirectoryRecursive)
@@ -25,9 +29,8 @@ import System.IO
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
-import Yesod.WebSockets
 import Network.HTTP.Types (status400)
-import Control.Exception (evaluate)
+import Control.Exception  as Ex hiding (Handler) 
 
 import Data.Map.Strict as SM (member, (!), insert, toList, Map (..)) 
 import Data.IORef (atomicModifyIORef', readIORef)
@@ -46,6 +49,13 @@ import GHC.Conc.Sync (unsafeIOToSTM)
 
 import Data.Maybe (fromJust)
 
+
+import Network.HTTP.Conduit
+import Data.Conduit
+import Data.Conduit.Binary (sinkFile)
+
+import Data.Conduit.List (consume)
+
 type LockMap = SM.Map String (MVar Int)
 
 type Port = Int
@@ -53,24 +63,25 @@ type Port = Int
 releasePort :: SessionId -> LockMap -> Port -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
-addLock :: MVar LockMap -> SessionId -> Handler LockMap
+addLock :: MVar LockMap -> SessionId -> Handler Port
 addLock portMap' sid = do
     portMap <- liftIO $ takeMVar portMap'
-    newMap <- if (member sid portMap)
-                        then error "trying to add a lock that already exists"
-                        else do
-                            port <- nextPort
-                            newLock <- liftIO $ newMVar port
-                            return $ SM.insert sid newLock portMap
-    liftIO $ putMVar portMap' newMap
-    return portMap
+    if (member sid portMap)
+        then error "trying to add a lock that already exists"
+        else do
+            port <- nextPort
+            newLock <- liftIO $ newMVar port
+            liftIO $ putMVar portMap' $ SM.insert sid newLock portMap
+            return port
+            
 
 nextPort :: Handler Int
 nextPort = do
-    App _ _ _ _ _ lastPort'  _  <- getYesod
-    np <- liftIO $ (+1) <$> takeMVar lastPort'
-    liftIO $ putMVar lastPort' np
-    return np
+    tryPort <- liftIO $ randomRIO (1025, 65000)
+    valid <- liftIO $ checkPort tryPort
+    if valid
+        then return tryPort
+        else nextPort
 
 waitLock :: SessionId -> LockMap -> IO Int
 waitLock sid locks = takeMVar (locks ! sid) >>= return
@@ -90,40 +101,83 @@ headers = do
 type InputPipe = FilePath
 type OutputPipe = FilePath
 
+getPortResponse :: Value -> SessionId -> Handler String
+getPortResponse input sessionId = do
+    App _ _ manager _ portMap' _  <- getYesod
+    portMap <- do
+        pm <- liftIO $ takeMVar portMap'
+        if member sessionId pm
+            then return pm
+            else do
+                error "We don't have the port, geoff should read it from the file in this case"
+
+    port <- liftIO $ waitLock sessionId portMap
+    liftIO $ putMVar portMap' portMap
+
+    let path = "http://127.0.0.1:" ++ show port ++ "/command"
+
+
+    req' <- liftIO $ parseUrl path
+
+    let sv = encode input
+
+    --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
+    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
+    res <- http req manager
+    resValue <- responseBody res $$+- consume
+    liftIO $ releasePort sessionId portMap port
+
+    let ret = concat $ map C.unpack resValue
+    return ret
+
+
+
+
+
+checkPort :: Int -> IO Bool
+checkPort p = do
+    es <- Ex.try $ bindPortTCP p "*4"
+    case es of
+        Left (_ :: Ex.IOException) -> return False
+        Right s -> do
+            sClose s
+            return True
+
+    
 getPipeResponse :: Value -> SessionId -> Handler String
-getPipeResponse v sid = do
-    App _ _ _ _ lm _ _  <- getYesod
-    locks' <- liftIO $ takeMVar lm
-
-    -- make sure we have a lock for this one
-    locks <- if member sid locks'
-                    then return locks'
-                    else addLock lm sid
-
-    locks <- liftIO $ takeMVar lm
-
-    port <- liftIO  $ waitLock sid locks
-    liftIO  $ putMVar lm locks
-    i    <- getInputPipe  sid
-    o    <- getOutputPipe sid
-    fileE <-  lift $ try (openFileBlocking i WriteMode)
-    case fileE of
-                -- An IOError here means the process that was supposed
-                -- to read from the pipe died before it could, and matlab
-                -- won't read again until we eat its (now useless) output
-                Left (e :: IOError)->   do
-                    _ <- lift $ drainFifo o
-                    liftIO  $ releasePort sid locks port
-                    error $ show e
-                    --lift $ openFileBlocking i WriteMode >>= return
-                Right fileHandle -> do
-                    liftIO $ L.hPutStr fileHandle payload
-                    lift $ hClose fileHandle
-                    ret <- lift $ drainFifo o
-                    liftIO $ releasePort sid locks port
-                    return ret
-    where
-        payload = encode v
+getPipeResponse = getPortResponse
+--getPipeResponse v sid = do
+--    App _ _ _ _ lm _ _  <- getYesod
+--    locks' <- liftIO $ takeMVar lm
+--
+--    -- make sure we have a lock for this one
+--    locks <- if member sid locks'
+--                    then return locks'
+--                    else addLock lm sid
+--
+--
+--    port <- liftIO  $ waitLock sid locks
+--    liftIO  $ putMVar lm locks
+--    i    <- getInputPipe  sid
+--    o    <- getOutputPipe sid
+--    fileE <-  lift $ try (openFileBlocking i WriteMode)
+--    case fileE of
+--                -- An IOError here means the process that was supposed
+--                -- to read from the pipe died before it could, and matlab
+--                -- won't read again until we eat its (now useless) output
+--                Left (e :: IOError)->   do
+--                    _ <- lift $ drainFifo o
+--                    liftIO  $ releasePort sid locks port
+--                    error $ show e
+--                    --lift $ openFileBlocking i WriteMode >>= return
+--                Right fileHandle -> do
+--                    liftIO $ L.hPutStr fileHandle payload
+--                    lift $ hClose fileHandle
+--                    ret <- lift $ drainFifo o
+--                    liftIO $ releasePort sid locks port
+--                    return ret
+--    where
+--        payload = encode v
 
 getInputPipe  sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
 getOutputPipe sid = fmap (++ "sessions/" ++ sid ++ "/pipe")  wwwDir 
@@ -201,12 +255,12 @@ delVMXFolder fp = do
     
 
     
-instance WebSocketsData Value where
-   toLazyByteString v = encode v
-   fromLazyByteString s = do
-        case decode s of
-            Just val -> val
-            Nothing -> object []
+--instance WebSocketsData Value where
+--   toLazyByteString v = encode v
+--   fromLazyByteString s = do
+--        case decode s of
+--            Just val -> val
+--            Nothing -> object []
 
 
 

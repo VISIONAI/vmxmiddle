@@ -40,7 +40,6 @@ import Handler.ProcessImage
 import Handler.SessionParams
 import Handler.EditModel
 import Handler.Model
-import Handler.WebSocket
 import Handler.ModelImage
 import Handler.ModelViewer
 import Handler.SessionViewer
@@ -108,10 +107,9 @@ makeFoundation conf@(AppConfig _ port _ _ _) = do
     machineIdent <- liftIO $ newIORef Nothing
 
 
-    lastPort <- liftIO $ newMVar (port + 2000)
 
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger portMap lastPort machineIdent
+        foundation = App conf s manager logger portMap machineIdent
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT

@@ -36,7 +36,6 @@ data App = App
     -- , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
     , portMap      ::  MVar (Map String (MVar Int))
-    , lastPort     :: MVar Int
     , machineIdent :: IORef (Maybe String)
     }
 
