@@ -7,7 +7,7 @@ import Data.Maybe (fromMaybe)
 import Prelude
 import GHC.Generics
 import Data.Typeable (Typeable)
-import           Control.Applicative (pure, (<$>), (<*>))
+import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad     (mzero)
 
 data VMXObject = VMXObject {

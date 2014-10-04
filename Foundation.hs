@@ -3,17 +3,11 @@ module Foundation where
 import Prelude
 import Yesod
 import Yesod.Static
-import Yesod.Auth
-import Yesod.Auth.BrowserId
-import Yesod.Auth.GoogleEmail
 import Yesod.Default.Config
-import Yesod.Default.Util (addStaticContentExternal)
 import Network.HTTP.Client.Conduit (Manager, HasHttpManager (getHttpManager))
 import qualified Settings
 import Settings.Development (development)
 -- import qualified Database.Persist
-import Database.Persist.Sql (SqlPersistT)
-import Settings.StaticFiles
 import Settings (widgetFile, Extra (..), SessionId, ModelId)
 import Model
 import Text.Hamlet (hamletFile)
@@ -22,7 +16,6 @@ import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
 import System.Directory     (getCurrentDirectory)
-import Control.Concurrent.STM (STM (..), newTVarIO, TMVar (..))
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -80,7 +73,7 @@ instance Yesod App where
         pc <- widgetToPageContent $ do
 
             $(widgetFile "default-layout")
-        giveUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
+        withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
 
     -- This is done to provide an optimization for serving static files from
     -- a separate domain. Please see the staticRoot setting in Settings.hs
