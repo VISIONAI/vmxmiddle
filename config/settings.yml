@@ -5,7 +5,6 @@ Default: &defaults
   copyright: Copyright vision.ai, LLC 2013-2014
   wwwdir: "/www/vmx/"
   vmxpath: "/vmx/build"
-  matlabpath: "/root/MATLAB/R2014a/v83"
   #analytics: UA-YOURCODE
 
 Development:
