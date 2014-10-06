@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>VMX</string>
+	<string>run.sh</string>
 	<key>CFBundleIconFile</key>
 	<string>VMX.icns</string>
 	<key>CFBundleIdentifier</key>

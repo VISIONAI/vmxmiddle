@@ -33,6 +33,8 @@ mkdir $D/Contents/Resources
 mkdir $D/Contents/Frameworks
 
 cp ~/projects/vmxmiddle/mac_builder/Info.plist $D/Contents/Info.plist
+cp ~/projects/vmxmiddle/mac_builder/run.sh $D/Contents/MacOS
+
 cp ~/projects/VMXassets/vmxicon2.icns $D/Contents/Resources/VMX.icns
 
 cp $original $D/Contents/MacOS/VMX
@@ -56,13 +58,13 @@ cp static/fonts/* $D/Contents/MacOS/static/fonts/
 cp -R static/enter_license/dist $D/Contents/MacOS/static/enter_license/
 
 mkdir $D/Contents/MacOS/config/
-cp config/settings.yml $D/Contents/MacOS/config/
+cp ~/projects/vmxmiddle/mac_builder/settings.yml $D/Contents/MacOS/config/
 
-#copy over VMXserver
+#copy over VMXserver from the build directory
 cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $D/Contents/MacOS/
 
 #copy over initial network
-cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
+#cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
 
 #clean up libs
 LIBS=`otool -L ${F} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
@@ -110,6 +112,14 @@ for i in $LIBS; do
         install_name_tool -change $j $LOCAL_LIB $i
     done    
 done
+
+#update local id of library
+cd $D/Contents/Frameworks/
+LIBS=`ls`
+for i in $LIBS; do
+    install_name_tool -id $i $i
+done
+cd -
 
 echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
 
