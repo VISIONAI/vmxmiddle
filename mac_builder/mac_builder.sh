@@ -121,7 +121,7 @@ for i in $LIBS; do
 done
 cd -
 
-echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
+echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH > $D/version
 
 ## We should be creating a proper plist file
 
