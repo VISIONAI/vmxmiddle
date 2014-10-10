@@ -9,6 +9,7 @@ module Helper.Shared
     , OutputPipe
     , makeJson
     , processImage
+    , loadModel
     , waitLock
     , releasePort
     , exitVMXServer
@@ -207,6 +208,16 @@ processImage sid image params name = do
    where
         command :: String
         command = "process_image"
+
+loadModel :: SessionId -> [String] -> Bool -> Handler String
+loadModel sid uuids compiled = do
+   let req = object ["command" .= command, "uuids" .= uuids, "compiled" .= compiled]
+   response <- getPipeResponse req sid
+   return response
+   where
+        command :: String
+        command = "load_model"
+
 
 exitVMXServer :: SessionId -> Handler String
 exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return

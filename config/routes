@@ -13,6 +13,7 @@
 /session/#SessionId ProcessImageR POST OPTIONS DELETE
 /session/#SessionId/params SessionParamsR GET OPTIONS
 /session/#SessionId/edit EditModelR POST PUT OPTIONS
+/session/#SessionId/load LoadModelR POST OPTIONS
 /models/#ModelId/image.jpg ModelImageR GET
 /models.html ModelViewerR GET
 /sessions.html SessionViewerR GET
