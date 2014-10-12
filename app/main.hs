@@ -6,12 +6,12 @@ import Settings             (parseExtra)
 import Application          (makeApplication)
 
 import System.Environment   (getEnv, withArgs, getExecutablePath)
-import Control.Monad
+--import Control.Monad
 
 import System.Directory     (setCurrentDirectory,getCurrentDirectory)
 
 import System.FilePath.Posix (takeDirectory)
-import Control.Monad.Trans (liftIO)
+--import Control.Monad.Trans (liftIO)
 
 
 main :: IO ()

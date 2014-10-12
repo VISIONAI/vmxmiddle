@@ -60,21 +60,27 @@ createSession uuids = do
     let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
 
     log'    <- lift $ openFile outLogPath' AppendMode
-    _       <- lift $ createProcess (shell $ shellLine)
+    (_,_,_,ph)      <- lift $ createProcess (shell $ shellLine)
                          {std_out = UseHandle log'}
+    
     liftIO $ 
-        waitForFile (sessionPath' ++ "/url")
+        waitForFile (sessionPath' ++ "/url") ph
     return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])
     where
         asString = C.unpack . C.concat . L.toChunks . encode
-        waitForFile :: FilePath -> IO ()
-        waitForFile f = do
+        waitForFile :: FilePath -> ProcessHandle -> IO ()
+        waitForFile f ph = do
+            --liftIO $ print "Waiting..."
             ready <- doesFileExist f
+            ec <- getProcessExitCode ph
+            case ec of
+              Nothing -> return () --liftIO $ print "good"
+              Just e -> error $ "Error " ++ (show e) ++": Cannot Start VMXserver"
             if ready
                 then return ()
                 else do
                     threadDelay 200
-                    waitForFile f
+                    waitForFile f ph
         name = case length uuids of
                 0 -> "none"
                 _ -> uuids !! 0

@@ -21,7 +21,7 @@ HASH=`git --no-pager log --format='%h' -n 1`
 
 cabal clean && cabal configure && cabal build
 
-original='/Users/tomasz/projects/vmxmiddle/dist/build/middle/middle'
+original='/Users/tomasz/projects/vmxmiddle/dist/build/VMX/VMX'
 
 D='/Users/tomasz/projects/vmxmiddle/dist/VMX.app'
 rm -rf $D
@@ -121,7 +121,7 @@ for i in $LIBS; do
 done
 cd -
 
-echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
+echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH > $D/version
 
 ## We should be creating a proper plist file
 
