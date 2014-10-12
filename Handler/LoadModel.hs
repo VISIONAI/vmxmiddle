@@ -3,7 +3,7 @@ module Handler.LoadModel where
 
 import Import
 import Helper.Shared
-import Helper.VMXTypes
+
 
 data LoadModelCommand =  LoadModelCommand {
     loadModelUuids      :: [String],
