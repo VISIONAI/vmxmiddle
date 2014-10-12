@@ -32,13 +32,13 @@ instance FromJSON VMXServerConfig  where
                                             <*> (o .: "log_memory")
                                             <*> (o .: "display_images")
                                             <*> (o .: "MCR")
-                                            <*> (o .: "eval_dir")
+                                            <*> (o .: "data")
                                             <*> (o .: "pretrained")
     parseJSON _ = mzero
 
 instance ToJSON VMXServerConfig where
-    toJSON (VMXServerConfig user' license' vmx_dir' log_images' log_memory' display_images' mcr' evaldir' pretrained') =
-        object ["user" .= user', "license" .= license', "vmx_dir" .= vmx_dir', "log_images" .= log_images', "log_memory" .= log_memory', "display_images" .= display_images', "MCR" .= mcr', "eval_dir" .= evaldir', "pretrained" .= pretrained']
+    toJSON (VMXServerConfig user' license' vmx_dir' log_images' log_memory' display_images' mcr' vmxdata' pretrained') =
+        object ["user" .= user', "license" .= license', "vmx_dir" .= vmx_dir', "log_images" .= log_images', "log_memory" .= log_memory', "display_images" .= display_images', "MCR" .= mcr', "data" .= vmxdata', "pretrained" .= pretrained']
 
 data VMXServerConfig = VMXServerConfig {
     user            :: String,
@@ -48,7 +48,7 @@ data VMXServerConfig = VMXServerConfig {
     log_memory      :: Bool,
     display_images  :: Bool,
     mcr             :: String,
-    eval_dir        :: String,
+    vmxdata         :: String,
     pretrained      :: String
 }
 
