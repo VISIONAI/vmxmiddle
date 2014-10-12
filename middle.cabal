@@ -33,6 +33,7 @@ library
                      Handler.RandomImage
                      Handler.CheckLicense
                      Handler.ActivateLicense
+                     Handler.LoadModel
                      Helper.Shared
                      Helper.VMXTypes
 
