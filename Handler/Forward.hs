@@ -9,10 +9,9 @@ import Network.URI (parseURI)
 
 -- useful example found at
 -- https://github.com/sellweek/xkcd/blob/7baf85dd12d17601cb238e0eb5d408ef82320097/src/XKCD.hs
-
 -- other useful stuff at https://github.com/andreyk0/www-webcam-snapshot/blob/master/Main.hs
 
--- |Downloads file from URL and returns its contents as a 'B.ByteString'
+-- Downloads a file from URL and returns its contents as a 'B.ByteString'
 downloadFile :: String -> IO B.ByteString
 downloadFile url = response >>= getResponseBody
   where 
@@ -24,7 +23,3 @@ getForwardR url' = do
   f <- liftIO $ downloadFile url
   sendResponse (typeJpeg, toContent f)
   
-  -- let myRequest = Network.HTTP.getRequest url
-  -- liftIO $ print $ "URL is " ++ url
-  -- res <- liftIO $ simpleHTTP myRequest >>= getResponseBody
-  -- return res
