@@ -21,7 +21,7 @@ HASH=`git --no-pager log --format='%h' -n 1`
 
 cabal clean && cabal configure && cabal build
 
-original='/Users/tomasz/projects/vmxmiddle/dist/build/VMX/VMX'
+original='/Users/tomasz/projects/vmxmiddle/dist/build/middle/middle'
 
 D='/Users/tomasz/projects/vmxmiddle/dist/VMX.app'
 rm -rf $D
@@ -122,12 +122,6 @@ done
 cd -
 
 echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH > $D/version
-
-## We should be creating a proper plist file
-
-
-## We should be setting up the icon
-
 
 #cp ~/projects/cvmx/VMX $D/Contents/MacOS
 
