@@ -157,7 +157,7 @@ wwwDir = do
     extra <- getExtra
     cwd <- liftIO $ getCurrentDirectory
     case extraWwwDir extra of
-        Just theDir -> return $ finalPath cwd $ theDir
+        Just theDir -> return $ finalPath cwd $ theDir ++ "/"
         Nothing  -> return "/www/vmx/"
 
 vmxExecutable :: Handler String
