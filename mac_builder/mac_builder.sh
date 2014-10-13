@@ -121,13 +121,7 @@ for i in $LIBS; do
 done
 cd -
 
-echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH >> $D/version
-
-## We should be creating a proper plist file
-
-
-## We should be setting up the icon
-
+echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH > $D/version
 
 #cp ~/projects/cvmx/VMX $D/Contents/MacOS
 
