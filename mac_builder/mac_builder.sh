@@ -52,6 +52,8 @@ mkdir $D/Contents/MacOS/static/dist/
 mkdir $D/Contents/MacOS/static/fonts/
 mkdir $D/Contents/MacOS/static/enter_license/
 cp static/index.html $D/Contents/MacOS/static/
+cp static/models.html $D/Contents/MacOS/static/
+cp static/sessions.html $D/Contents/MacOS/static/
 cp static/dist/* $D/Contents/MacOS/static/dist/
 cp static/fonts/* $D/Contents/MacOS/static/fonts/
 
