@@ -51,12 +51,15 @@ mkdir $D/Contents/MacOS/static
 mkdir $D/Contents/MacOS/static/dist/
 mkdir $D/Contents/MacOS/static/fonts/
 mkdir $D/Contents/MacOS/static/enter_license/
+mkdir $D/Contents/MacOS/static/img
 cp static/index.html $D/Contents/MacOS/static/
 cp static/models.html $D/Contents/MacOS/static/
 cp static/sessions.html $D/Contents/MacOS/static/
 cp static/dist/* $D/Contents/MacOS/static/dist/
 cp static/fonts/* $D/Contents/MacOS/static/fonts/
 
+
+cp static/img/missing.jpg $D/Contents/MacOS/static/img/
 cp -R static/enter_license/dist $D/Contents/MacOS/static/enter_license/
 
 mkdir $D/Contents/MacOS/config/
