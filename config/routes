@@ -15,6 +15,7 @@
 /session/#SessionId/edit EditModelR POST PUT OPTIONS
 /session/#SessionId/load LoadModelR POST OPTIONS
 /models/#ModelId/image.jpg ModelImageR GET
+/models/#ModelId/model.data ModelDataR GET
 /models.html ModelViewerR GET
 /sessions.html SessionViewerR GET
 /video.html VideoViewerR GET
