@@ -27,8 +27,8 @@ while true; do
     esac
 done
 
-models=$1
-uuids=`ls $models`
+vmx_dir=$1
+
 
 status=`curl -s -I --connect-timeout 2 -I $server`
 
@@ -39,14 +39,14 @@ else
     echo 'Download server down'
     exit
 fi
-./VMXserver.app/Contents/MacOS $models uploader none :8090 &
+./VMXserver.app/Contents/MacOS/VMXserver `pwd`/$vmx_dir uploader none :8090 &
 sleep 3
 listing=`curl $server -H "Accept: application/json" | jq -r '.[]'`
 #echo 'listing is' $listing
 for f in $listing
 do
     echo 'file is' $server/$f
-    curl -X POST -d '{"command":"load_model","uuids":["$f"],"compiled":false}' localhost:8090
+    curl -X POST -d '{"command":"load_model","uuids":["'$server/$f'"],"compiled":false}' localhost:8090
     curl -X POST -d '{"command":"save_model","name":""}' localhost:8090
     
 done
