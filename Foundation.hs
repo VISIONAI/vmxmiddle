@@ -15,7 +15,7 @@ import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
-import System.Directory     (getCurrentDirectory)
+import System.Directory     (getCurrentDirectory,createDirectoryIfMissing)
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -157,7 +157,13 @@ wwwDir = do
     extra <- getExtra
     cwd <- liftIO $ getCurrentDirectory
     case extraWwwDir extra of
-        Just theDir -> return $ finalPath cwd $ theDir ++ "/"
+        Just theDir -> do
+          let result = finalPath cwd $ theDir ++ "/"
+          let session_dir = result ++ "sessions"
+          let models_dir = result ++ "models"
+          liftIO $ createDirectoryIfMissing True session_dir
+          liftIO $ createDirectoryIfMissing False models_dir
+          return result
         Nothing  -> return "/www/vmx/"
 
 vmxExecutable :: Handler String

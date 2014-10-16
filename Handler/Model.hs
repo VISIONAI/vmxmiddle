@@ -121,18 +121,13 @@ list_models = do
                 Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                          ListModelResponse  e e [] [] e "error"  (Just e)  "error"  (Just "error") 0 0  "error"  "error" 
+                          ListModelResponse  e e [] [] 0 0  "error" "error"
 
 data ListModelResponse = ListModelResponse {
     listModelName :: String,
     listModelMeta :: String,
     listModelSize :: [Int],
     listModelHistory :: [String],
-    listModelDataset :: String,
-    listModelNetwork :: String,
-    listModelCompiled :: Maybe String,
-    listModelPos      :: String,
-    listModelStats    :: Maybe String,
     listModelNumPos   :: Int,
     listModelNumNeg   :: Int,
     listModelStartTime :: String,
@@ -147,11 +142,6 @@ instance FromJSON ListModelResponse where
                          <*> (o .: "meta")
                          <*> (o .: "size")
                          <*> (o .: "history")
-                         <*> (o .: "data_set")
-                         <*> (o .: "network")
-                         <*> (o .: "compiled")
-                         <*> (o .: "pos")
-                         <*> (o .: "stats")
                          <*> (o .: "num_pos")
                          <*> (o .: "num_neg")
                          <*> (o .: "start_time")
@@ -165,11 +155,6 @@ instance FromJSON (String -> ListModelResponse) where
                          <*> (o .: "meta")
                          <*> (o .: "size")
                          <*> (o .: "history")
-                         <*> (o .: "data_set")
-                         <*> (o .: "network")
-                         <*> (o .:? "compiled")
-                         <*> (o .: "pos")
-                         <*> (o .:? "stats")
                          <*> (o .: "num_pos")
                          <*> (o .: "num_neg")
                          <*> (o .: "start_time")
@@ -177,16 +162,11 @@ instance FromJSON (String -> ListModelResponse) where
     parseJSON _ = mzero
 
 instance ToJSON ListModelResponse where
-    toJSON (ListModelResponse name' meta' size' history' dataset' network' compiled' pos' stats' num_pos' num_neg' start_time' end_time' uuid')= 
+    toJSON (ListModelResponse name' meta' size' history' num_pos' num_neg' start_time' end_time' uuid')= 
         object ["name" .= name'
                , "meta" .= meta'
                , "size" .= size'
                , "history" .= history'
-               , "dataset" .= dataset'
-               , "network" .= network'
-               , "compiled" .= compiled'
-               , "pos" .= pos'
-               , "stats" .= stats'
                , "num_pos" .= num_pos'
                , "num_neg" .= num_neg'
                , "start_time" .= start_time'

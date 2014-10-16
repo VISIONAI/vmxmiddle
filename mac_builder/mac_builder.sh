@@ -37,6 +37,8 @@ cp ~/projects/vmxmiddle/mac_builder/run.sh $D/Contents/MacOS
 
 cp ~/projects/VMXassets/vmxicon2.icns $D/Contents/Resources/VMX.icns
 
+cp ~/projects/vmxmiddle/mac_builder/upload.sh $D/Contents/MacOS/
+
 cp $original $D/Contents/MacOS/VMX
 F=$D/Contents/MacOS/VMX
 
@@ -51,12 +53,15 @@ mkdir $D/Contents/MacOS/static
 mkdir $D/Contents/MacOS/static/dist/
 mkdir $D/Contents/MacOS/static/fonts/
 mkdir $D/Contents/MacOS/static/enter_license/
+mkdir $D/Contents/MacOS/static/img
 cp static/index.html $D/Contents/MacOS/static/
 cp static/models.html $D/Contents/MacOS/static/
 cp static/sessions.html $D/Contents/MacOS/static/
 cp static/dist/* $D/Contents/MacOS/static/dist/
 cp static/fonts/* $D/Contents/MacOS/static/fonts/
 
+
+cp static/img/missing.jpg $D/Contents/MacOS/static/img/
 cp -R static/enter_license/dist $D/Contents/MacOS/static/enter_license/
 
 mkdir $D/Contents/MacOS/config/

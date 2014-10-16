@@ -27,6 +27,7 @@ library
                      Handler.EditModel
                      Handler.Model
                      Handler.ModelImage
+                     Handler.ModelData
                      Handler.ModelViewer
                      Handler.SessionViewer
                      Handler.VideoViewer

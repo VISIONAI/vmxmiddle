@@ -1,19 +1,18 @@
-module Handler.ModelImage where
+module Handler.ModelData where
 import System.Directory (doesFileExist)
 import Import
 
 
-
-getModelImageR :: ModelId -> Handler Html
-getModelImageR muid = do
+getModelDataR :: ModelId -> Handler Html
+getModelDataR muid = do
   wd <- wwwDir
-  let image_file = (wd ++ "models/" ++ muid ++ "/image.jpg")
+  let model_file = (wd ++ "models/" ++ muid ++ "/model.data")
   let default_file = "static/img/missing.jpg"
-  e <- liftIO $ doesFileExist image_file
+  e <- liftIO $ doesFileExist model_file
   if e
     then do
     --liftIO $ print "sending real image.jpg"
-    sendFile "image/jpg" image_file
+    sendFile typePlain model_file
     else do
     --liftIO $ print "sending missing.jpg"
     sendFile "image/png" default_file
