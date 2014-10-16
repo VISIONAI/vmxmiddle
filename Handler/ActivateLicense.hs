@@ -7,7 +7,8 @@ import Data.Conduit (($$+-))
 import Data.Conduit.Attoparsec  (sinkParser)
 import Data.Aeson.Parser (json)
 import Data.Aeson        (Result (..), fromJSON )
-import Network.HTTP.Conduit (http, method, withManager, parseUrl, Response (..), HttpException (..) )
+import Network.Connection (TLSSettings (..))
+import Network.HTTP.Conduit (http, method, withManagerSettings, mkManagerSettings, parseUrl, Response (..), HttpException (..) )
 import Network.HTTP.Types (Status (..) )
 import Handler.CheckLicense
 import qualified Data.Text.Lazy.IO as DTL (writeFile)
@@ -17,6 +18,7 @@ import qualified Data.ByteString.Lazy as L (fromChunks)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception as X hiding (Handler)
 import Data.Aeson.Encode.Pretty (encodePretty)
+import System.Directory (doesDirectoryExist)
 
 data ActivateResponse = ActivateResponse String
 
@@ -62,10 +64,19 @@ writeLicense l key = do
     let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/config.json"
     c' <- liftIO $ readJson . unpack <$> DT.readFile path 
     case c' of
-        VMXServerConfig _ _ models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained' -> 
+        VMXServerConfig _ _ models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained' -> do
             liftIO $ DTL.writeFile path $ decodeUtf8 $ encodePretty $
                 VMXServerConfig key l models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained'
+            isDocker <- liftIO $ doesDirectoryExist dockerPersistDir
+            if isDocker 
+                then
+                    liftIO $ DTL.writeFile (dockerPersistDir ++ "/config.json") $ decodeUtf8 $ encodePretty $
+                        VMXServerConfig key l models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained'
+                else return ()
+             
+                
     where
+        dockerPersistDir = "/vmx-persist"
         readJson :: String -> VMXServerConfig
         readJson s = do
             let packed = C.pack s
@@ -84,8 +95,9 @@ postActivateLicenseR key = do
     val <- case ident' of 
         Nothing -> error "no ident"
         Just uuid -> do 
+            let settings = mkManagerSettings (TLSSettingsSimple True False False) Nothing
             liftIO $ handle catchException $
-                withManager $ \manager -> do
+                withManagerSettings settings $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
                     let req = req' { method = "POST"}
                     res <- (http req manager) 
@@ -103,7 +115,9 @@ postActivateLicenseR key = do
         catchException (StatusCodeException (Status 403 _) _ _) = return $ object ["error" .= ("key_already_used" :: String)]
         catchException (StatusCodeException (Status 404 _) _ _) = return $ object ["error" .= ("key_unknown" :: String)]
         catchException (StatusCodeException _ _ _) = return $ object ["error" .= ("unknown_error" :: String)]
-        catchException _                           = return $ object ["error" .= ("non StatusCode unknown error" :: String)]
+        catchException x                           = do
+            liftIO $ print x
+            return $ object ["error" .= (show x)]
     
 
 

@@ -103,6 +103,7 @@ library
                  , aeson-pretty
                  , streaming-commons
                  , network
+                 , connection
 
 
 
