@@ -10,7 +10,7 @@
 
 #Define the location of remote copy
 user=tomasz
-server=vm-x.com
+server=vmx
 location=/www/incoming
 
 echo 'This script will share your models with the rest of the world'
