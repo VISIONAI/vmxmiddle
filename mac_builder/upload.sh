@@ -8,10 +8,13 @@
 #
 # Copyright 2013-2014 vision.ai, LLC 
 
-#Define the location of remote copy
-user=tomasz
-server=vmx
-location=/www/incoming
+server=http://vm-x.com:3084/upload
+
+#Define the location of remote copy when using SSH
+#user=tomasz
+#server=vmx
+#location=/www/incoming
+
 
 echo 'This script will share your models with the rest of the world'
 
@@ -32,6 +35,16 @@ done
 models=$1
 uuids=`ls $models`
 
+status=`curl -s -I --connect-timeout 3 -I $server`
+
+if [ "$?" = "0" ];
+then
+    echo 'Upload server up'
+else
+    echo 'Upload server down'
+    exit
+fi
+
 for uuid in $uuids; do
     FILE=$models/$uuid/model.data
     if [ -f $FILE ];
@@ -42,5 +55,12 @@ for uuid in $uuids; do
         break;
     fi
     echo 'Copying to' $server
-    ssh ${user}@${server} "cat > /tmp/${uuid} && cp /tmp/${uuid} ${location}/${uuid}.data && rm /tmp/${uuid}" < $models/$uuid/model.data
+    #ssh ${user}@${server} "cat > /tmp/${uuid} && cp /tmp/${uuid} ${location}/${uuid}.data && rm /tmp/${uuid}" < $models/$uuid/model.data
+    curl --connect-timeout 1 -F name=VMXupload -F filedata="@$FILE" ${server} 2>&1 > /dev/null 
+    if [ "$?" = "0" ];
+    then
+        echo 'Successfully copied'
+    else
+        echo 'Problem copying'
+    fi
 done
