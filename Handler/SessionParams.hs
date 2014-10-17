@@ -12,7 +12,7 @@ optionsSessionParamsR _ = do
     return ()
 
 
-getSessionParamsR :: SessionId -> Handler String
+getSessionParamsR :: SessionId -> Handler TypedContent
 getSessionParamsR sid = do
     addHeader "Access-Control-Allow-Origin" "*"
      -- trace "start of get session params" $ liftIO $ print sid

@@ -15,7 +15,7 @@ instance FromJSON LoadModelCommand where
         LoadModelCommand <$> (o .: "uuids") <*> (o .: "compiled")
     parseJSON _ = mzero
 
-postLoadModelR :: SessionId -> Handler String
+postLoadModelR :: SessionId -> Handler TypedContent
 postLoadModelR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"

@@ -54,6 +54,15 @@ type Form x = Html -> MForm (HandlerT App IO) (FormResult x, Widget)
 instance Yesod App where
     approot = ApprootMaster $ appRoot . settings
 
+
+    errorHandler (InternalError e) = 
+        selectRep $ do
+            provideRepType  "application/json" $ return $ object ["500" .= e] 
+            provideRep $ defaultLayout $ 
+                toWidget [hamlet|<h1>500 error</h1><p> #{e}|]
+
+    errorHandler other = defaultErrorHandler other
+
     -- Store session data on the client in encrypted cookies,
     -- default session idle timeout is 120 minutes
     makeSessionBackend _ = fmap Just $ defaultClientSessionBackend

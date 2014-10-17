@@ -5,6 +5,8 @@ module Helper.Shared
     ( drainFifo
     , headers
     , getPipeResponse
+    , getPortResponse
+    , getPortResponse'
     , InputPipe
     , OutputPipe
     , makeJson
@@ -112,17 +114,34 @@ sessionToPath sid = do
     dataDir <- wwwDir
     return $ dataDir ++ "/sessions/" ++ sid ++ "/"
 
-getPortResponse :: Value -> SessionId -> Handler String
+getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
+    ret <- getPortResponse' input sessionId
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return ret
+        provideRepType  mimeText $ return ret
+
+mimeJson :: ContentType
+mimeJson = "application/json"
+mimeText = "text/plain"
+mimeHtml = "text/html"
+
+portErrorHandler :: String -> Handler TypedContent
+portErrorHandler msg = error msg
+
+
+getPortResponse' :: Value -> SessionId -> Handler String
+getPortResponse' input sessionId = do
     App _ _ manager _ portMap' _  <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         if member sessionId pm
             then return pm
             else do
-                path <- (++ "/url") <$> sessionToPath sessionId
-                port <- liftIO $ readFile path
-                error "something"
+                liftIO $ putMVar portMap' pm
+                _ <- portErrorHandler "invalid session"
+                error "this error should not be called"
 
     port <- liftIO $ waitLock sessionId portMap
     liftIO $ putMVar portMap' portMap
@@ -144,8 +163,6 @@ getPortResponse input sessionId = do
 
 
 
-
-
 checkPort :: Int -> IO Bool
 checkPort p = do
     es <- Ex.try $ bindPortTCP p "*4"
@@ -156,7 +173,7 @@ checkPort p = do
             return True
 
     
-getPipeResponse :: Value -> SessionId -> Handler String
+getPipeResponse :: Value -> SessionId -> Handler TypedContent
 getPipeResponse = getPortResponse
 --getPipeResponse v sid = do
 --    App _ _ _ _ lm _ _  <- getYesod
@@ -200,7 +217,7 @@ getPipeResponse = getPortResponse
 
 
 
-processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler String
+processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
 processImage sid image params name = do
    let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
    response <- getPipeResponse req sid
@@ -209,7 +226,7 @@ processImage sid image params name = do
         command :: String
         command = "process_image"
 
-loadModel :: SessionId -> [String] -> Bool -> Handler String
+loadModel :: SessionId -> [String] -> Bool -> Handler TypedContent
 loadModel sid uuids compiled = do
    let req = object ["command" .= command, "uuids" .= uuids, "compiled" .= compiled]
    response <- getPipeResponse req sid
@@ -219,7 +236,7 @@ loadModel sid uuids compiled = do
         command = "load_model"
 
 
-exitVMXServer :: SessionId -> Handler String
+exitVMXServer :: SessionId -> Handler TypedContent
 exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return
 	where 	
 		exit :: String
