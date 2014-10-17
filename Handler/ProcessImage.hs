@@ -32,7 +32,7 @@ instance FromJSON ProcessImageCommand where
     parseJSON _ = mzero
 
 
-postProcessImageR :: SessionId -> Handler String
+postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"

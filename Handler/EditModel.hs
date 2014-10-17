@@ -74,7 +74,7 @@ genericEditModel sid command = do
                          , "settings" .= (editModelSettings eic)
                          , "changes"  .= (editModelChanges eic)
                          ]
-        response <- getPipeResponse req sid
+        response <- getPortResponse' req sid
         let (mbResponse :: Maybe EditModelResponse) = decode' $ LBS.pack response
         case mbResponse of
           Just response' ->
