@@ -61,6 +61,12 @@ instance Yesod App where
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>500 error</h1><p> #{e}|]
 
+    errorHandler (InvalidArgs es) = 
+        selectRep $ do
+            provideRepType  "application/json" $ return $ object ["invalid arguments" .= es] 
+            provideRep $ defaultLayout $ 
+                toWidget [hamlet|<h1>invalid args</h1><p> #{show es}|]
+
     errorHandler other = defaultErrorHandler other
 
     -- Store session data on the client in encrypted cookies,

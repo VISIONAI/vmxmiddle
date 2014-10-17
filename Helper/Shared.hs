@@ -140,8 +140,8 @@ getPortResponse' input sessionId = do
             then return pm
             else do
                 liftIO $ putMVar portMap' pm
-                _ <- portErrorHandler "invalid session"
-                error "this error should not be called"
+                invalidArgs [pack sessionId, "invalid session"]
+                
 
     port <- liftIO $ waitLock sessionId portMap
     liftIO $ putMVar portMap' portMap
