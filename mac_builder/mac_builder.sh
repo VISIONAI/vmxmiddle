@@ -38,6 +38,7 @@ cp ~/projects/vmxmiddle/mac_builder/run.sh $D/Contents/MacOS
 cp ~/projects/VMXassets/vmxicon2.icns $D/Contents/Resources/VMX.icns
 
 cp ~/projects/vmxmiddle/mac_builder/upload.sh $D/Contents/MacOS/
+cp ~/projects/vmxmiddle/mac_builder/download.sh $D/Contents/MacOS/
 
 cp $original $D/Contents/MacOS/VMX
 F=$D/Contents/MacOS/VMX
