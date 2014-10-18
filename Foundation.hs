@@ -15,7 +15,7 @@ import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
-import System.Directory     (getCurrentDirectory,createDirectoryIfMissing)
+import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFileExist)
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -57,7 +57,7 @@ instance Yesod App where
 
     errorHandler (InternalError e) = 
         selectRep $ do
-            provideRepType  "application/json" $ return $ object ["500" .= e] 
+            provideRepType  "application/json" $ return $ object ["error" .= e] 
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>500 error</h1><p> #{e}|]
 
@@ -186,6 +186,12 @@ vmxExecutable = do
     extra <- getExtra
     cwd <- liftIO $ getCurrentDirectory
     case extraVmxPath extra of
-        Just theDir -> return $ finalPath cwd $ theDir ++ "/VMXserver"
+        Just theDir -> do
+          let result = finalPath cwd $ theDir ++ "/VMXserver"
+          exist <- liftIO $ doesFileExist result
+          case exist of
+            True -> liftIO $ print $ result ++ " exists"
+            False -> liftIO $ print $ "Warning " ++ result ++ " does not exist"
+          return result
         Nothing  -> return "/home/g/VMXserver/VMXserver"
 
