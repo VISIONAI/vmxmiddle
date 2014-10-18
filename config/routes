@@ -1,24 +1,30 @@
 /static      StaticR  Static  getStatic
 
-
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
 / HomeR GET 
 
-
-
-/session SessionR GET POST OPTIONS
+-- VMX REST API Handlers
 /model ModelR GET POST PUT OPTIONS
+/session SessionR GET POST OPTIONS
 /session/#SessionId ProcessImageR POST OPTIONS DELETE
 /session/#SessionId/params SessionParamsR GET OPTIONS
 /session/#SessionId/edit EditModelR POST PUT OPTIONS
 /session/#SessionId/load LoadModelR POST OPTIONS
+
+-- Handlers for serving images and model data
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
+
+-- Handlers for extra HTML pages like model viewing, session listing, and a simple video viewer
 /models.html ModelViewerR GET
 /sessions.html SessionViewerR GET
 /video.html VideoViewerR GET
+
+-- Extra handlers (like serving random images)
 /random RandomImageR GET OPTIONS
+
+-- Handlers for checking if VMX is licensed
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
