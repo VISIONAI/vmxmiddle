@@ -6,9 +6,9 @@ import Import
 import Data.Conduit (($$+-))
 import Data.Conduit.Attoparsec  (sinkParser)
 import Data.Aeson.Parser (json)
-import Data.Aeson        (Result (..), fromJSON )
+import Data.Aeson        (Result (..), fromJSON , encode)
 import Network.Connection (TLSSettings (..))
-import Network.HTTP.Conduit (http, method, withManagerSettings, mkManagerSettings, parseUrl, Response (..), HttpException (..) )
+import Network.HTTP.Conduit (http, method, withManagerSettings, mkManagerSettings, parseUrl, Response (..), HttpException (..) , RequestBody (..), requestBody)
 import Network.HTTP.Types (Status (..) )
 import Handler.CheckLicense
 import qualified Data.Text.Lazy.IO as DTL (writeFile)
@@ -88,9 +88,18 @@ writeLicense l key = do
                 Left e -> do
                          VMXServerConfig e e "" "" False False False False "" e e
 
+data ActivatePayload =  ActivatePayload {
+    activationPayloadEmail   :: Maybe Text
+}
+
+instance FromJSON ActivatePayload where
+    parseJSON (Object o) = ActivatePayload <$> (o .:? "email")
+    parseJSON _ = mzero
+
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
     addHeader "Access-Control-Allow-Origin" "*"
+    incoming <- requireJsonBody
     ident' <- getMachineIdent
     val <- case ident' of 
         Nothing -> error "no ident"
@@ -99,7 +108,8 @@ postActivateLicenseR key = do
             liftIO $ handle catchException $
                 withManagerSettings settings $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
-                    let req = req' { method = "POST"}
+                    let valueBs = encode $ object ["email" .= activationPayloadEmail incoming]
+                    let req = req' { method = "POST", requestBody = RequestBodyLBS valueBs}
                     res <- (http req manager) 
                     resValue <- responseBody res $$+- sinkParser json
                     return resValue 
