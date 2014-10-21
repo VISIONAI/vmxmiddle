@@ -64,23 +64,23 @@ createSession uuids = do
                          {std_out = UseHandle log'}
     
     liftIO $ 
-        waitForFile (sessionPath' ++ "/url") ph
+        waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
     return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])
     where
         asString = C.unpack . C.concat . L.toChunks . encode
-        waitForFile :: FilePath -> ProcessHandle -> IO ()
-        waitForFile f ph = do
+        waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
+        waitForFile f ph vmxExecutable' = do
             --liftIO $ print "Waiting..."
             ready <- doesFileExist f
             ec <- getProcessExitCode ph
             case ec of
               Nothing -> return () --liftIO $ print "good"
-              Just e -> error $ "Error " ++ (show e) ++": Cannot Start VMXserver"
+              Just e -> error $ "Error " ++ (show e) ++": Cannot Start " <> vmxExecutable'
             if ready
                 then return ()
                 else do
                     threadDelay 200
-                    waitForFile f ph
+                    waitForFile f ph vmxExecutable'
         name = case length uuids of
                 0 -> "none"
                 _ -> uuids !! 0
