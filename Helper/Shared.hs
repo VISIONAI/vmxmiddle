@@ -142,9 +142,8 @@ getPortResponse' input sessionId = do
                 liftIO $ putMVar portMap' pm
                 invalidArgs [pack sessionId, "invalid session"]
                 
-
-    port <- liftIO $ waitLock sessionId portMap
     liftIO $ putMVar portMap' portMap
+    port <- liftIO $ waitLock sessionId portMap
 
     let path = "http://127.0.0.1:" ++ show port ++ "/command"
 
