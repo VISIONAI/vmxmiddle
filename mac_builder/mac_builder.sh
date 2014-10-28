@@ -17,6 +17,19 @@ else
 fi
 DATER=`date "+%Y-%m-%d"`
 HASH=`git --no-pager log --format='%h' -n 1`
+GIT_LIST=`git show-ref | grep refs/heads/master | awk '{print($1)}'`
+GITTAG=`git show-ref | grep ${GIT_LIST} | grep refs/tags/ | awk '{print($2)}' | sed 's/refs\/tags\///'`
+HASH=$DATER"_"$BRANCH_NAME$HASH
+if [ "$GITTAG" != "" ]; then
+    if [ "$BRANCH_NAME" == "" ]; then
+        HASH=$GITTAG
+    else
+        echo 'hi' > /dev/null
+    fi
+else
+    echo 'hi' > /dev/null
+fi
+
 
 
 cabal clean && cabal configure && cabal build
@@ -129,7 +142,8 @@ for i in $LIBS; do
 done
 cd -
 
-echo "VMXmiddle_"$PLATFORM"_"$DATER"_"$BRANCH_NAME$HASH > $D/version
+BUILD_NAME="VMXmiddle_"$PLATFORM"_"$HASH
+echo $BUILD_NAME > $D/version
 
 #cp ~/projects/cvmx/VMX $D/Contents/MacOS
 
