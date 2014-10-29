@@ -1,161 +1,93 @@
+#!/bin/sh
+#
+# This shell script will create a VMX bundle for VMX middle, assigning
+# the proper icons, initialization scripts, etc.
+#
+# The resulting build gets sent over to files.vision.ai
+
 echo 'Welcome to Mac Builder of VMX Middle'
 
 if [ `uname` == "Darwin" ]; then
-    echo "Inside Mac"
     PLATFORM="Mac"
 else
-    #inside virtual box
-    echo "Inside Virtual Box Linux Environment"    
     PLATFORM="Linux"
 fi
 
-BRANCH_NAME=`git branch | grep "*" | awk '{print($2)}'`
-if [ $BRANCH_NAME == "master" ]; then
-    BRANCH_NAME=""
-else
-    BRANCH_NAME=$BRANCH_NAME"-"
-fi
-DATER=`date "+%Y-%m-%d"`
-HASH=`git --no-pager log --format='%h' -n 1`
-GIT_LIST=`git show-ref | grep refs/heads/master | awk '{print($1)}'`
-GITTAG=`git show-ref | grep ${GIT_LIST} | grep refs/tags/ | awk '{print($2)}' | sed 's/refs\/tags\///'`
-HASH=$DATER"_"$BRANCH_NAME$HASH
-if [ "$GITTAG" != "" ]; then
-    if [ "$BRANCH_NAME" == "" ]; then
-        HASH=$GITTAG
-    else
-        echo 'hi' > /dev/null
-    fi
-else
-    echo 'hi' > /dev/null
-fi
+#Jump into main repo directory, so we can run this script from anywhere
+cd `dirname $0`/../
 
+#Get the version
+HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
 
-
+#Perform the Haskell compilation of vmxmiddle
 cabal clean && cabal configure && cabal build
 
-original='/Users/tomasz/projects/vmxmiddle/dist/build/middle/middle'
+# set up the Mac OS X bundle directory
+BUILD_DIR='dist/VMX.app'
+rm -rf $BUILD_DIR
+mkdir $BUILD_DIR
 
-D='/Users/tomasz/projects/vmxmiddle/dist/VMX.app'
-rm -rf $D
-mkdir $D
+mkdir $BUILD_DIR/Contents
+mkdir $BUILD_DIR/Contents/MacOS/
+mkdir $BUILD_DIR/Contents/MacOS/config/
+mkdir $BUILD_DIR/Contents/Resources
+mkdir $BUILD_DIR/Contents/Frameworks
 
-mkdir $D/Contents
-mkdir $D/Contents/MacOS/
-mkdir $D/Contents/Resources
-mkdir $D/Contents/Frameworks
+# copy over default files
+cp ./mac_builder/Info.plist $BUILD_DIR/Contents/Info.plist
+cp ./mac_builder/run.sh $BUILD_DIR/Contents/MacOS/
+cp ./mac_builder/settings.yml $BUILD_DIR/Contents/MacOS/config/
+cp ./resources/vmxicon2.icns $BUILD_DIR/Contents/Resources/VMX.icns
 
-cp ~/projects/vmxmiddle/mac_builder/Info.plist $D/Contents/Info.plist
-cp ~/projects/vmxmiddle/mac_builder/run.sh $D/Contents/MacOS
+#copy over utility files
+#cp ~/projects/vmxmiddle/mac_builder/upload.sh $BUILD_DIR/Contents/MacOS/
+#cp ~/projects/vmxmiddle/mac_builder/download.sh $BUILD_DIR/Contents/MacOS/
 
-cp ~/projects/VMXassets/vmxicon2.icns $D/Contents/Resources/VMX.icns
-
-#cp ~/projects/vmxmiddle/mac_builder/upload.sh $D/Contents/MacOS/
-#cp ~/projects/vmxmiddle/mac_builder/download.sh $D/Contents/MacOS/
-
-cp $original $D/Contents/MacOS/VMX
-F=$D/Contents/MacOS/VMX
+# copy over main binary
+BINARY_NAME=$BUILD_DIR/Contents/MacOS/VMX
+cp dist/build/middle/middle $BINARY_NAME
 
 #strip binary
-strip $F
+strip $BINARY_NAME
 
-#mkdir $D/Contents/MacOS/assets/
-#mkdir $D/Contents/MacOS/assets/sessions/
-#mkdir $D/Contents/MacOS/assets/models/
-#
-#mkdir $D/Contents/MacOS/static
-#mkdir $D/Contents/MacOS/static/dist/
-#mkdir $D/Contents/MacOS/static/fonts/
-#mkdir $D/Contents/MacOS/static/enter_license/
-#mkdir $D/Contents/MacOS/static/img
-#cp static/index.html $D/Contents/MacOS/static/
-#cp static/models.html $D/Contents/MacOS/static/
-#cp static/sessions.html $D/Contents/MacOS/static/
-#cp static/dist/* $D/Contents/MacOS/static/dist/
-#cp static/fonts/* $D/Contents/MacOS/static/fonts/
-
-
-#cp static/img/missing.jpg $D/Contents/MacOS/static/img/
-#cp -R static/enter_license/dist $D/Contents/MacOS/static/enter_license/
-
-mkdir $D/Contents/MacOS/config/
-cp ~/projects/vmxmiddle/mac_builder/settings.yml $D/Contents/MacOS/config/
+#mkdir $BUILD_DIR/Contents/MacOS/assets/
+#mkdir $BUILD_DIR/Contents/MacOS/assets/sessions/
+#mkdir $BUILD_DIR/Contents/MacOS/assets/models/
+#mkdir $BUILD_DIR/Contents/MacOS/static
+#mkdir $BUILD_DIR/Contents/MacOS/static/dist/
+#mkdir $BUILD_DIR/Contents/MacOS/static/fonts/
+#mkdir $BUILD_DIR/Contents/MacOS/static/enter_license/
+#mkdir $BUILD_DIR/Contents/MacOS/static/img
+#cp static/index.html $BUILD_DIR/Contents/MacOS/static/
+#cp static/models.html $BUILD_DIR/Contents/MacOS/static/
+#cp static/sessions.html $BUILD_DIR/Contents/MacOS/static/
+#cp static/dist/* $BUILD_DIR/Contents/MacOS/static/dist/
+#cp static/fonts/* $BUILD_DIR/Contents/MacOS/static/fonts/
+#cp static/img/missing.jpg $BUILD_DIR/Contents/MacOS/static/img/
+#cp -R static/enter_license/dist $BUILD_DIR/Contents/MacOS/static/enter_license/
 
 #copy over VMXserver from the build directory
-#cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $D/Contents/MacOS/
+#cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $BUILD_DIR/Contents/MacOS/
 
 #copy over initial network
-#cp /VMXdata/99* $D/Contents/MacOS/build/VMXdata/
+#cp /VMXdata/99* $BUILD_DIR/Contents/MacOS/build/VMXdata/
 
-#clean up libs
-LIBS=`otool -L ${F} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
+# Clean and move libraries so they are located inside the bundle
+./mac_builder/clean_libs.sh $BINARY_NAME
 
-for i in $LIBS; do
-    echo "i is" $i
-    LOCAL_LIB='@executable_path/../Frameworks/'`basename $i`
-    #echo "LL is" $LOCAL_LIB
-    echo install_name_tool -change $i $LOCAL_LIB $F
-    install_name_tool -change $i $LOCAL_LIB $F
-    cp ${i} $D/Contents/Frameworks/
-    LIBS2=`otool -L ${i} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
-    for j in $LIBS2; do
-        #echo "i j is " $i $j
-        cp ${j} $D/Contents/Frameworks/
-        LIBS3=`otool -L ${j} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
-        for k in $LIBS3; do
-            #echo "j k is " $j $k
-            cp ${k} $D/Contents/Frameworks/
-            LIBS4=`otool -L ${k} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
-            for l in $LIBS4; do
-                #echo "k l is " $k $l
-                cp ${l} $D/Contents/Frameworks/
-                LIBS5=`otool -L ${l} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
-                for m in $LIBS5; do
-                    #echo "l m is " $l $m
-                    cp ${m} $D/Contents/Frameworks/
-                done
-
-                
-            done
-            
-        done
-    done
-done
-
-### go over all libs and replace /opt/local/bin with @executable_path\/..\/Frameworks
-
-LIBS=`find $D/Contents/Frameworks/ -type f`
-for i in $LIBS; do
-    LIBS2=`otool -L ${i} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
-    for j in $LIBS2; do
-        #LOCAL_LIB='./'`basename $j`
-        LOCAL_LIB='@executable_path/../Frameworks/'`basename $j`
-        install_name_tool -change $j $LOCAL_LIB $i
-    done    
-done
-
-#update local id of library
-cd $D/Contents/Frameworks/
-LIBS=`ls`
-for i in $LIBS; do
-    install_name_tool -id $i $i
-done
-cd -
-
-BUILD_NAME="VMXmiddle_"$PLATFORM"_"$HASH
-echo $BUILD_NAME > $D/version
-
-#cp ~/projects/cvmx/VMX $D/Contents/MacOS
-
+BUILD_NAME="VMXmiddle_"$HASH
+echo $BUILD_NAME > $BUILD_DIR/version
 
 TARBALL=$BUILD_NAME".tar"
-cd ~/projects/vmxmiddle/dist/
+cd dist/
 tar cf $TARBALL VMX.app
 gzip -f $TARBALL
-mkdir ~/projects/vmxmiddle/builds/
-mv $TARBALL.gz ~/projects/vmxmiddle/builds/
+if [ ! -d "../builds/" ]; then
+    mkdir ../builds/
+fi
+mv $TARBALL.gz ../builds/
 echo "Finished building builds/"$TARBALL.gz
-echo "Copying to vm-x.com"
+echo "Copying to files.vision.ai/vmx/"
 
-scp ~/projects/vmxmiddle/builds/$TARBALL.gz tomasz@vm-x.com:/VMXbuilds/
-scp ~/projects/vmxmiddle/builds/$TARBALL.gz root@files.vision.ai:/www/vmx/Mac/
+#scp ~/projects/vmxmiddle/builds/$TARBALL.gz tomasz@vm-x.com:/VMXbuilds/
+scp ~/projects/vmxmiddle/builds/$TARBALL.gz root@files.vision.ai:/www/vmx/${PLATFORM}/
