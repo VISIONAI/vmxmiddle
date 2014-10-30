@@ -16,7 +16,7 @@
 
 
 BRANCH_NAME=`git branch | grep "*" | awk '{print($2)}'`
-if [ $BRANCH_NAME == "master" ]; then
+if [ "$BRANCH_NAME" == "master" ]; then
     BRANCH_NAME=""
 else
     BRANCH_NAME=$BRANCH_NAME"-"
