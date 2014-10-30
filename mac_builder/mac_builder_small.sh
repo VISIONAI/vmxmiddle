@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This shell script will create a Mac OS X VMX bundle for VMXmiddle,
 # assigning the proper icons, config files, etc.  It does not include
@@ -20,9 +20,13 @@ cd `dirname $0`/../
 #Get the version
 HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
 
-#Perform the Haskell compilation of vmxmiddle
-cabal clean && cabal configure && cabal build
-
+if [ `uname` == "Darwin" ]; then
+    #Perform the Haskell compilation of vmxmiddle
+    cabal clean && cabal configure && cabal build
+else
+    echo 'pwd is' `pwd`
+    ./cabal_build.sh
+fi
 # set up the Mac OS X bundle directory
 
 if [ `uname` == "Darwin" ]; then
@@ -45,19 +49,25 @@ mkdir $BUILD_SUBDIR2
 CONFIG_DIR=$BUILD_SUBDIR2/config/
 mkdir $CONFIG_DIR
 
-# copy over Mac bundle files
-cp ./mac_builder/Info.plist $BUILD_SUBDIR/Info.plist
-cp ./mac_builder/run.sh $BUILD_SUBDIR2/run.sh
 
+if [ `uname` == "Darwin" ]; then
+    # copy over Mac bundle files
+    cp ./mac_builder/Info.plist $BUILD_SUBDIR/Info.plist
+    cp ./mac_builder/run.sh $BUILD_SUBDIR2/run.sh
+fi
 
 #copy over necessary config files
 cp ./mac_builder/settings.yml $CONFIG_DIR/settings.yml
+
+
 cp ./config/favicon.ico $CONFIG_DIR/favicon.ico
 cp ./config/robots.txt $CONFIG_DIR/robots.txt
 
-#copy over Mac Bundle icon
-mkdir $BUILD_DIR/Contents/Resources
-cp ./resources/vmxicon2.icns $BUILD_DIR/Contents/Resources/VMX.icns
+if [ `uname` == "Darwin" ]; then
+    #copy over Mac Bundle icon
+    mkdir $BUILD_DIR/Contents/Resources
+    cp ./resources/vmxicon2.icns $BUILD_DIR/Contents/Resources/VMX.icns
+fi
 
 # copy over main binary
 BINARY_NAME=$BUILD_SUBDIR2/VMX
@@ -92,11 +102,12 @@ strip $BINARY_NAME
 #copy over initial network
 #cp /VMXdata/99* $BUILD_DIR/Contents/MacOS/build/VMXdata/
 
-# Clean and move libraries so they are located inside the bundle's Frameworks directory
-./mac_builder/clean_libs.sh $BINARY_NAME
+if [ `uname` == "Darwin" ]; then
+    # Clean and move libraries so they are located inside the bundle's Frameworks directory
+    ./mac_builder/clean_libs.sh $BINARY_NAME
+fi
 
 # Create a tarball and send it to the server
-
 BUILD_NAME="VMXmiddle_"$HASH
 echo $BUILD_NAME > $BUILD_DIR/version
 
