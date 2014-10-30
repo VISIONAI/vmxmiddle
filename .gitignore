@@ -1,4 +1,5 @@
 build
+builds/
 dist*
 static/tmp/
 static/combined/
