@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script returns the version of the current repository
 #
 # It uses the versioning scheme:
