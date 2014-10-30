@@ -16,8 +16,18 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
+if [ `uname` != "Darwin" ]; then
+    echo 'No need to clean libs on Linux'
+    exit 1
+fi
+
+
 BINARY_NAME=$1
 BUILD_DIR=`dirname $1`/../../
+
+if [ ! -d "$BUILD_DIR/Contents/Frameworks/" ]; then
+    mkdir $BUILD_DIR/Contents/Frameworks/
+fi
 
 #clean up libs
 LIBS=`otool -L $BINARY_NAME | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`

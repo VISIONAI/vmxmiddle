@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# This shell script will create a VMX bundle for VMX middle, assigning
-# the proper icons, initialization scripts, etc.
+# This shell script will create a Mac OS X VMX bundle for VMXmiddle,
+# assigning the proper icons, config files, etc.  It does not include
+# VMXAppBuilder, which is maintained in another build pipeline.
 #
 # The resulting build gets sent over to files.vision.ai
 
@@ -23,32 +24,51 @@ HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
 cabal clean && cabal configure && cabal build
 
 # set up the Mac OS X bundle directory
-BUILD_DIR='dist/VMX.app'
+
+if [ `uname` == "Darwin" ]; then
+    APP_NAME=VMX.app
+    BUILD_DIR='dist/VMX.app/'
+    BUILD_SUBDIR='dist/VMX.app/Contents/'
+    BUILD_SUBDIR2='dist/VMX.app/Contents/MacOS/'
+else
+    APP_NAME=VMX
+    BUILD_DIR='dist/VMX/'
+    BUILD_SUBDIR='dist/VMX/'
+    BUILD_SUBDIR2='dist/VMX/'
+fi
+
 rm -rf $BUILD_DIR
 mkdir $BUILD_DIR
+mkdir $BUILD_SUBDIR
+mkdir $BUILD_SUBDIR2
 
-mkdir $BUILD_DIR/Contents
-mkdir $BUILD_DIR/Contents/MacOS/
-mkdir $BUILD_DIR/Contents/MacOS/config/
+CONFIG_DIR=$BUILD_SUBDIR2/config/
+mkdir $CONFIG_DIR
+
+# copy over Mac bundle files
+cp ./mac_builder/Info.plist $BUILD_SUBDIR/Info.plist
+cp ./mac_builder/run.sh $BUILD_SUBDIR2/run.sh
+
+
+#copy over necessary config files
+cp ./mac_builder/settings.yml $CONFIG_DIR/settings.yml
+cp ./config/favicon.ico $CONFIG_DIR/favicon.ico
+cp ./config/robots.txt $CONFIG_DIR/robots.txt
+
+#copy over Mac Bundle icon
 mkdir $BUILD_DIR/Contents/Resources
-mkdir $BUILD_DIR/Contents/Frameworks
-
-# copy over default files
-cp ./mac_builder/Info.plist $BUILD_DIR/Contents/Info.plist
-cp ./mac_builder/run.sh $BUILD_DIR/Contents/MacOS/
-cp ./mac_builder/settings.yml $BUILD_DIR/Contents/MacOS/config/
 cp ./resources/vmxicon2.icns $BUILD_DIR/Contents/Resources/VMX.icns
 
-#copy over utility files
-#cp ~/projects/vmxmiddle/mac_builder/upload.sh $BUILD_DIR/Contents/MacOS/
-#cp ~/projects/vmxmiddle/mac_builder/download.sh $BUILD_DIR/Contents/MacOS/
-
 # copy over main binary
-BINARY_NAME=$BUILD_DIR/Contents/MacOS/VMX
+BINARY_NAME=$BUILD_SUBDIR2/VMX
 cp dist/build/middle/middle $BINARY_NAME
 
 #strip binary
 strip $BINARY_NAME
+
+#copy over utility files
+#cp ~/projects/vmxmiddle/mac_builder/upload.sh $BUILD_DIR/Contents/MacOS/
+#cp ~/projects/vmxmiddle/mac_builder/download.sh $BUILD_DIR/Contents/MacOS/
 
 #mkdir $BUILD_DIR/Contents/MacOS/assets/
 #mkdir $BUILD_DIR/Contents/MacOS/assets/sessions/
@@ -72,15 +92,17 @@ strip $BINARY_NAME
 #copy over initial network
 #cp /VMXdata/99* $BUILD_DIR/Contents/MacOS/build/VMXdata/
 
-# Clean and move libraries so they are located inside the bundle
+# Clean and move libraries so they are located inside the bundle's Frameworks directory
 ./mac_builder/clean_libs.sh $BINARY_NAME
+
+# Create a tarball and send it to the server
 
 BUILD_NAME="VMXmiddle_"$HASH
 echo $BUILD_NAME > $BUILD_DIR/version
 
 TARBALL=$BUILD_NAME".tar"
 cd dist/
-tar cf $TARBALL VMX.app
+tar cf $TARBALL $APP_NAME
 gzip -f $TARBALL
 if [ ! -d "../builds/" ]; then
     mkdir ../builds/
@@ -89,5 +111,4 @@ mv $TARBALL.gz ../builds/
 echo "Finished building builds/"$TARBALL.gz
 echo "Copying to files.vision.ai/vmx/"
 
-#scp ~/projects/vmxmiddle/builds/$TARBALL.gz tomasz@vm-x.com:/VMXbuilds/
-scp ~/projects/vmxmiddle/builds/$TARBALL.gz root@files.vision.ai:/www/vmx/${PLATFORM}/
+scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/${PLATFORM}/
