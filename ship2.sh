@@ -6,9 +6,10 @@ if [ `uname` == "Darwin" ]; then
     exit 1
 fi
 PLATFORM=Linux
+HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
 
 #setup the build directory
-BUILD_DIR=scratch
+BUILD_DIR=dist/vmx
 mkdir -p $BUILD_DIR/config
 
 #copy over main binary and strip it
@@ -20,5 +21,10 @@ cp config/settings.yml $BUILD_DIR/config
 cp config/favicon.ico $BUILD_DIR/config
 cp config/robots.txt $BUILD_DIR/config
 
-tar cfzv middle.linux.tar.gz  -C $BUILD_DIR .
-#scp middle.linux.tar.gz root@files.vision.ai:/usr/share/nginx/html/middle.linux.tar.gz
+BUILD_NAME="VMXmiddle_"$HASH
+echo $BUILD_NAME > $BUILD_DIR/version
+mkdir builds 2>/dev/null
+OWD=`pwd`
+cd $BUILD_DIR
+tar cfzv $OWD/builds/$BUILD_NAME.tar.gz .
+scp $OWD/builds/$BUILD_NAME.tar.gz root@files.vision.ai:/www/vmx/$PLATFORM/
