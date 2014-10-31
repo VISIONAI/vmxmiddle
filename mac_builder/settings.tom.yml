@@ -1,0 +1,21 @@
+Default: &defaults
+  host: "*4" # any IPv4 host
+  port: 3000
+  approot: "http://localhost:3000"
+  copyright: Copyright vision.ai, LLC 2013-2014
+  wwwdir: "/www/vvv2"
+  vmxpath: "/projects/VMXserver/build/VMXserver.app/Contents/MacOS/"
+  #analytics: UA-YOURCODE
+
+Development:
+  <<: *defaults
+
+Testing:
+  <<: *defaults
+
+Staging:
+  <<: *defaults
+
+Production:
+  #approot: "http://www.example.com"
+  <<: *defaults
