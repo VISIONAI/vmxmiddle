@@ -19,7 +19,7 @@ cd `dirname $0`/../
 
 #Get the version
 #HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
-HASH=${PLATFORM}_`git describe --tags --dirty`
+HASH=${PLATFORM}_`git describe --tags`
 
 
 if [ `uname` == "Darwin" ]; then
