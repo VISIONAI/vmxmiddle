@@ -18,7 +18,9 @@ fi
 cd `dirname $0`/../
 
 #Get the version
-HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
+#HASH=$PLATFORM_`./mac_builder/getVMXversion.sh`
+HASH=${PLATFORM}_`git describe --tags --dirty`
+
 
 if [ `uname` == "Darwin" ]; then
     #Perform the Haskell compilation of vmxmiddle
@@ -109,9 +111,11 @@ fi
 
 # Create a tarball and send it to the server
 BUILD_NAME="VMXmiddle_"$HASH
+echo build name is $BUILD_NAME
 echo $BUILD_NAME > $BUILD_DIR/version
 
 TARBALL=$BUILD_NAME".tar"
+echo 'tarball is now ' $TARBALL
 cd dist/
 tar cf $TARBALL $APP_NAME
 gzip -f $TARBALL
@@ -122,4 +126,4 @@ mv $TARBALL.gz ../builds/
 echo "Finished building builds/"$TARBALL.gz
 echo "Copying to files.vision.ai/vmx/"
 
-scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/${PLATFORM}/
+scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
