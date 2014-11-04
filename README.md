@@ -1,4 +1,4 @@
-0.0.2
+v0.0.2
 
 VMXmiddle is the REST API layer between VMXServer and VMXAppBuilder,
 because it is sandwiched between the algorithmic back-end and the GUI
