@@ -1,5 +1,5 @@
-VMXmiddle is the REST API layer between VMXServer and VMXAppBuilder,
-because it is sandwiched between the algorithmic back-end and the GUI
+VMXmiddle is the REST API layer between VMXServer and VMXAppBuilder.
+Because it is sandwiched between the algorithmic back-end and the GUI
 front-end, it is called "middle"
 
 ## Build instructions using docker:
