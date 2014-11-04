@@ -1,13 +1,11 @@
 VMXmiddle is the REST API layer between VMXServer and VMXAppBuilder,
 because it is sandwiched between the algorithmic back-end and the GUI
-front-ent, it is called "middle"
+front-end, it is called "middle"
 
 ## Build instructions using docker:
 
 
 ``` shell
-# start a postgresql database running in the background, call the container `db`
-docker run -d --name db gdoteof/d-postgres
 
 ## build the images which will hold the volumes needed for the backend
 git clone git@github.com:gdoteof/vmx-dockers.git
