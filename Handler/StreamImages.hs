@@ -60,3 +60,37 @@ getStreamImagesR muid = do
     else do
       randfile <- liftIO $ pick modelFoldersClean
       sendFile "image/jpg" randfile
+
+getStreamImagesFirstR :: ModelId -> Handler Html
+getStreamImagesFirstR muid = do
+  modelDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
+  sendFile "image/jpg" (modelDir ++ "000001.jpg")
+
+
+getStreamImagesNextR :: ModelId -> Handler Html
+getStreamImagesNextR muid = do
+  modelsDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
+  modelFolders' <- liftIO $ getRecursiveContents modelsDir
+
+  let modelFolders = filter (\x -> ".jpg" == fileEnding x) modelFolders'
+
+  mname <- lookupSession $ pack muid
+  
+  case mname of
+        Nothing -> do
+            setSession (pack muid) "0"
+        Just _ -> liftIO $ print $ "" 
+  -- QUESTION FROM TOM: how to I place an empty statement above instead of a silly print nothing
+        
+  token <- lookupSession $ pack muid
+  case token of
+    Just realtoken -> do
+      let index = read (unpack realtoken)::Int
+      if index == length modelFolders
+        then do setSession (pack muid) "0"
+                sendFile "image/jpg" $ (modelFolders !! 0)
+        else do let newone = (show (index + 1))::String
+                setSession (pack muid) $ (pack newone)
+                sendFile "image/jpg" $  (modelFolders !! index)
+    --Nothing -> do
+    --  liftIO $ print "Never gets here"
