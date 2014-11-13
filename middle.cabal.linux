@@ -35,6 +35,7 @@ library
                      Handler.CheckLicense
                      Handler.ActivateLicense
                      Handler.LoadModel
+                     Handler.StreamImages
                      Helper.Shared
                      Helper.VMXTypes
 
