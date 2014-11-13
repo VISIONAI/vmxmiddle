@@ -45,6 +45,8 @@ import Handler.CheckLicense
 import Handler.ActivateLicense
 import Handler.LoadModel
 import Handler.StreamImages
+import Handler.Forward
+
 
 -- This line actually creates our YesodDispatch instance. It is the second half
 -- of the call to mkYesodData which occurs in Foundation.hs. Please see the

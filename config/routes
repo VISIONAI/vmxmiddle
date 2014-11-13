@@ -26,3 +26,5 @@
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
 
+/forward/#Url ForwardR GET
+
