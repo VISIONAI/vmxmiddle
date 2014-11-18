@@ -30,6 +30,7 @@ data App = App
     , appLogger :: Logger
     , portMap      ::  MVar (Map String (MVar Int))
     , machineIdent :: IORef (Maybe String)
+--    , maximumContentLength :: GHC.Word.Word64 
     }
 
 instance HasHttpManager App where
@@ -107,7 +108,9 @@ instance Yesod App where
 
     makeLogger = return . appLogger
 
-
+    -- allow a maximum upload of 10 MB
+    maximumContentLength _ (Just (ModelR {})) = Just (10 * 1024 * 1024)
+    maximumContentLength _ _ = Just (2 * 1024 * 1024)
 -- How to run database actions.
 -- instance YesodPersist App where
 --     type YesodPersistBackend App = SqlPersistT
