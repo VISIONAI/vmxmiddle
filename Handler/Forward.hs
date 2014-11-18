@@ -1,7 +1,7 @@
 module Handler.Forward where
 
 import Import
-import Network.HTTP (getRequest, getResponseBody, simpleHTTP, Request, mkRequest)
+import Network.HTTP (getResponseBody, simpleHTTP, Request, mkRequest)
 import Network.HTTP( RequestMethod( GET ) )
 import qualified Data.ByteString as B
 import Data.Maybe (fromJust)
@@ -22,6 +22,9 @@ downloadFile url = response >>= getResponseBody
 getForwardR :: Handler String
 getForwardR = do
   urlMaybe <- lookupGetParam "q"
+  -- getParameters <- reqGetParams <$> Import.getRequest
+--  liftIO $ print $ concatMap ("Params: " ++) getParameters
+  -- Import.getRequest >>= liftIO . print . ("Params :" ++) . concatMap show . reqGetParams
   case urlMaybe of
     Nothing -> do
       error "missing q param"
@@ -29,6 +32,7 @@ getForwardR = do
       let url = unpack u
       -- liftIO $ print ("URL is " ++ url)
       liftIO $ print ("Downloading " ++ url)
+      liftIO $ print $ fromJust $ parseURI url
       f <- liftIO $ downloadFile url
       sendResponse (typeJpeg, toContent f)
   
