@@ -59,6 +59,11 @@ seedRecursiveContentsCache muid cacheRef = do
 
       return modelFoldersClean
     
+postResetCacheR :: ModelId -> Handler ()
+postResetCacheR mid = do
+    App _ _ _ _ _ _ modelImageCache' <- getYesod
+    seedRecursiveContentsCache mid modelImageCache'
+    return ()
 
 -- This handler will return a random image from the modelsDir
 -- directory, and an error is thrown if there are 0 images.
