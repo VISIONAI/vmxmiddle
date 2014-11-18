@@ -30,7 +30,7 @@ data App = App
     , appLogger :: Logger
     , portMap      ::  MVar (Map String (MVar Int))
     , machineIdent :: IORef (Maybe String)
---    , maximumContentLength :: GHC.Word.Word64 
+    , imageStream  :: IORef (Map String [String])
     }
 
 instance HasHttpManager App where

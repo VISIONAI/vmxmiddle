@@ -5,6 +5,9 @@ import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath ((</>))
 
 import System.Random
+import Data.IORef (readIORef, writeIORef, IORef)
+import Data.Map (member, (!), Map)
+import qualified Data.Map as M (insert)
 
 
 import Import
@@ -22,6 +25,7 @@ fileEnding x = reverse $ take 4 $ reverse x
 
 last9 :: forall a. [a] -> [a]
 last9 x = reverse $ take 9 $ reverse x
+
 
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
@@ -43,15 +47,31 @@ getRecursiveContents topdir = do
 --     addHeader "Access-Control-Allow-Methods" "GET"
 --     return ()
 
+seedRecursiveContentsCache :: ModelId -> IORef (Map String [String]) -> Handler [String]
+seedRecursiveContentsCache muid cacheRef = do
+      modelsDir <- (++ ("models/" ++ muid)) <$> wwwDir
+      modelFolders' <- liftIO $ getRecursiveContents modelsDir
+      let modelFolders = filter (\x -> ".jpg" == fileEnding x) modelFolders'
+      let modelFoldersClean = filter (\x -> "image.jpg" /= last9 x) modelFolders
+
+      oldCache <- liftIO $ readIORef cacheRef
+      liftIO $ writeIORef cacheRef $ M.insert muid modelFoldersClean oldCache
+
+      return modelFoldersClean
+    
+
 -- This handler will return a random image from the modelsDir
 -- directory, and an error is thrown if there are 0 images.
 getStreamImagesR :: ModelId -> Handler Html
 getStreamImagesR muid = do
-  modelsDir <- (++ ("models/" ++ muid)) <$> wwwDir
-  modelFolders' <- liftIO $ getRecursiveContents modelsDir
+  App _ _ _ _ _ _ modelImageCache' <- getYesod
+  modelImageCache <- liftIO . readIORef $ modelImageCache'
+  modelFoldersClean <- 
+        if member muid modelImageCache 
+            then return $ modelImageCache ! muid
+            else seedRecursiveContentsCache muid modelImageCache'
 
-  let modelFolders = filter (\x -> ".jpg" == fileEnding x) modelFolders'
-  let modelFoldersClean = filter (\x -> "image.jpg" /= last9 x) modelFolders
+  
 
   let l = length modelFoldersClean
   if l==0
