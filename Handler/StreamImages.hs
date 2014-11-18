@@ -26,8 +26,7 @@ last9 x = reverse $ take 9 $ reverse x
 getRecursiveContents :: FilePath -> IO [FilePath]
 getRecursiveContents topdir = do
   names <- getDirectoryContents topdir
-  let properNames' = filter (`notElem` [".", ".."]) names
-  let properNames = properNames'
+  let properNames = filter (`notElem` [".", ".."]) names
   paths <- forM properNames $ \name -> do
     let path = topdir </> name
     isDirectory <- doesDirectoryExist path
@@ -69,28 +68,15 @@ getStreamImagesFirstR muid = do
 
 getStreamImagesNextR :: ModelId -> Handler Html
 getStreamImagesNextR muid = do
-  modelsDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
-  modelFolders' <- liftIO $ getRecursiveContents modelsDir
+  modelDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
 
-  let modelFolders = filter (\x -> ".jpg" == fileEnding x) modelFolders'
+  recursiveContents <- liftIO $ getRecursiveContents modelDir
 
-  mname <- lookupSession $ pack muid
-  
-  case mname of
-        Nothing -> do
-            setSession (pack muid) "0"
-        Just _ -> liftIO $ print $ "" 
-  -- QUESTION FROM TOM: how to I place an empty statement above instead of a silly print nothing
+  let images = filter (\x -> fileEnding x == ".jpg") recursiveContents
+
+  mbIndex <- lookupSession $ pack muid
         
-  token <- lookupSession $ pack muid
-  case token of
-    Just realtoken -> do
-      let index = read (unpack realtoken)::Int
-      if index == length modelFolders
-        then do setSession (pack muid) "0"
-                sendFile "image/jpg" $ (modelFolders !! 0)
-        else do let newone = (show (index + 1))::String
-                setSession (pack muid) $ (pack newone)
-                sendFile "image/jpg" $  (modelFolders !! index)
-    --Nothing -> do
-    --  liftIO $ print "Never gets here"
+  let index = maybe 0 (read . unpack) mbIndex
+  let safeIndex = index `mod` length images
+  setSession (pack muid) $ pack $ show $ safeIndex + 1
+  sendFile "image/jpg" $ (images !! safeIndex)

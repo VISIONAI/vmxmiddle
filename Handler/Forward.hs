@@ -23,12 +23,7 @@ getForwardR :: Handler String
 getForwardR = do
   urlMaybe <- lookupGetParam "q"
   case urlMaybe of
-    Nothing -> do
-      error "missing q param"
-    Just u -> do
-      let url = unpack u
-      -- liftIO $ print ("URL is " ++ url)
-      liftIO $ print ("Downloading " ++ url)
-      f <- liftIO $ downloadFile url
+    Nothing -> error "missing q param"
+    Just url -> do
+      f <- liftIO . downloadFile . unpack $ url
       sendResponse (typeJpeg, toContent f)
-  
