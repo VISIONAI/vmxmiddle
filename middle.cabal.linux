@@ -107,6 +107,7 @@ library
                  , streaming-commons
                  , network
                  , connection
+                 , HTTP
 
 
 
