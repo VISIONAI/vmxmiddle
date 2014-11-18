@@ -35,4 +35,3 @@ getForwardR = do
       liftIO $ print $ fromJust $ parseURI url
       f <- liftIO $ downloadFile url
       sendResponse (typeJpeg, toContent f)
-  

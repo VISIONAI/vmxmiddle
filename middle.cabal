@@ -37,6 +37,7 @@ library
                      Handler.LoadModel
                      Handler.StreamImages
                      Handler.Forward
+
                      Helper.Shared
                      Helper.VMXTypes
 
@@ -107,6 +108,7 @@ library
                  , streaming-commons
                  , network
                  , connection
+                 , HTTP
 
 
 
