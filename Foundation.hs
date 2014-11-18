@@ -30,6 +30,7 @@ data App = App
     , appLogger :: Logger
     , portMap      ::  MVar (Map String (MVar Int))
     , machineIdent :: IORef (Maybe String)
+    , imageStream  :: IORef (Map String [String])
     }
 
 instance HasHttpManager App where

@@ -105,11 +105,12 @@ makeFoundation conf = do
 
     -- Keep track of the machineIdent string we get back from vmxserver
     machineIdentIORef <- liftIO $ newIORef Nothing
+    modelImageCache   <- liftIO $ newIORef $ Map.fromList []
 
 
 
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger portMapMVar machineIdentIORef
+        foundation = App conf s manager logger portMapMVar machineIdentIORef modelImageCache
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT
