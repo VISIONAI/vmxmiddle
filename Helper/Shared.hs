@@ -109,10 +109,10 @@ type InputPipe = FilePath
 type OutputPipe = FilePath
 
 
-sessionToPath :: SessionId -> Handler FilePath
-sessionToPath sid = do
-    dataDir <- wwwDir
-    return $ dataDir ++ "/sessions/" ++ sid ++ "/"
+-- sessionToPath :: SessionId -> Handler FilePath
+-- sessionToPath sid = do
+--     dataDir <- wwwDir
+--     return $ dataDir ++ "/sessions/" ++ sid ++ "/"
 
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
@@ -124,11 +124,13 @@ getPortResponse input sessionId = do
 
 mimeJson :: ContentType
 mimeJson = "application/json"
+mimeText :: ContentType
 mimeText = "text/plain"
+mimeHtml :: ContentType
 mimeHtml = "text/html"
 
-portErrorHandler :: String -> Handler TypedContent
-portErrorHandler msg = error msg
+--portErrorHandler :: String -> Handler TypedContent
+--portErrorHandler msg = error msg
 
 
 getPortResponse' :: Value -> SessionId -> Handler String
