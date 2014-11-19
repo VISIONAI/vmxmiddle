@@ -28,3 +28,5 @@
 
 /forward ForwardR GET
 
+
+/models/#ModelId/reset_cache ResetCacheR POST
