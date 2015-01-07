@@ -35,9 +35,9 @@ library
                      Handler.CheckLicense
                      Handler.ActivateLicense
                      Handler.LoadModel
+                     Handler.LogModel
                      Handler.StreamImages
                      Handler.Forward
-
                      Helper.Shared
                      Helper.VMXTypes
 

@@ -75,6 +75,7 @@ instance FromJSON CreateModelCommand where
 --create new model
 postModelR :: Handler TypedContent
 postModelR = do
+    addHeader "Access-Control-Allow-Origin" "*"
     headers
     cmc <- requireJsonBody
     let sid = createModelSid cmc
