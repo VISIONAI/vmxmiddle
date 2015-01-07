@@ -3,11 +3,9 @@ module Handler.LogModel where
 
 import Import
 
-import System.IO 
+
 import System.Process
 import Data.Text.IO (hGetContents)
-import Helper.Shared
-
 
 
 getLogModelR :: SessionId -> Handler String
