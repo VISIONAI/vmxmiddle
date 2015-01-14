@@ -28,7 +28,7 @@ data ProcessImageCommand =  ProcessImageCommand {
 -- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
-        ProcessImageCommand "weneedtogiveitaname" <$> (o .: "images") <*> (o .: "params")
+        ProcessImageCommand "" <$> (o .: "images") <*> (o .: "params")
     parseJSON _ = mzero
 
 
