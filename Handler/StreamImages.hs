@@ -75,9 +75,7 @@ getStreamImagesR muid = do
         if member muid modelImageCache 
             then return $ modelImageCache ! muid
             else seedRecursiveContentsCache muid modelImageCache'
-
   
-
   let l = length modelFoldersClean
   if l==0
     then error "Not enough images inside model folder, go train some models!"
@@ -93,14 +91,15 @@ getStreamImagesFirstR muid = do
 
 getStreamImagesNextR :: ModelId -> Handler Html
 getStreamImagesNextR muid = do
-  modelDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
+  App _ _ _ _ _ _ modelImageCache' <- getYesod
+  modelImageCache <- liftIO . readIORef $ modelImageCache'
+  modelFoldersClean <- 
+        if member muid modelImageCache 
+            then return $ modelImageCache ! muid
+            else seedRecursiveContentsCache muid modelImageCache'
 
-  recursiveContents <- liftIO $ getRecursiveContents modelDir
-
-  let images = filter (\x -> fileEnding x == ".jpg") recursiveContents
-
+  let images = modelFoldersClean
   mbIndex <- lookupSession $ pack muid
-        
   let index = maybe 0 (read . unpack) mbIndex
   let safeIndex = index `mod` length images
   setSession (pack muid) $ pack $ show $ safeIndex + 1

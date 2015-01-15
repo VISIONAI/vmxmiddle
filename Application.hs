@@ -44,6 +44,7 @@ import Handler.RandomImage
 import Handler.CheckLicense
 import Handler.ActivateLicense
 import Handler.LoadModel
+import Handler.LogModel
 import Handler.StreamImages
 import Handler.Forward
 

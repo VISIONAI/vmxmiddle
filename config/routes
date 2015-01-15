@@ -14,6 +14,8 @@
 /session/#SessionId/params SessionParamsR GET OPTIONS
 /session/#SessionId/edit EditModelR POST PUT OPTIONS
 /session/#SessionId/load LoadModelR POST OPTIONS
+/session/#SessionId/log.txt LogModelR GET OPTIONS
+
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
@@ -30,3 +32,4 @@
 
 
 /models/#ModelId/reset_cache ResetCacheR POST
+
