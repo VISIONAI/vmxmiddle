@@ -1,3 +1,5 @@
+#deprecated but useful script to look at
+
 mkdir -p scratch/config
 cp dist/build/middle/middle scratch/vmx
 cp -r config/settings.yml scratch/config
