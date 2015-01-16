@@ -16,3 +16,5 @@ yesod-devel/
 cabal.sandbox.config
 .DS_Store
 *.swp
+scratch
+*.tar.gz
