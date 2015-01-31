@@ -75,7 +75,9 @@ data VMXParams = VMXParams {
 instance ToJSON   VMXParams
 instance FromJSON VMXParams where
     parseJSON (Object o) =
-        VMXParams  (2000) (2000) <$> (o .: "detect_max_overlap") 
+        VMXParams        <$> (o .: "train_max_negatives")
+                         <*> (o .: "train_max_positives") 
+                         <*> (o .: "detect_max_overlap") 
                          <*> (o .: "detect_add_flip") 
                          <*> (o .: "levels_per_octave") 
                          <*> (o .: "learn_threshold")
