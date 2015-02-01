@@ -1,5 +1,13 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE OverloadedStrings  #-}
+
+{-|
+Module      : ActivateLicense
+Description : VMX License Activation
+
+This module contains functions for VMX license activation.
+-}
 module Handler.ActivateLicense where
 
 import Import
@@ -10,7 +18,6 @@ import Data.Aeson        (Result (..), fromJSON , encode)
 import Network.Connection (TLSSettings (..))
 import Network.HTTP.Conduit (http, method, withManagerSettings, mkManagerSettings, parseUrl, Response (..), HttpException (..) , RequestBody (..), requestBody)
 import Network.HTTP.Types (Status (..) )
-import Handler.CheckLicense
 import qualified Data.Text.Lazy.IO as DTL (writeFile)
 import qualified Data.Text.IO as DT (readFile)
 import qualified Data.ByteString.Char8 as C (pack)
@@ -19,12 +26,25 @@ import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception as X hiding (Handler)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import System.Directory (doesDirectoryExist)
+import Data.IORef (readIORef)
 
-data ActivateResponse = ActivateResponse String
-
-instance FromJSON ActivateResponse  where
-    parseJSON (Object o) = ActivateResponse <$> (o .: "license")
-    parseJSON _ = mzero
+{-|
+A 'VMXServerConfig' object represents the contents of the config.json file
+inside the VMXserver directory.
+-}
+data VMXServerConfig = VMXServerConfig {
+    user            :: String,
+    license         :: String,
+    models          :: String,
+    sessions        :: String,
+    log_images      :: Bool,
+    log_memory      :: Bool,
+    display_images  :: Bool,
+    perform_tests   :: Bool,
+    mcr             :: String,
+    vmxdata         :: String,
+    pretrained      :: String
+}
 
 instance FromJSON VMXServerConfig  where
     parseJSON (Object o) = VMXServerConfig  <$> (o .: "user")
@@ -42,22 +62,45 @@ instance FromJSON VMXServerConfig  where
 
 instance ToJSON VMXServerConfig where
     toJSON (VMXServerConfig user' license' models' sessions' log_images' log_memory' display_images' perform_tests' mcr' vmxdata' pretrained') =
-        object ["user" .= user', "license" .= license', "models" .= models', "sessions" .= sessions', "log_images" .= log_images', "log_memory" .= log_memory', "display_images" .= display_images', "perform_tests" .= perform_tests', "MCR" .= mcr', "data" .= vmxdata', "pretrained" .= pretrained']
+        object ["user" .= user',
+                "license" .= license',
+                "models" .= models',
+                "sessions" .= sessions',
+                "log_images" .= log_images',
+                "log_memory" .= log_memory',
+                "display_images" .= display_images',
+                "perform_tests" .= perform_tests',
+                "MCR" .= mcr',
+                "data" .= vmxdata',
+                "pretrained" .= pretrained']
 
-data VMXServerConfig = VMXServerConfig {
-    user            :: String,
-    license         :: String,
-    models          :: String,
-    sessions        :: String,
-    log_images      :: Bool,
-    log_memory      :: Bool,
-    display_images  :: Bool,
-    perform_tests   :: Bool,
-    mcr             :: String,
-    vmxdata         :: String,
-    pretrained      :: String
+
+{-|
+The license activation response which contains a valid license
+-}
+data ActivateResponse = ActivateResponse String
+
+instance FromJSON ActivateResponse  where
+    parseJSON (Object o) = ActivateResponse <$> (o .: "license")
+    parseJSON _ = mzero
+
+{-|
+The license activation payload which contains an optional email.
+-}
+data ActivatePayload =  ActivatePayload {
+    activationPayloadEmail   :: Maybe Text
 }
 
+instance FromJSON ActivatePayload where
+    parseJSON (Object o) = ActivatePayload <$> (o .:? "email")
+    parseJSON _ = mzero
+
+
+{-|
+Writes the obtained license to the license file
+
+TODO(TJM): what is this /vmx-persist directory?
+-}
 writeLicense :: License -> LicenseKey -> Handler ()
 writeLicense l key = do
     extra <-getExtra
@@ -88,25 +131,27 @@ writeLicense l key = do
                 Left e -> do
                          VMXServerConfig e e "" "" False False False False "" e e
 
-data ActivatePayload =  ActivatePayload {
-    activationPayloadEmail   :: Maybe Text
-}
 
-instance FromJSON ActivatePayload where
-    parseJSON (Object o) = ActivatePayload <$> (o .:? "email")
-    parseJSON _ = mzero
+{-|
+POST \/activate\/#LicenseKey
 
+Performs license activation by sending the machine identifier (a UUID)
+together with the activation key to https:\/\/beta.vision.ai\/license\/
+
+We check the response on our servers (see vmxkeyserver repository) and return a
+license (if the key is un-unsed).
+-}
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
     addHeader "Access-Control-Allow-Origin" "*"
     incoming <- requireJsonBody
     ident' <- getMachineIdent
     val <- case ident' of 
-        Nothing -> error "no ident"
+        Nothing -> error "Unable to get a valid activation identifier"
         Just uuid -> do 
-            let settings = mkManagerSettings (TLSSettingsSimple True False False) Nothing
+            let settings' = mkManagerSettings (TLSSettingsSimple True False False) Nothing
             liftIO $ handle catchException $
-                withManagerSettings settings $ \manager -> do
+                withManagerSettings settings' $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
                     let valueBs = encode $ object ["email" .= activationPayloadEmail incoming]
                     let req = req' { method = "POST", requestBody = RequestBodyLBS valueBs}
@@ -128,7 +173,22 @@ postActivateLicenseR key = do
         catchException x                           = do
             liftIO $ print x
             return $ object ["error" .= (show x)]
-    
+
+{-|
+Returns the current computer's identifier.
+
+See the related 'setMachineIdent' function.
+
+NOTE(TJM): this will only work if setMachineIdent runs first, and this gets called only if /check is accessed and a .vmxlicense file is not present.  Can this cause some activation issues?
+-}
+getMachineIdent :: Handler (Maybe String)
+getMachineIdent = do
+    App {..}   <- getYesod
+    ident' <- liftIO $ readIORef machineIdent
+    return ident' 
+    --extra <-getExtra
+    --let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/VMXServerConfig.json"
+    --config <- liftIO $ readJson . unpack <$> DT.readFile path 
 
 
 

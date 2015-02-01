@@ -8,7 +8,7 @@ import Network.HTTP.Client.Conduit (Manager, HasHttpManager (getHttpManager))
 import qualified Settings
 import Settings.Development (development)
 -- import qualified Database.Persist
-import Settings (widgetFile, Extra (..), SessionId, ModelId)
+import Settings (widgetFile, Extra (..))
 import Model
 import Text.Hamlet (hamletFile)
 import Yesod.Core.Types (Logger)
@@ -24,13 +24,11 @@ import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFi
 data App = App
     { settings :: AppConfig DefaultEnv Extra
     , getStatic :: Static -- ^ Settings for static file serving.
-    -- , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
     , httpManager :: Manager
-    -- , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , portMap      ::  MVar (Map String (MVar Int))
-    , machineIdent :: IORef (Maybe String)
-    , imageStream  :: IORef (Map String [String])
+    , portMap      ::  MVar (Map String (MVar Int)) -- ^ Maps session Ids to ports  
+    , machineIdent :: IORef (Maybe String)       -- ^ The computer UUID  
+    , imageStream  :: IORef (Map String [String])  -- ^ Stores counters for each model  
     }
 
 instance HasHttpManager App where
@@ -161,15 +159,20 @@ getVmxPrefix :: Char -> String -> String
 getVmxPrefix '/' _ = ""
 getVmxPrefix _ cwd = cwd ++ "/"
 
--- Does nothing for absolute locations (Starting with /) but will
--- prepend the current work directory if the specief path is not
--- relative (not starging with a /)
+{-|
+Does nothing for absolute locations (Starting with /) but will
+prepend the current work directory if the specified path is not
+relative (not starging with a /)
+-}
 finalPath :: String -> String -> String
 finalPath cwd s = do
   let firstChar = head s
   let prefix = getVmxPrefix firstChar cwd
   prefix ++ s
-  
+
+{-|
+Returns the VMX main directory
+-}
 wwwDir :: Handler String
 wwwDir = do
     extra <- getExtra
@@ -184,6 +187,9 @@ wwwDir = do
           return result
         Nothing  -> return "/www/vmx/"
 
+{-|
+Returns the location of the VMXserver executable
+-}
 vmxExecutable :: Handler String
 vmxExecutable = do
     extra <- getExtra

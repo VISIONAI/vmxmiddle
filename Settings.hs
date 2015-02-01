@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- | Settings are centralized, as much as possible, into this file. This
 -- includes database connection settings, static file locations, etc.
 -- In addition, you can configure a number of different aspects of Yesod
@@ -23,26 +24,26 @@ import Text.Hamlet
 -- | The location of static files on your system. This is a file system
 -- path. The default value works properly with your scaffolded site.
 staticDir :: FilePath
-staticDir = "static"
+staticDir = "static3"
 
-vmxStaticFolders :: [FilePath]
-vmxStaticFolders = map (\a -> (staticDir ++ "/" ++ a))
-    [ "bower_components"
-    , "css"
-    , "combined"
-    , "externs"
-    , "fonts"
-    , "partial"
-    ]
-vmxStaticFiles :: [FilePath]
-vmxStaticFiles = 
-    [ "_SpecRunner.html"
-    , "index.html"
-    , "models.html"
-    , "sessions.html"
-    , "tracker.html"
-    , "video.html"
-    ]
+-- vmxStaticFolders :: [FilePath]
+-- vmxStaticFolders = map (\a -> (staticDir ++ "/" ++ a))
+--     [ "bower_components"
+--     , "css"
+--     , "combined"
+--     , "externs"
+--     , "fonts"
+--     , "partial"
+--     ]
+-- vmxStaticFiles :: [FilePath]
+-- vmxStaticFiles = 
+--     [ "_SpecRunner.html"
+--     , "index.html"
+--     , "models.html"
+--     , "sessions.html"
+--     , "tracker.html"
+--     , "video.html"
+--     ]
 
 -- | The base URL for your static files. As you can see by the default
 -- value, this can simply be "static" appended to your application root.
@@ -98,5 +99,3 @@ parseExtra _ o = Extra
 
 
 
-type SessionId = String
-type ModelId   = String

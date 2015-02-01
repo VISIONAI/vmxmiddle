@@ -5,6 +5,12 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 
+{-|
+Module      : Model
+Description : VMX Model
+
+Saving models (PUT), creating models (POST), Listing models (GET)
+-}
 module Handler.Model where
 
 import Import
@@ -14,13 +20,13 @@ import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as LC
 import Data.Aeson (encode)
-import           Data.Typeable
-import           GHC.Generics
-import           Data.Data
-import           Helper.VMXTypes
-import           System.Directory (getDirectoryContents,doesFileExist)
+import Helper.VMXTypes
+import System.Directory (getDirectoryContents,doesFileExist)
 import qualified Data.Text.IO as DT (readFile)
 
+{-|
+OPTIONS for \/model
+-}
 optionsModelR :: Handler ()
 optionsModelR = do
     addHeader "Allow" "Get, Put, Post"
@@ -29,13 +35,9 @@ optionsModelR = do
     addHeader "Access-Control-Allow-Methods" "GET, PUT, POST"
     return ()
 
-
---list all models
-getModelR :: Handler String
-getModelR = do
-    addHeader "Access-Control-Allow-Origin" "*"
-    list_models >>= return
-
+{-|
+A 'SaveModelCommand' lists the information required for saving
+-}
 data SaveModelCommand = SaveModelCommand {
     saveModelSid :: String
 }
@@ -45,6 +47,11 @@ instance FromJSON SaveModelCommand where
         SaveModelCommand <$> (o .: "session_id")
     parseJSON _ = mzero
 
+{-|
+PUT \/model
+
+Handler to save a model
+-}
 putModelR :: Handler TypedContent
 putModelR =  do
     headers
@@ -56,6 +63,9 @@ putModelR =  do
     where
         save_model :: String = "save_model"
 
+{-|
+The 'CreateModelCommand' lists the model creation data structure
+-}
 data CreateModelCommand = CreateModelCommand {
     createModelName :: String,
     createModelParams :: Value,
@@ -65,14 +75,17 @@ data CreateModelCommand = CreateModelCommand {
 
 instance FromJSON CreateModelCommand where
     parseJSON (Object o) = do
-        CreateModelCommand <$> (o .: "name") <*> (o .: "params") <*> (o .: "images") <*> (o .: "session_id")
+        CreateModelCommand <$> (o .: "name")
+          <*> (o .: "params")
+          <*> (o .: "images")
+          <*> (o .: "session_id")
     parseJSON _ = mzero
 
+{-|
+POST \/model
 
-
-
-
---create new model
+Handler to create a new model
+-}
 postModelR :: Handler TypedContent
 postModelR = do
     addHeader "Access-Control-Allow-Origin" "*"
@@ -89,13 +102,72 @@ postModelR = do
                       "images"     .= images,
                       "command"    .= ("create_model" :: String)
                      ]
-    response <- getPipeResponse req sid
+    response <- getPortResponse req sid
     return response
     where
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
         selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')
         selectionsAndFiles [] _ _ _ = []
 
+
+{-|
+A 'ListModelResponse' data structure lists information about models
+-}
+data ListModelResponse = ListModelResponse {
+    listModelName :: String,
+    listModelMeta :: String,
+    listModelSize :: [Int],
+    listModelHistory :: [String],
+    listModelNumPos   :: Int,
+    listModelNumNeg   :: Int,
+    listModelStartTime :: String,
+    listModelEndTime   :: String,
+    listModelUUID      :: String
+}
+
+instance FromJSON ListModelResponse where
+    parseJSON (Object o) = do
+        ListModelResponse <$> (o .: "name")
+                         <*> (o .: "meta")
+                         <*> (o .: "size")
+                         <*> (o .: "history")
+                         <*> (o .: "num_pos")
+                         <*> (o .: "num_neg")
+                         <*> (o .: "start_time")
+                         <*> (o .: "end_time")
+                         <*> (o .: "uuids")
+    parseJSON _ = mzero
+
+-- NOTE(TJM): why is this missing "uuids" like the function above?
+instance FromJSON (String -> ListModelResponse) where
+    parseJSON (Object o) = do
+        ListModelResponse <$> (o .: "name")
+                         <*> (o .: "meta")
+                         <*> (o .: "size")
+                         <*> (o .: "history")
+                         <*> (o .: "num_pos")
+                         <*> (o .: "num_neg")
+                         <*> (o .: "start_time")
+                         <*> (o .: "end_time")
+    parseJSON _ = mzero
+
+instance ToJSON ListModelResponse where
+    toJSON (ListModelResponse name' meta' size' history' num_pos' num_neg' start_time' end_time' uuid')= 
+        object ["name" .= name'
+               , "meta" .= meta'
+               , "size" .= size'
+               , "history" .= history'
+               , "num_pos" .= num_pos'
+               , "num_neg" .= num_neg'
+               , "start_time" .= start_time'
+               , "end_time" .= end_time'
+               , "uuid" .= uuid'
+               , "image" .= ("models/" <> uuid' <> "/image.jpg")
+               ]
+
+{-|
+Lists models
+-}
 list_models :: Handler String
 list_models = do
     modelsDir      <- (++ "models/") <$> wwwDir
@@ -124,69 +196,13 @@ list_models = do
                 Left e -> do
                           ListModelResponse  e e [] [] 0 0  "error" "error"
 
-data ListModelResponse = ListModelResponse {
-    listModelName :: String,
-    listModelMeta :: String,
-    listModelSize :: [Int],
-    listModelHistory :: [String],
-    listModelNumPos   :: Int,
-    listModelNumNeg   :: Int,
-    listModelStartTime :: String,
-    listModelEndTime   :: String,
-    listModelUUID      :: String
-}
+{-|
+GET \/model
 
-
-instance FromJSON ListModelResponse where
-    parseJSON (Object o) = do
-        ListModelResponse <$> (o .: "name")
-                         <*> (o .: "meta")
-                         <*> (o .: "size")
-                         <*> (o .: "history")
-                         <*> (o .: "num_pos")
-                         <*> (o .: "num_neg")
-                         <*> (o .: "start_time")
-                         <*> (o .: "end_time")
-                         <*> (o .: "uuids")
-    parseJSON _ = mzero
-
-instance FromJSON (String -> ListModelResponse) where
-    parseJSON (Object o) = do
-        ListModelResponse <$> (o .: "name")
-                         <*> (o .: "meta")
-                         <*> (o .: "size")
-                         <*> (o .: "history")
-                         <*> (o .: "num_pos")
-                         <*> (o .: "num_neg")
-                         <*> (o .: "start_time")
-                         <*> (o .: "end_time")
-    parseJSON _ = mzero
-
-instance ToJSON ListModelResponse where
-    toJSON (ListModelResponse name' meta' size' history' num_pos' num_neg' start_time' end_time' uuid')= 
-        object ["name" .= name'
-               , "meta" .= meta'
-               , "size" .= size'
-               , "history" .= history'
-               , "num_pos" .= num_pos'
-               , "num_neg" .= num_neg'
-               , "start_time" .= start_time'
-               , "end_time" .= end_time'
-               , "uuid" .= uuid'
-               , "image" .= ("models/" <> uuid' <> "/image.jpg")
-               ]
-        
-
-data VMXModel = VMXModel {
-    name :: String,
-    hg_size :: [Int],
-    num_pos :: Int,
-    num_neg :: Int,
-    image ::   String,
-    start_time :: Float,
-    end_time :: Float
-}  deriving (Data, Typeable, Show, Generic)
-
-instance FromJSON VMXModel
-instance ToJSON VMXModel
+Lists all models
+-}
+getModelR :: Handler String
+getModelR = do
+    addHeader "Access-Control-Allow-Origin" "*"
+    list_models >>= return
 

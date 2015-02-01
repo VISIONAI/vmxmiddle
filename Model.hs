@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module Model where
 
 import Prelude
@@ -18,3 +19,5 @@ import Prelude
 type LicenseKey = String
 type License    = String
 type Url        = String
+type SessionId = String
+type ModelId   = String

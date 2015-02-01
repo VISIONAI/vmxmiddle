@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module Settings.Development where
 
 import Prelude

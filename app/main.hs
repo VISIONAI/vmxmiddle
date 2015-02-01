@@ -18,7 +18,7 @@ main :: IO ()
 main = do
   exec_path <- getExecutablePath
   setCurrentDirectory ( takeDirectory exec_path)
-  putStrLn "Welcome to VMXMiddle (c) 2013-2014 vision.ai, LLC"
+  putStrLn "Welcome to VMXMiddle (c) 2013-2015 vision.ai"
   putStrLn "Please visit http://localhost:3000 in your browser"
   do
     cwd <- getCurrentDirectory

@@ -1,3 +1,9 @@
+{-|
+Module      : Forward
+Description : IP camera Forwarding
+
+This module contains functions for forwarding image requests
+-}
 module Handler.Forward where
 
 import Import
@@ -12,13 +18,18 @@ import Network.URI (parseURI)
 -- https://github.com/sellweek/xkcd/blob/7baf85dd12d17601cb238e0eb5d408ef82320097/src/XKCD.hs
 -- other useful stuff at https://github.com/andreyk0/www-webcam-snapshot/blob/master/Main.hs
 
--- Downloads a file from URL and returns its contents as a 'B.ByteString'
+{-|
+Downloads a file from URL and returns its contents as a 'B.ByteString'
+-}
 downloadFile :: String -> IO B.ByteString
 downloadFile url = response >>= getResponseBody
   where
 --    response = simpleHttp ((mkRequest GET $ fromJu) :: Request B.ByteString)
     response = simpleHTTP ((mkRequest GET $ fromJust $ parseURI url) :: Request B.ByteString)
 
+{-|
+Process the \/forward\/?q=some_url handler
+-}
 getForwardR :: Handler String
 getForwardR = do
   urlMaybe <- lookupGetParam "q"

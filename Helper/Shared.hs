@@ -1,58 +1,54 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+
+{-|
+Module      : Shared
+Description : VMX Shared Functions
+
+Common utility functions
+-}
 module Helper.Shared
-    ( drainFifo
-    , headers
-    , getPipeResponse
+    ( headers
     , getPortResponse
-    , getPortResponse'
-    , InputPipe
-    , OutputPipe
-    , makeJson
-    , processImage
-    , loadModel
     , waitLock
     , releasePort
-    , exitVMXServer
-    , delVMXFolder
     , addLock
     , nextPort
+    , getRecursiveContents
+    , pickRandom
+    , fileEnding
+    , last9  
     ) where
 
 import Import
 import Data.Streaming.Network (bindPortTCP)
 import Network.Socket (sClose)
 import System.Random
-import qualified Data.ByteString.Lazy as L
+--import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
-import System.Directory (removeDirectoryRecursive)
-import System.IO
 import Data.Aeson (encode)
-import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
-
-import Helper.VMXTypes
-
-import Data.Text.IO (hGetContents)
-
-
-
-
 import Network.HTTP.Conduit
 import Data.Conduit
-
 import Data.Conduit.List (consume)
+import System.FilePath ((</>))
+import Control.Monad (forM)
+import System.Directory (doesDirectoryExist, getDirectoryContents)
 
 type LockMap = SM.Map String (MVar Int)
-
 type Port = Int
 
+{-|
+Release a port from the internal list of used ports so that it can be used again.
+-}
 releasePort :: SessionId -> LockMap -> Port -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
+{-|
+Add a session lock to the internal list of locks
+-}
 addLock :: SessionId -> Maybe Port -> Handler Port
 addLock sid mbPort= do
     App _ _ _ _ portMap' _ _  <- getYesod
@@ -79,9 +75,10 @@ addLock sid mbPort= do
                         return $ (newPort, SM.insert sid newLock portMap)
     liftIO $ putMVar portMap' newMap
     return port
-            
-            
 
+{-|
+Randomly generate the next available port in the range (1025,65000)
+-}
 nextPort :: Handler Int
 nextPort = do
     aPort <- liftIO $ randomRIO (1025, 65000)
@@ -90,49 +87,23 @@ nextPort = do
         then return aPort
         else nextPort
 
+{-|
+Wait on a lock
+-}
 waitLock :: SessionId -> LockMap -> IO Int
 waitLock sid locks = takeMVar (locks ! sid) >>= return
 
--- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
-drainFifo :: FilePath -> IO String
-drainFifo f = do
-    hdl <- openFileBlocking f ReadMode
-    o   <- Data.Text.IO.hGetContents hdl
-    return $ unpack o
-
+{-|
+TODO(TJM): why is this here? Calling this 'headers' will be confusing as this is a generic term.  How about 'VMXheaders'?
+-}
 headers :: Handler ()
 headers = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
 
-type InputPipe = FilePath
-type OutputPipe = FilePath
-
-
--- sessionToPath :: SessionId -> Handler FilePath
--- sessionToPath sid = do
---     dataDir <- wwwDir
---     return $ dataDir ++ "/sessions/" ++ sid ++ "/"
-
-getPortResponse :: Value -> SessionId -> Handler TypedContent
-getPortResponse input sessionId = do
-    ret <- getPortResponse' input sessionId
-    selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return ret
-        provideRepType  mimeText $ return ret
-
-mimeJson :: ContentType
-mimeJson = "application/json"
-mimeText :: ContentType
-mimeText = "text/plain"
-mimeHtml :: ContentType
-mimeHtml = "text/html"
-
---portErrorHandler :: String -> Handler TypedContent
---portErrorHandler msg = error msg
-
-
+{-|
+Internal function to get the VMXserver reponse
+-}
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
     App _ _ manager _ portMap' _ _ <- getYesod
@@ -148,12 +119,7 @@ getPortResponse' input sessionId = do
     port <- liftIO $ waitLock sessionId portMap
 
     let path = "http://127.0.0.1:" ++ show port ++ "/command"
-
-
     req' <- liftIO $ parseUrl path
-
-
-    --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
     res <- http req manager
     resValue <- responseBody res $$+- consume
@@ -162,8 +128,26 @@ getPortResponse' input sessionId = do
     let ret = concat $ map C.unpack resValue
     return ret
 
+mimeJson :: ContentType
+mimeJson = "application/json"
+mimeText :: ContentType
+mimeText = "text/plain"
+mimeHtml :: ContentType
+mimeHtml = "text/html"
 
-
+{-|
+Internal function to get the VMXserver reponse, will return Json, HTML, or text
+-}
+getPortResponse :: Value -> SessionId -> Handler TypedContent
+getPortResponse input sessionId = do
+    ret <- getPortResponse' input sessionId
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return ret
+        provideRepType  mimeText $ return ret
+{-|
+Check if a port is available, by opening it, then closing it
+-}
 checkPort :: Int -> IO Bool
 checkPort p = do
     es <- Ex.try $ bindPortTCP p "*4"
@@ -173,105 +157,38 @@ checkPort p = do
             sClose s
             return True
 
-    
-getPipeResponse :: Value -> SessionId -> Handler TypedContent
-getPipeResponse = getPortResponse
---getPipeResponse v sid = do
---    App _ _ _ _ lm _ _  <- getYesod
---    locks' <- liftIO $ takeMVar lm
---
---    -- make sure we have a lock for this one
---    locks <- if member sid locks'
---                    then return locks'
---                    else addLock lm sid
---
---
---    port <- liftIO  $ waitLock sid locks
---    liftIO  $ putMVar lm locks
---    i    <- getInputPipe  sid
---    o    <- getOutputPipe sid
---    fileE <-  lift $ try (openFileBlocking i WriteMode)
---    case fileE of
---                -- An IOError here means the process that was supposed
---                -- to read from the pipe died before it could, and matlab
---                -- won't read again until we eat its (now useless) output
---                Left (e :: IOError)->   do
---                    _ <- lift $ drainFifo o
---                    liftIO  $ releasePort sid locks port
---                    error $ show e
---                    --lift $ openFileBlocking i WriteMode >>= return
---                Right fileHandle -> do
---                    liftIO $ L.hPutStr fileHandle payload
---                    lift $ hClose fileHandle
---                    ret <- lift $ drainFifo o
---                    liftIO $ releasePort sid locks port
---                    return ret
---    where
---        payload = encode v
+{-|
+Recursively list files (skipping .)
+-}
+getRecursiveContents :: FilePath -> IO [FilePath]
+getRecursiveContents topdir = do
+  names <- getDirectoryContents topdir
+  let properNames = filter (`notElem` [".", ".."]) names
+  paths <- forM properNames $ \name -> do
+    let path = topdir </> name
+    isDirectory <- doesDirectoryExist path
+    if isDirectory
+      then getRecursiveContents path
+      else return [path]
+  return (concat paths)
 
+{-|
+Pick a random element
+-}
+pickRandom :: [a] -> IO a
+pickRandom xs = do
+  index <- randomRIO (0, (length xs - 1))
+  return (xs !! index)
 
+{-|
+Returns the last 4 characters of a string
+-}
+fileEnding :: String -> String
+fileEnding x = reverse $ take 4 $ reverse x
 
-    
-    
-
-
-
-
-
-processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
-processImage sid image params name = do
-   let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
-   response <- getPipeResponse req sid
-   return response
-   where
-        command :: String
-        command = "process_image"
-
-loadModel :: SessionId -> [String] -> Bool -> Handler TypedContent
-loadModel sid uuids compiled = do
-   let req = object ["command" .= command, "uuids" .= uuids, "compiled" .= compiled]
-   response <- getPipeResponse req sid
-   return response
-   where
-        command :: String
-        command = "load_model"
-
-
-exitVMXServer :: SessionId -> Handler TypedContent
-exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return
-	where 	
-		exit :: String
-		exit = "exit"
-
-delVMXFolder :: FilePath -> Handler ()
-delVMXFolder fp = do
-	wwwDir' <- wwwDir
-	liftIO $ removeDirectoryRecursive $ wwwDir' <> fp >>= return
-    
-
-    
---instance WebSocketsData Value where
---   toLazyByteString v = encode v
---   fromLazyByteString s = do
---        case decode s of
---            Just val -> val
---            Nothing -> object []
-
-
-
-
-
-makeJson :: String -> Value
-makeJson s = do
-    -- String -> Char8 bystring
-    let packed = C.pack s
-    -- Char8 -> Lazy bytestring
-    let chunked = L.fromChunks [packed]
-    let eJ :: Either String Value = eitherDecode chunked
-    case eJ of
-        Right r -> r
-        -- TODO .. properly handle errors
-        Left _ -> undefined
-
-    
+{-|
+Return the last 9 characters of a string
+-}
+last9 :: forall a. [a] -> [a]
+last9 x = reverse $ take 9 $ reverse x
 

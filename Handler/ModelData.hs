@@ -1,8 +1,20 @@
+{-|
+Module      : ModelData
+Description : VMX ModelData
+
+Returns the model data, which is a model.data file containing the
+model.  This allows for another VMXserver running on a different
+machine to import this model.
+-}
 module Handler.ModelData where
 import System.Directory (doesFileExist)
 import Import
 
+{-|
+GET \/models\/#id\/model.data
 
+Serves the \/models\/uuid\/model.data file, or a missing.jpg file
+-}
 getModelDataR :: ModelId -> Handler Html
 getModelDataR muid = do
   wd <- wwwDir
@@ -11,9 +23,7 @@ getModelDataR muid = do
   e <- liftIO $ doesFileExist model_file
   if e
     then do
-    --liftIO $ print "sending real image.jpg"
     sendFile typePlain model_file
     else do
-    --liftIO $ print "sending missing.jpg"
-    sendFile "image/png" default_file
+    sendFile "image/jpg" default_file
 

@@ -1,5 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
+
+{-|
+Module      : Check License
+Description : VMX License Checking
+
+This module contains functions for checking if VMX is licensed.
+-}
 module Handler.CheckLicense where
 
 import Import
@@ -9,16 +16,14 @@ import qualified Data.ByteString.Lazy as L
 import System.Exit (ExitCode(..))
 import qualified Data.List as List (head)
 import Prelude (tail)
-import Data.IORef (readIORef, writeIORef)
+import Data.IORef (writeIORef)
 import System.Directory (doesFileExist)
 import Data.Text.IO (hGetContents)
-
 import System.Process
 
-
-
-
-
+{-|
+The VMXServerMessage represents the first line of running VMXserver
+-}
 data VMXServerMessage = VMXServerMessage {
     message :: String,
     version :: String,
@@ -27,12 +32,25 @@ data VMXServerMessage = VMXServerMessage {
 }
 
 instance FromJSON VMXServerMessage where
-    parseJSON (Object o) = VMXServerMessage <$> (o .: "message") <*> (o .: "version") <*> (o .: "machine") <*> (o .: "user")
+    parseJSON (Object o) = VMXServerMessage
+                           <$> (o .: "message")
+                           <*> (o .: "version")
+                           <*> (o .: "machine")
+                           <*> (o .: "user")
     parseJSON _ = mzero
     
+{-|
+GET \/check
 
+Handler for checking if the license is valid.
 
+If a .vmxlicense file exists in the vmxPath, it will return true.
+If the file is not present, it will run "VMXserver -check".  If the check
+succeeds, it will write the .vmxlicense file and return true.  If the check
+fails, it will return an error.
 
+This will also set the machine identifier (the UUID)
+-}
 getCheckLicenseR :: Handler Value
 getCheckLicenseR = do
     addHeader "Access-Control-Allow-Origin" "*"
@@ -92,16 +110,13 @@ getCheckLicenseR = do
                 Left e -> do
                          VMXServerMessage e e e e
 
+{-|
+Sets the current computer's identifier.
+
+See the related 'getMachineIdent' function.
+-}
 setMachineIdent :: String -> Handler ()
 setMachineIdent  ident = do
     App {..}   <- getYesod
     liftIO $ writeIORef machineIdent (Just ident)
 
-getMachineIdent :: Handler (Maybe String)
-getMachineIdent = do
-    App {..}   <- getYesod
-    ident' <- liftIO $ readIORef machineIdent
-    return ident' 
-    --extra <-getExtra
-    --let path = (fromMaybe "/vmx/build" $ extraVmxPath extra) ++ "/VMXServerConfig.json"
-    --config <- liftIO $ readJson . unpack <$> DT.readFile path 

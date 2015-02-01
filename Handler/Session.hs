@@ -1,6 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+{-|
+Module      : Session
+Description : VMX Session management
+
+Creating a listing sessions
+-}
 module Handler.Session where
 
 import Import
@@ -23,6 +30,9 @@ import Data.List (isInfixOf)
 
 import Control.Concurrent (threadDelay)
 
+{-|
+OPTIONS for \/session
+-}
 optionsSessionR :: Handler ()
 optionsSessionR = do
     addHeader "Allow" "Get, Put"
@@ -31,9 +41,22 @@ optionsSessionR = do
     addHeader "Access-Control-Allow-Methods" "GET, PUT"
     return ()
 
+{-|
+Data structure for creating a new session
+-}
+data CreateSessionCommand = CreateSessionCommand {
+        modelUUIDS :: [String]
+} 
 
+instance FromJSON CreateSessionCommand where
+    parseJSON (Object o) = CreateSessionCommand <$> (o .: "uuids")
+    parseJSON _ = mzero
 
+{-|
+POST \/session
 
+Creates a new session
+-}
 postSessionR :: Handler String
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
@@ -43,8 +66,9 @@ postSessionR = do
     App {..} <- getYesod
     return payLoad
 
-type ModelName = String
-
+{-|
+Creates a new session
+-}
 createSession :: [String] -> Handler (SessionId, String)
 createSession uuids = do
     sid             <- liftIO getSessionId
@@ -99,13 +123,19 @@ createSession uuids = do
         --        Nothing -> ""
 
 
---list all sessions
+{-|
+GET /session
+Lists session
+-}
 getSessionR :: Handler Value
 getSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
     list_sessions
 
+{-|
+Lists sessions
+-}
 list_sessions :: Handler Value
 list_sessions = do
     sessions <-  sp >>= lift.getDirectoryContents 
@@ -135,28 +165,20 @@ list_sessions = do
                         ".."        -> False
                         ".DS_Store" -> False
                         _ -> True
+{-|
+Make a JSON
 
--- create a new session
-data VmxSessionFile = VmxSessionFile {
-        pid :: String
-} 
-
-
-
-instance FromJSON VmxSessionFile where
-    parseJSON (Object o) = VmxSessionFile <$> (o .: "pid")
-    parseJSON _ = mzero
-
-
--- create a new session
-data CreateSessionCommand = CreateSessionCommand {
-        modelUUIDS :: [String]
-} 
-
-
-
-instance FromJSON CreateSessionCommand where
-    parseJSON (Object o) = CreateSessionCommand <$> (o .: "uuids")
-    parseJSON _ = mzero
-
+NOTE(TJM): what does this do?
+-}
+makeJson :: String -> Value
+makeJson s = do
+    -- String -> Char8 bystring
+    let packed = C.pack s
+    -- Char8 -> Lazy bytestring
+    let chunked = L.fromChunks [packed]
+    let eJ :: Either String Value = eitherDecode chunked
+    case eJ of
+        Right r -> r
+        -- TODO .. properly handle errors
+        Left _ -> undefined
 

@@ -1,5 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+
+{-|
+Module      : VMXTypes
+Description : VMX Types
+
+Common data structures used in VMX
+-}
 module Helper.VMXTypes where
 
 import Data.Aeson 
@@ -7,9 +14,15 @@ import Data.Maybe (fromMaybe)
 import Prelude
 import GHC.Generics
 import Data.Typeable (Typeable)
-import           Control.Applicative ((<$>), (<*>))
-import           Control.Monad     (mzero)
+import Control.Applicative ((<$>), (<*>))
+import Control.Monad     (mzero)
 
+{-|
+The 'VMXObject' represents an object inside an image with a
+mandatory name and bounding box.  The 'vmxOScore' is optional (doesn't
+make sense for a manual bounding box annotation) and the 'vmxOExtra' field
+can store an extra array of numbers associated with the object.
+-}
 data VMXObject = VMXObject {
     vmxOName  :: String,
     vmxOBB    :: [Float],
@@ -19,19 +32,30 @@ data VMXObject = VMXObject {
 
 instance ToJSON VMXObject where
     toJSON (VMXObject name bbs score extra) =
-            object ["name" .= name, "bb" .= bbs, "score" .= score, "extra" .= extra]
+            object ["name" .= name,
+                    "bb" .= bbs,
+                    "score" .= score,
+                    "extra" .= extra]
 
 instance FromJSON VMXObject where
     parseJSON (Object o) =
-        VMXObject <$> (o .: "name") <*> (o .: "bb") <*> (o .:? "extra") <*> (o .:? "score")
+        VMXObject <$> (o .: "name")
+        <*> (o .: "bb")
+        <*> (o .:? "extra")
+        <*> (o .:? "score")
     parseJSON _ = mzero
 
 instance FromJSON VMXImage where
     parseJSON (Object o) =
-        VMXImage <$> (o .: "image") <*> (o .:? "time") <*> (o .:? "objects")
+        VMXImage <$> (o .: "image")
+        <*> (o .:? "time")
+        <*> (o .:? "objects")
     parseJSON _ = mzero
 
-
+{-|
+The 'VMXImage' represents an image (along with a time) as well as an
+optional array of 'VMXObject's.
+-}
 data VMXImage = VMXImage {
     vmxIImage :: String,
     vmxITime  :: Maybe String,
@@ -40,18 +64,16 @@ data VMXImage = VMXImage {
 
 instance ToJSON VMXImage where
     toJSON (VMXImage image time objects) =
-            object ["image" .= image, "time" .= time, "objects" .= objects']
+            object ["image" .= image,
+                    "time" .= time,
+                    "objects" .= objects']
             where
                     objects' = fromMaybe ([]) objects
 
 
-data CreateModel = CreateModel {
-    cmImages :: [VMXImage],
-    cmParams :: Value,
-    cmName   :: String
-}
-
-
+{-|
+The 'VMXParams' represents the object detection parameters for VMXserver.
+-}
 data VMXParams = VMXParams {                 
                train_max_negatives           ::      Int
 ,              train_max_positives           ::      Int
@@ -72,6 +94,7 @@ data VMXParams = VMXParams {
 ,              initialize_add_flip           ::      Bool
 ,              learn_mode                    ::      Bool
 } deriving (Generic, Typeable)
+
 instance ToJSON   VMXParams
 instance FromJSON VMXParams where
     parseJSON (Object o) =
@@ -94,3 +117,16 @@ instance FromJSON VMXParams where
                          <*> (o .: "initialize_add_flip")
                          <*> (o .: "learn_mode")
     parseJSON _ = mzero
+
+{-|
+The 'CreateModel' represents the input to model creation: an array of
+'VMXImage's, some detection parameters, as well as a model name.
+-}
+data CreateModel = CreateModel {
+    cmImages :: [VMXImage],
+    cmParams :: Value,
+    cmName   :: String
+}
+
+
+
