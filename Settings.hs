@@ -24,7 +24,7 @@ import Text.Hamlet
 -- | The location of static files on your system. This is a file system
 -- path. The default value works properly with your scaffolded site.
 staticDir :: FilePath
-staticDir = "static3"
+staticDir = "static"
 
 -- vmxStaticFolders :: [FilePath]
 -- vmxStaticFolders = map (\a -> (staticDir ++ "/" ++ a))
