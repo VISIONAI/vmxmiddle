@@ -6,7 +6,6 @@ module Helper.Shared
     , headers
     , getPipeResponse
     , getPortResponse
-    , getPortResponse'
     , InputPipe
     , OutputPipe
     , makeJson

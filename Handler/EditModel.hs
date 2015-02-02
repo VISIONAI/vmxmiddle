@@ -3,10 +3,10 @@ module Handler.EditModel where
 
 import Import
 import Helper.Shared
-import Data.Aeson (decode', encode)
-import Data.Aeson.Types (Result(..))
-import qualified Data.ByteString.Lazy.Char8 as LBS
-import Network.HTTP.Types (status400)
+--import Data.Aeson (decode', encode)
+--import Data.Aeson.Types (Result(..))
+--import qualified Data.ByteString.Lazy.Char8 as LBS
+--import Network.HTTP.Types (status400)
 
 
 optionsEditModelR :: SessionId -> Handler ()
@@ -17,10 +17,67 @@ optionsEditModelR _ = do
     addHeader "Access-Control-Allow-Methods" "PUT, POST"
     return ()
 
+data VMXEditSettings = VMXEditSettings {
+    vmxESlearn_iterations  :: Maybe Integer,
+    vmxESmax_positives  :: Maybe Integer,
+    vmxESmax_negatives  :: Maybe Integer,
+    vmxESpositives_order  :: Maybe Integer,
+    vmxESnegatives_order  :: Maybe Integer
+}
+
+instance ToJSON VMXEditSettings where
+    toJSON (VMXEditSettings lp maxp maxn po no) =
+            object ["learn_iterations" .= lp,
+                    "max_positives" .= maxp,
+                    "max_negatives" .= maxn,
+                    "positives_order" .= po,
+                    "negatives_order" .= no]
+
+instance FromJSON VMXEditSettings where
+    parseJSON (Object o) =
+        VMXEditSettings <$> (o .:? "learn_iterations")
+        <*> (o .:? "max_positives")
+        <*> (o .:? "max_negatives")
+        <*> (o .:? "positives_order")
+        <*> (o .:? "negatives_order")
+        
+    parseJSON _ = mzero
+
+
+data VMXEditChange = VMXEditChange {
+    vmxECimage  :: Maybe String,
+    vmxESscore  :: Maybe Double,
+    vmxESclass_label  :: Integer,
+    vmxESid  :: Integer,
+    vmxEStime  :: Maybe String,
+    vmxESdata  :: Maybe [Float]
+}
+
+instance ToJSON VMXEditChange where
+    toJSON (VMXEditChange image score class_label curid time curdata) =
+            object ["image" .= image,
+                    "score" .= score,
+                    "class_label" .= class_label,
+                    "id" .= curid,
+                    "time" .= time,
+                    "data" .= curdata]
+
+instance FromJSON VMXEditChange where
+    parseJSON (Object o) =
+        VMXEditChange <$> (o .:? "image")
+        <*> (o .:? "score")
+        <*> (o .: "class_label")
+        <*> (o .: "id")
+        <*> (o .:? "time")
+        <*> (o .:? "data")
+        
+    parseJSON _ = mzero
+
+
 
 data EditModelCommand = EditModelCommand {
-    editModelSettings :: Value,
-    editModelChanges  :: Value
+    editModelSettings :: Maybe VMXEditSettings,
+    editModelChanges  :: [VMXEditChange]
 } 
 --TJM: Yesod just gives me "Malformed JSON" when I change settings to
 --settings2 in the payload.  How can I get the parsing error to be
@@ -55,34 +112,22 @@ instance FromJSON EditModelResponse where
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- this is a read against the current model running at the session
-postEditModelR :: SessionId -> Handler Value
+postEditModelR :: SessionId -> Handler TypedContent
 postEditModelR sid = genericEditModel sid "show_model"
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- a write against the current model
-putEditModelR :: SessionId -> Handler Value
+putEditModelR :: SessionId -> Handler TypedContent
 putEditModelR sid = genericEditModel sid "edit_model"
 
-genericEditModel :: SessionId -> String -> Handler Value
+genericEditModel :: SessionId -> String -> Handler TypedContent
 genericEditModel sid command = do
     headers
     addHeader "Content-Type" "application/json"
-    (r :: Result EditModelCommand) <- parseJsonBody
-    case r of
-      Success eic -> do
-        let req = object [ "command"  .= command
-                         , "settings" .= (editModelSettings eic)
-                         , "changes"  .= (editModelChanges eic)
-                         ]
-        response <- getPortResponse' req sid
-        let (mbResponse :: Maybe EditModelResponse) = decode' $ LBS.pack response
-        case mbResponse of
-          Just response' ->
-            case response' of
-              EditModelResponse _ _ -> return $ toJSON response'
-              EditModelResponseError _ _ -> sendResponseStatus status400 $ toJSON response'
-          Nothing -> do
-            sendResponseStatus status400 $ object ["error" .= response]
-      Error s -> sendResponseStatus status400 $ LBS.unpack $ encode $ object ["error" .= s]
-
-
+    (r :: EditModelCommand) <- requireJsonBody
+    let req = object [ "command"  .= command
+                     , "settings" .= (editModelSettings r)
+                     , "changes"  .= (editModelChanges r)
+                     ]
+    response <- getPortResponse req sid
+    return response
