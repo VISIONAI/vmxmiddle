@@ -32,20 +32,6 @@ instance FromJSON EditModelCommand where
                          <*> (o .: "changes")
     parseJSON _ = mzero
 
-{-|
-The Edit Model Reponse, which contains a bunch of positives and negatives
-
-TODO(TJM): I'm not sure how the EditModelResponseError works...
--}
-data EditModelResponse = EditModelResponse Value String | EditModelResponseError Integer String
-
-{-|
-TODO(TJM): not sure what's happening here
--}
-editModelData :: EditModelResponse -> Value
-editModelData (EditModelResponse d _ ) = d
-editModelData (EditModelResponseError _ _ ) = undefined
-
 instance ToJSON EditModelResponse where
     toJSON (EditModelResponse d m)= 
         object ["data" .= d
