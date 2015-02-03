@@ -11,8 +11,9 @@ import System.Process
 import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
-import Data.Aeson (encode)
-
+import Data.Aeson (encode,decode)
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Text.Lazy.Encoding (decodeUtf8)
 import Helper.Shared
 import Control.Exception (tryJust)
 import Control.Monad (guard)
@@ -20,8 +21,10 @@ import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
 
+import qualified Data.ByteString.Lazy.Char8 as LC
 
 import Control.Concurrent (threadDelay)
+import Helper.Shared
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -98,13 +101,16 @@ createSession uuids = do
         --        Just m -> "models/" ++ m ++ ".mat"
         --        Nothing -> ""
 
-
 --list all sessions
-getSessionR :: Handler Value
+getSessionR :: Handler TypedContent
 getSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
-    list_sessions
+    ret <- list_sessions
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
+        provideRepType  mimeText $ return ret
+
 
 list_sessions :: Handler Value
 list_sessions = do
