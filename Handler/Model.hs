@@ -37,7 +37,6 @@ getModelR = do
     ret <- list_models
     selectRep $ do
         provideRepType  mimeJson $ return ret
-        --provideRepType  mimeHtml $ return ret -- $ decodeUtf8 $ encodePretty $ ret
         provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
         provideRepType  mimeText $ return ret
 
