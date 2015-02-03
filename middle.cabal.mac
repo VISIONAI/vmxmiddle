@@ -111,7 +111,7 @@ library
                  , network
                  , connection
                  , HTTP
-
+                 , lifted-base
 
 
 
