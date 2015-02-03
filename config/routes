@@ -18,6 +18,8 @@
 
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
+/models/#ModelId/compiled.data CompiledModelDataR GET
+/models/#ModelId/data_set.json ModelDatasetR GET
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
 /models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
 /models/#ModelId/data_set/image.jpg StreamImagesNextR GET

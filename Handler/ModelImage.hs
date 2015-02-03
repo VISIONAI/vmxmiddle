@@ -18,3 +18,17 @@ getModelImageR muid = do
     --liftIO $ print "sending missing.jpg"
     sendFile "image/png" default_file
 
+getModelDatasetR :: ModelId -> Handler Html
+getModelDatasetR muid = do
+  wd <- wwwDir
+  let image_file = (wd ++ "models/" ++ muid ++ "/data_set.json")
+  let default_file = "static/img/missing.jpg"
+  e <- liftIO $ doesFileExist image_file
+  if e
+    then do
+    --liftIO $ print "sending real image.jpg"
+    sendFile typePlain image_file
+    else do
+    --liftIO $ print "sending missing.jpg"
+    sendFile "image/png" default_file
+
