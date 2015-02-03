@@ -27,7 +27,10 @@ data VMXServerMessage = VMXServerMessage {
 }
 
 instance FromJSON VMXServerMessage where
-    parseJSON (Object o) = VMXServerMessage <$> (o .: "message") <*> (o .: "version") <*> (o .: "machine") <*> (o .: "user")
+    parseJSON (Object o) = VMXServerMessage <$> (o .: "message")
+                           <*> (o .: "version")
+                           <*> (o .: "machine")
+                           <*> (o .: "user")
     parseJSON _ = mzero
     
 
@@ -60,12 +63,25 @@ getCheckLicenseR = do
     -- liftIO $ print $ show . head . lines $ stdout
     setMachineIdent uuid
 
+    (exitCode2, stdout2) <- do 
+                        (_, Just stdoutHdl, _, hdl) <- liftIO $ createProcess (proc "cat" ["version"]) {std_out =CreatePipe}
+                        stdout <- liftIO $ Data.Text.IO.hGetContents stdoutHdl 
+                        exitCode <- liftIO $ waitForProcess hdl
+                        case exitCode of
+                           ExitSuccess  -> do
+                               return (exitCode, unpack stdout)
+                           ExitFailure _ -> do
+                               return (exitCode, "devel")
+
+        
+    let versionMiddle = List.head $ lines stdout2
+
     case exitCode of
         ExitSuccess    -> do
             liftIO $ DT.writeFile licensePath (pack . List.head . lines $ stdout)
-            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
+            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version, "versionMiddle" .= versionMiddle]
         ExitFailure 11 -> do
-            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
+            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version, "versionMiddle" .= versionMiddle]
         ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
         ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure 133  -> error $ "Error 33: Cannot Start " <> show vmxExecutable'
