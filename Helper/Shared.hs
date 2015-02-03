@@ -33,6 +33,7 @@ import System.IO
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
+import Control.Exception.Lifted  as LX (catch, finally)
 
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 
@@ -158,9 +159,10 @@ getPortResponse' input sessionId = do
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
-    res <- http req manager
-    resValue <- responseBody res $$+- consume
-    liftIO $ releasePort sessionId portMap port
+    resValue <- (do
+        res <- http req manager
+        resValue' <- responseBody res $$+- consume
+        return resValue') `LX.finally` (liftIO $ releasePort sessionId portMap port)
 
     let ret = concat $ map C.unpack resValue
     return ret
