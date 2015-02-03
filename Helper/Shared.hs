@@ -17,6 +17,9 @@ module Helper.Shared
     , delVMXFolder
     , addLock
     , nextPort
+    , mimeJson
+    , mimeHtml
+    , mimeText
     ) where
 
 import Import
@@ -113,6 +116,13 @@ type OutputPipe = FilePath
 --     dataDir <- wwwDir
 --     return $ dataDir ++ "/sessions/" ++ sid ++ "/"
 
+mimeJson :: ContentType
+mimeJson = "application/json"
+mimeText :: ContentType
+mimeText = "text/plain"
+mimeHtml :: ContentType
+mimeHtml = "text/html"
+
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
     ret <- getPortResponse' input sessionId
@@ -121,12 +131,6 @@ getPortResponse input sessionId = do
         provideRepType  mimeHtml $ return ret
         provideRepType  mimeText $ return ret
 
-mimeJson :: ContentType
-mimeJson = "application/json"
-mimeText :: ContentType
-mimeText = "text/plain"
-mimeHtml :: ContentType
-mimeHtml = "text/html"
 
 --portErrorHandler :: String -> Handler TypedContent
 --portErrorHandler msg = error msg

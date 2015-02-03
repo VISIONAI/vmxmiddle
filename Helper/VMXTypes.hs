@@ -94,3 +94,4 @@ instance FromJSON VMXParams where
                          <*> (o .: "initialize_add_flip")
                          <*> (o .: "learn_mode")
     parseJSON _ = mzero
+
