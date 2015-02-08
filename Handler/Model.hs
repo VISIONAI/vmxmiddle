@@ -41,12 +41,17 @@ getModelR = do
         provideRepType  mimeText $ return ret
 
 data SaveModelCommand = SaveModelCommand {
-    saveModelSid :: String
+    saveModelSid :: String,
+    saveModelName :: String,
+    saveModelNewUUID :: Maybe Bool
+                     
 }
 
 instance FromJSON SaveModelCommand where
     parseJSON (Object o) =
         SaveModelCommand <$> (o .: "session_id")
+        <*> (o .: "name")
+        <*> (o .:? "new_uuid")
     parseJSON _ = mzero
 
 putModelR :: Handler TypedContent
@@ -54,7 +59,9 @@ putModelR =  do
     headers
     cmd :: SaveModelCommand <- requireJsonBody
     let sid = saveModelSid cmd
-    let req = object ["command" .= save_model, "session_id" .= sid]
+    let name = saveModelName cmd
+    let new_uuid = saveModelNewUUID cmd
+    let req = object ["command" .= save_model, "session_id" .= sid, "name" .= name, "new_uuid" .= new_uuid]
     response <- getPortResponse req sid
     return response
     where

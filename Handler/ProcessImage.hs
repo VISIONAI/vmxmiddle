@@ -18,7 +18,7 @@ optionsProcessImageR _ = do
 data ProcessImageCommand =  ProcessImageCommand {
     processImageName   :: String,
     processImageImages :: [VMXImage],
-    processImageParams   :: VMXParams
+    processImageParams   :: Maybe VMXParams
 }
 
 -- NOTE from TJM: "weeneedtogiveitname" is probably here because we
@@ -28,7 +28,7 @@ data ProcessImageCommand =  ProcessImageCommand {
 -- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
-        ProcessImageCommand "" <$> (o .: "images") <*> (o .: "params")
+        ProcessImageCommand "" <$> (o .: "images") <*> (o .:? "params")
     parseJSON _ = mzero
 
 
@@ -37,7 +37,8 @@ postProcessImageR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
-   val <- processImage sid (processImageImages pic) (processImageParams pic) (processImageName pic)
+   let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
+   val <- processImage sid (processImageImages pic) params (processImageName pic)
    return val
 
 deleteProcessImageR :: SessionId -> Handler ()

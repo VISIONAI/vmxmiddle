@@ -33,7 +33,7 @@ import System.IO
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (catch, finally)
+import Control.Exception.Lifted  as LX (finally)
 
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 
