@@ -3,6 +3,9 @@ Because it is sandwiched between the algorithmic back-end and the GUI
 front-end, it is called "middle"
 
 ## Devel instructions for Linux
+```
+./yesod_devel.sh
+```
 
 ## Devel instructions for Mac
 
