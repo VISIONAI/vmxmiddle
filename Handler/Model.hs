@@ -63,7 +63,7 @@ putModelR =  do
     let new_uuid = saveModelNewUUID cmd
 
     let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
-    liftIO $ print $ "req is " ++ (show req)
+    --liftIO $ print $ "req is " ++ (show req)
     response <- getPortResponse req sid
     return response
     where
