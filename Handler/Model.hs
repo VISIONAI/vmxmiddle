@@ -61,7 +61,7 @@ putModelR =  do
     let sid = saveModelSid cmd
     let name = saveModelName cmd
     let new_uuid = saveModelNewUUID cmd
-    let req = object ["command" .= save_model, "session_id" .= sid, "name" .= name, "new_uuid" .= new_uuid]
+    let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
     response <- getPortResponse req sid
     return response
     where
