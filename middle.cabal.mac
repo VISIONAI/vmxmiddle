@@ -38,6 +38,7 @@ library
                      Handler.LogModel
                      Handler.StreamImages
                      Handler.Forward
+                     Handler.SaveSession
                      Helper.Shared
                      Helper.VMXTypes
 
