@@ -1,0 +1,39 @@
+{
+  "name": "git-fish",
+  "version": "0.0.4",
+  "description": "Github Web Hook Listener",
+  "main": "./index.js",
+  "bin": {
+    "gitfish": "./bin/gitfish"
+  },
+  "scripts": {
+    "test": "./test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jmervine/node-git-fish.git"
+  },
+  "keywords": [
+    "git",
+    "github",
+    "web hook",
+    "post recieve hook",
+    "hook",
+    "autodeploy",
+    "auto-deploy",
+    "deployment"
+  ],
+  "author": "Joshua Mervine <joshua@mervine.net> (http://mervine.net)",
+  "license": "MIT",
+  "dependencies": {
+    "which": "~1.0.5",
+    "subarg": "0.0.1",
+    "forever": "~0.10.11",
+    "async": "~0.2.10"
+  },
+  "devDependencies": {
+    "request-lite": "~2.33.1",
+    "tape": "~2.4.2",
+    "http-debug": "~0.1.1"
+  }
+}

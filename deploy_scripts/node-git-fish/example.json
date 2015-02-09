@@ -1,0 +1,11 @@
+{
+    "port": 8000,
+    "token": "go-fish",
+    "script": {
+        "script": "example.script.js"
+    },
+    "gofish" : {
+        "script": "./test/script.js",
+        "branch"  : ["master"]
+    }
+}
