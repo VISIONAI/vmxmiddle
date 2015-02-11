@@ -20,7 +20,7 @@ import Control.Monad (guard)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
-
+import Data.Map (keys)
 import qualified Data.ByteString.Lazy.Char8 as LC
 
 import Control.Concurrent (threadDelay)
@@ -28,10 +28,10 @@ import Helper.Shared
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
-    addHeader "Allow" "Get, Put"
+    addHeader "Allow" "Get, Post"
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "GET, PUT"
+    addHeader "Access-Control-Allow-Methods" "GET, POST"
     return ()
 
 
@@ -114,10 +114,22 @@ getSessionR = do
 
 list_sessions :: Handler Value
 list_sessions = do
-    sessions <-  sp >>= lift.getDirectoryContents 
-    let sessions'' = filter notDots sessions
-    psOutput <- liftIO $ readProcess "ps" ["aux"] ""
-    let sessions' = filter (notDead psOutput) sessions''
+    App _ _ manager _ portMap' _ _ <- getYesod
+    portMap <- do
+        pm <- liftIO $ takeMVar portMap'
+        liftIO $ putMVar portMap' pm
+        return pm
+               
+    -- liftIO $ print $ "keys are" ++ (show $ keys $ portMap)
+
+    -- sessions <-  sp >>= lift.getDirectoryContents 
+    -- let sessions'' = filter notDots sessions
+    -- psOutput <- liftIO $ readProcess "ps" ["aux"] ""
+    -- let sessions' = filter (notDead psOutput) sessions''
+    -- liftIO $ print $ "sessions' is " ++ (show sessions')
+    
+    let sessions' = keys $ portMap
+    --liftIO $ print $ "portMap' is " ++ (show keys portMap')
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
     where
@@ -129,7 +141,7 @@ list_sessions = do
             case mModelJson of
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
-                Left _ -> return $ object ["session" .= fp, "error" .= True]
+                Left _ -> return $ object ["session" .= fp, "model" .= Null]
         notDead :: String -> FilePath -> Bool
         notDead psOutput sessionDir = do
             let possible = filter (isInfixOf sessionDir) (lines psOutput)
