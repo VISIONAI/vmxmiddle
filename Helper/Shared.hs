@@ -14,6 +14,7 @@ module Helper.Shared
     , waitLock
     , releasePort
     , exitVMXServer
+    , removeVMXSession
     , delVMXFolder
     , addLock
     , nextPort
@@ -33,10 +34,9 @@ import System.IO
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (finally)
-
+import Control.Exception.Lifted  as LX (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
-
+import Data.Map (delete)
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
@@ -52,6 +52,15 @@ import Data.Conduit.List (consume)
 type LockMap = SM.Map String (MVar Int)
 
 type Port = Int
+
+removeVMXSession :: SessionId -> Handler ()
+removeVMXSession sid = do
+    App _ _ _ _ portMap' _ _ <- getYesod
+    pm <- liftIO $ takeMVar portMap'
+    liftIO $ putMVar portMap' (Data.Map.delete sid pm)
+    return ()
+
+
 
 releasePort :: SessionId -> LockMap -> Port -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
@@ -159,14 +168,20 @@ getPortResponse' input sessionId = do
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
-    resValue <- (do
-        res <- http req manager
-        resValue' <- responseBody res $$+- consume
-        return resValue') `LX.finally` (liftIO $ releasePort sessionId portMap port)
+    res <- http req manager
+           `LX.catch`
+           (\(FailedConnectionException2 _ _ _ _) ->
+             do
+               removeVMXSession sessionId
+               error "Removed bad session")
+           `LX.finally` (liftIO $ releasePort sessionId portMap port)
+     
 
-    let ret = concat $ map C.unpack resValue
+    resValue' <- responseBody res $$+- consume
+    
+    let ret = concat $ map C.unpack resValue'
     return ret
-
+        
 
 
 checkPort :: Int -> IO Bool

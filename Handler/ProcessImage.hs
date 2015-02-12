@@ -4,7 +4,6 @@ module Handler.ProcessImage where
 import Import
 import Helper.Shared
 import Helper.VMXTypes
-import Data.Map (delete)
 
 
 optionsProcessImageR :: SessionId -> Handler ()
@@ -44,18 +43,17 @@ postProcessImageR sid = do
 deleteProcessImageR :: SessionId -> Handler ()
 deleteProcessImageR = deleteVMXSession
 
+
 deleteVMXSession :: SessionId -> Handler ()
 deleteVMXSession sid = do
-    App _ _ _ _ portMap' _ _ <- getYesod
-    portMap <- do
-        pm <- liftIO $ takeMVar portMap'
-        let newmap = (Data.Map.delete sid pm)
-        liftIO $ putMVar portMap' newmap
-
+    -- remove from port map
+    removeVMXSession sid
+    
     -- stop process
     _ <- exitVMXServer sid
-    delVMXFolder $ "sessions/" <> sid
-			
-	-- delete session files
+    
+    return ()
+    -- delete session files
+    -- delVMXFolder $ "sessions/" <> sid			
 
 
