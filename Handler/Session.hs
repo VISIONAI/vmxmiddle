@@ -8,20 +8,19 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
-import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
+import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
-import Data.Aeson (encode,decode)
+import Data.Aeson (encode)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Helper.Shared
 import Control.Exception (tryJust)
 import Control.Monad (guard)
 import System.IO.Error (isDoesNotExistError)
 import qualified Data.Text.IO as DT (readFile)
-import Data.List (isInfixOf)
+-- import Data.List (isInfixOf)
 import Data.Map (keys)
-import qualified Data.ByteString.Lazy.Char8 as LC
+-- import qualified Data.ByteString.Lazy.Char8 as LC
 
 import Control.Concurrent (threadDelay)
 import Helper.Shared
@@ -114,7 +113,7 @@ getSessionR = do
 
 list_sessions :: Handler Value
 list_sessions = do
-    App _ _ manager _ portMap' _ _ <- getYesod
+    App _ _ _ _ portMap' _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         liftIO $ putMVar portMap' pm
@@ -142,17 +141,17 @@ list_sessions = do
                 Right modelJson -> 
                     return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
                 Left _ -> return $ object ["session" .= fp, "model" .= Null]
-        notDead :: String -> FilePath -> Bool
-        notDead psOutput sessionDir = do
-            let possible = filter (isInfixOf sessionDir) (lines psOutput)
-            (not . null $ filter (isInfixOf "VMXserver") possible)
-        --check if running
-        notDots :: FilePath -> Bool
-        notDots fp = case fp of
-                        "."         -> False
-                        ".."        -> False
-                        ".DS_Store" -> False
-                        _ -> True
+        -- notDead :: String -> FilePath -> Bool
+        -- notDead psOutput sessionDir = do
+        --     let possible = filter (isInfixOf sessionDir) (lines psOutput)
+        --     (not . null $ filter (isInfixOf "VMXserver") possible)
+        -- --check if running
+        -- notDots :: FilePath -> Bool
+        -- notDots fp = case fp of
+        --                 "."         -> False
+        --                 ".."        -> False
+        --                 ".DS_Store" -> False
+        --                 _ -> True
 
 -- create a new session
 data VmxSessionFile = VmxSessionFile {
