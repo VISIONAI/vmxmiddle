@@ -24,9 +24,9 @@ import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFi
 data App = App
     { settings :: AppConfig DefaultEnv Extra
     , getStatic :: Static -- ^ Settings for static file serving.
-    -- , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
+     , connPool :: Database.Persist.PersistConfigPool Settings.PersistConf -- ^ Database connection pool.
     , httpManager :: Manager
-    -- , persistConfig :: Settings.PersistConf
+    , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
     , portMap      ::  MVar (Map String (MVar Int))
     , machineIdent :: IORef (Maybe String)
@@ -117,11 +117,11 @@ instance Yesod App where
     maximumContentLength _ (Just (ModelR {})) = Just (10 * 1024 * 1024)
     maximumContentLength _ _ = Just (2 * 1024 * 1024)
 -- How to run database actions.
--- instance YesodPersist App where
---     type YesodPersistBackend App = SqlPersistT
---     runDB = defaultRunDB persistConfig connPool
--- instance YesodPersistRunner App where
---     getDBRunner = defaultGetDBRunner connPool
+instance YesodPersist App where
+    type YesodPersistBackend App = SqlPersistT
+    runDB = defaultRunDB persistConfig connPool
+instance YesodPersistRunner App where
+    getDBRunner = defaultGetDBRunner connPool
 
 -- instance YesodAuth App where
 --     type AuthId App = UserId

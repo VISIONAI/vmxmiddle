@@ -4,12 +4,12 @@ docker rm   vmx
 
 
 
-docker run -t -i  -p 3000:3000 --name vmxmiddle-current -v `pwd`:/code --link db:db  -v /dockerscratch/sessions:/vmx/sessions --volumes-from vmxmodels --volumes-from vmxserver --volumes-from vmxdata   --rm gdoteof/d-vmxmiddle  /bin/bash -c "cd /code && yesod devel"
+docker run -t -i  -p 3000:3000 --name vmxmiddle-current -v `pwd`:/code  -v /dockerscratch/sessions:/vmx/sessions -v /dockerscratch/models:/vmx/models --volumes-from vmxserver --volumes-from vmxdata   --rm gdoteof/d-vmxmiddle  /bin/bash -c "cd /code && yesod devel"
 
 if [ $? -ne 0 ]; then
   docker stop vmxmiddle-current
   docker rm vmxmiddle-current
-  docker run -t -i  -p 3000:3000 --name vmxmiddle-current -v `pwd`:/code --link db:db  -v /dockerscratch/sessions:/vmx/sessions --volumes-from vmxmodels --volumes-from vmxserver --volumes-from vmxdata  --rm gdoteof/d-vmxmiddle  /bin/bash -c "cd /code && yesod devel"
+  docker run -t -i  -p 3000:3000 --name vmxmiddle-current -v `pwd`:/code   -v /dockerscratch/sessions:/vmx/sessions -v /dockerscratch/models:/vmx/models  --volumes-from vmxserver --volumes-from vmxdata  --rm gdoteof/d-vmxmiddle  /bin/bash -c "cd /code && yesod devel"
   fi
 
 chown -R g:g yesod-devel
