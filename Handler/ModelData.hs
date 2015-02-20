@@ -3,7 +3,7 @@ import System.Directory (doesFileExist)
 import Import
 
 
-getModelDataR :: ModelId -> Handler Html
+getModelDataR :: ModelUuid -> Handler Html
 getModelDataR muid = do
   wd <- wwwDir
   let model_file = (wd ++ "models/" ++ muid ++ "/model.data")
@@ -18,7 +18,7 @@ getModelDataR muid = do
     sendFile "image/png" default_file
 
 
-getCompiledModelDataR :: ModelId -> Handler Html
+getCompiledModelDataR :: ModelUuid -> Handler Html
 getCompiledModelDataR muid = do
   wd <- wwwDir
   let model_file = (wd ++ "models/" ++ muid ++ "/compiled.data")

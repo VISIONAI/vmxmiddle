@@ -4,7 +4,7 @@ import Import
 
 
 
-getModelImageR :: ModelId -> Handler Html
+getModelImageR :: ModelUuid -> Handler Html
 getModelImageR muid = do
   wd <- wwwDir
   let image_file = (wd ++ "models/" ++ muid ++ "/image.jpg")
@@ -18,7 +18,7 @@ getModelImageR muid = do
     --liftIO $ print "sending missing.jpg"
     sendFile "image/png" default_file
 
-getModelDatasetR :: ModelId -> Handler Html
+getModelDatasetR :: ModelUuid -> Handler Html
 getModelDatasetR muid = do
   wd <- wwwDir
   let image_file = (wd ++ "models/" ++ muid ++ "/data_set.json")

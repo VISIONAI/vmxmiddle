@@ -39,6 +39,7 @@ library
                      Handler.StreamImages
                      Handler.Forward
                      Handler.SaveSession
+                     Handler.Login
                      Helper.Shared
                      Helper.VMXTypes
 

@@ -6,6 +6,7 @@
 
 / HomeR GET 
 
+/auth   AuthR   Auth   getAuth
 
 
 /session SessionR GET POST OPTIONS
@@ -17,13 +18,13 @@
 /session/#SessionId/save SaveSessionR POST
 /session/#SessionId/log.txt LogModelR GET OPTIONS
 
-/models/#ModelId/image.jpg ModelImageR GET
-/models/#ModelId/model.data ModelDataR GET
-/models/#ModelId/compiled.data CompiledModelDataR GET
-/models/#ModelId/data_set.json ModelDatasetR GET
-/models/#ModelId/data_set/random.jpg StreamImagesR GET
-/models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
-/models/#ModelId/data_set/image.jpg StreamImagesNextR GET
+/models/#ModelUuid/image.jpg ModelImageR GET
+/models/#ModelUuid/model.data ModelDataR GET
+/models/#ModelUuid/compiled.data CompiledModelDataR GET
+/models/#ModelUuid/data_set.json ModelDatasetR GET
+/models/#ModelUuid/data_set/random.jpg StreamImagesR GET
+/models/#ModelUuid/data_set/first.jpg StreamImagesFirstR GET
+/models/#ModelUuid/data_set/image.jpg StreamImagesNextR GET
 /models.html ModelViewerR GET
 /sessions.html SessionViewerR GET
 
@@ -34,6 +35,6 @@
 /forward ForwardR GET
 
 
-/models/#ModelId/reset_cache ResetCacheR POST
+/models/#ModelUuid/reset_cache ResetCacheR POST
 
 

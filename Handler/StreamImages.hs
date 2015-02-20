@@ -12,7 +12,7 @@ import qualified Data.Map as M (insert)
 
 import Import
 
---getStreamImagesR :: ModelId -> Handler Html
+--getStreamImagesR :: ModelUuid -> Handler Html
 --getStreamImagesR = error "Not yet implemented: getStreamImagesR"
 
 pick :: [a] -> IO a
@@ -47,7 +47,7 @@ getRecursiveContents topdir = do
 --     addHeader "Access-Control-Allow-Methods" "GET"
 --     return ()
 
-seedRecursiveContentsCache :: ModelId -> IORef (Map String [String]) -> Handler [String]
+seedRecursiveContentsCache :: ModelUuid -> IORef (Map String [String]) -> Handler [String]
 seedRecursiveContentsCache muid cacheRef = do
       modelsDir <- (++ ("models/" ++ muid)) <$> wwwDir
       modelFolders' <- liftIO $ getRecursiveContents modelsDir
@@ -59,7 +59,7 @@ seedRecursiveContentsCache muid cacheRef = do
 
       return modelFoldersClean
     
-postResetCacheR :: ModelId -> Handler ()
+postResetCacheR :: ModelUuid -> Handler ()
 postResetCacheR mid = do
     App _ _ _ _ _ _ _ _ modelImageCache' <- getYesod
     seedRecursiveContentsCache mid modelImageCache'
@@ -67,7 +67,7 @@ postResetCacheR mid = do
 
 -- This handler will return a random image from the modelsDir
 -- directory, and an error is thrown if there are 0 images.
-getStreamImagesR :: ModelId -> Handler Html
+getStreamImagesR :: ModelUuid -> Handler Html
 getStreamImagesR muid = do
   App _ _ _ _ _ _ _ _ modelImageCache' <- getYesod
   modelImageCache <- liftIO . readIORef $ modelImageCache'
@@ -83,13 +83,13 @@ getStreamImagesR muid = do
       randfile <- liftIO $ pick modelFoldersClean
       sendFile "image/jpg" randfile
 
-getStreamImagesFirstR :: ModelId -> Handler Html
+getStreamImagesFirstR :: ModelUuid -> Handler Html
 getStreamImagesFirstR muid = do
   modelDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
   sendFile "image/jpg" (modelDir ++ "000001.jpg")
 
 
-getStreamImagesNextR :: ModelId -> Handler Html
+getStreamImagesNextR :: ModelUuid -> Handler Html
 getStreamImagesNextR muid = do
   App _ _ _ _ _ _ _ _ modelImageCache' <- getYesod
   modelImageCache <- liftIO . readIORef $ modelImageCache'
