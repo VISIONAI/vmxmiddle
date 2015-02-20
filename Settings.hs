@@ -16,9 +16,11 @@ import Control.Applicative
 import Settings.Development
 import Data.Default (def)
 import Text.Hamlet
+import Database.Persist.Postgresql (PostgresConf)
 
 
 -- Static setting below. Changing these requires a recompile
+type PersistConf = PostgresConf
 
 -- | The location of static files on your system. This is a file system
 -- path. The default value works properly with your scaffolded site.

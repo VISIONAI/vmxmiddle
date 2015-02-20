@@ -7,7 +7,8 @@ import Yesod.Default.Config
 import Network.HTTP.Client.Conduit (Manager, HasHttpManager (getHttpManager))
 import qualified Settings
 import Settings.Development (development)
--- import qualified Database.Persist
+import qualified Database.Persist
+import Database.Persist.Sql
 import Settings (widgetFile, Extra (..), SessionId, ModelId)
 import Model
 import Text.Hamlet (hamletFile)

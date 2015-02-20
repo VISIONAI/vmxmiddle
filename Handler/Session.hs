@@ -114,7 +114,7 @@ getSessionR = do
 
 list_sessions :: Handler Value
 list_sessions = do
-    App _ _ manager _ portMap' _ _ <- getYesod
+    App _ _ _ manager _ _ portMap' _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         liftIO $ putMVar portMap' pm

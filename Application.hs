@@ -6,6 +6,8 @@ module Application
     ) where
 
 import Import
+import Settings
+import Yesod.Auth
 import Yesod.Default.Config
 import Yesod.Default.Main
 import Yesod.Default.Handlers
@@ -13,13 +15,14 @@ import Network.Wai.Middleware.RequestLogger
     ( mkRequestLogger, outputFormat, OutputFormat (..), IPAddrSource (..), destination
     )
 import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
--- import qualified Database.Persist
--- import Database.Persist.Sql (runMigration)
+import qualified Database.Persist
+import Database.Persist.Sql (runMigration)
 import Network.HTTP.Client.Conduit (newManager)
 import Control.Concurrent (forkIO, threadDelay)
 import System.Log.FastLogger (newStdoutLoggerSet, defaultBufSize, flushLogStr)
 import Network.Wai.Logger (clockDateCacher)
 import Data.Default (def)
+import Control.Monad.Logger (runLoggingT)
 import Yesod.Core.Types (loggerSet, Logger (Logger))
 
 -- Imports for map of SessionIds to MVars
@@ -83,10 +86,10 @@ makeFoundation :: AppConfig DefaultEnv Extra -> IO App
 makeFoundation conf = do
     manager <- newManager
     s <- staticSite
---    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
---              Database.Persist.loadConfig >>=
---              Database.Persist.applyEnv
---    p <- Database.Persist.createPoolConfig (dbconf :: Settings.PersistConf)
+    dbconf <- withYamlEnvironment "config/postgresql.yml" (appEnv conf)
+              Database.Persist.loadConfig >>=
+              Database.Persist.applyEnv
+    p <- Database.Persist.createPoolConfig (dbconf :: Settings.PersistConf)
 
     loggerSet' <- newStdoutLoggerSet defaultBufSize
     (getter, updater) <- clockDateCacher
@@ -111,14 +114,14 @@ makeFoundation conf = do
 
 
 
-    let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger portMapMVar machineIdentIORef modelImageCache
+    let logger     = Yesod.Core.Types.Logger loggerSet' getter
+        foundation = App conf s p manager dbconf logger portMapMVar machineIdentIORef modelImageCache
 
     -- Perform database migration using our application's logging settings.
---     runLoggingT
---         (Database.Persist.runPool dbconf (runMigration migrateAll) p)
---         (messageLoggerSource foundation logger)
--- 
+    runLoggingT
+        (Database.Persist.runPool dbconf (runMigration migrateAll) p)
+        (messageLoggerSource foundation logger)
+
     return foundation
 
 -- for yesod devel

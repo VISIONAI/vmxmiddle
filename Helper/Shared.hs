@@ -58,7 +58,7 @@ releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
 addLock :: SessionId -> Maybe Port -> Handler Port
 addLock sid mbPort= do
-    App _ _ _ _ portMap' _ _  <- getYesod
+    App _ _ _ _ _ _ portMap' _ _  <- getYesod
     portMap <- liftIO $ takeMVar portMap'
     (port, newMap) <- case mbPort of 
                 Just requestedPort -> do  
@@ -139,7 +139,7 @@ getPortResponse input sessionId = do
 
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
-    App _ _ manager _ portMap' _ _ <- getYesod
+    App _ _ _ manager _ _ portMap' _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         if member sessionId pm
