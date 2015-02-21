@@ -10,6 +10,7 @@ module Handler.Model where
 import Import
 import Helper.Shared
 import Control.Monad (filterM)
+import Data.Aeson (decode, withObject)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
 import           Data.Typeable
@@ -56,6 +57,7 @@ instance FromJSON SaveModelCommand where
 
 putModelR :: Handler TypedContent
 putModelR =  do
+    mId <- maybeAuthId
     headers
     cmd :: SaveModelCommand <- requireJsonBody
     let sid = saveModelSid cmd
@@ -76,6 +78,29 @@ data CreateModelCommand = CreateModelCommand {
     createModelSid :: String
 }
 
+type ErrorFlag = Int
+
+-- { "error": 0, "message": "Create Model Success (UUID=oneeye)", "warning": "Create Model (Model Not Saved)", "data": { "model": { "uuid": "1356ff35-e234-4487-8840-7d8ec4207d4b", "name": "oneeye", "size": [ 4, 4 ], "num_pos": 1, "num_neg": 86, "start_time": "2015-02-21T03:19:42.991Z", "end_time": "2015-02-21T03:19:42.991Z" }, "time": 2.3303579999999999 } }
+data CreateModelResponse = CreateModelResponse ErrorFlag CreateModelData
+
+data VMXModelData = VMXModelData ModelUuid ModelName
+instance FromJSON VMXModelData where
+    parseJSON (Object o) = VMXModelData <$> o .: "uuid" <*> o .: "name"
+    parseJSON _ = mzero
+
+
+instance FromJSON CreateModelResponse where
+    parseJSON (Object o) = CreateModelResponse <$> o .: "error" 
+                                               <*> o .: "data"
+    parseJSON _ = mzero
+
+type ModelName = String
+data CreateModelData = CreateModelData VMXModelData
+
+instance FromJSON CreateModelData where
+    parseJSON (Object o) = CreateModelData <$> o .: "model"
+    parseJSON _ = mzero
+
 instance FromJSON CreateModelCommand where
     parseJSON (Object o) = do
         CreateModelCommand <$> (o .: "name") <*> (o .: "params") <*> (o .: "images") <*> (o .: "session_id")
@@ -91,6 +116,7 @@ postModelR = do
     addHeader "Access-Control-Allow-Origin" "*"
     headers
     cmc <- requireJsonBody
+    mAuthId <- maybeAuthId
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
     let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
@@ -102,8 +128,14 @@ postModelR = do
                       "images"     .= images,
                       "command"    .= ("create_model" :: String)
                      ]
-    response <- getPipeResponse req sid
-    return response
+    response <- getPortResponse' req sid
+    let a :: Maybe CreateModelResponse = decode $  L.fromChunks $ [C.pack response]
+    case a of 
+        Just (CreateModelResponse _ (CreateModelData (VMXModelData uuid name))) -> do
+            _ <- runDB $ insert $ Model mAuthId uuid name
+            return ()
+        _ -> return ()
+    returnReps response
     where
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
         selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')

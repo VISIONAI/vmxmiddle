@@ -6,6 +6,8 @@ module Helper.Shared
     , headers
     , getPipeResponse
     , getPortResponse
+    , getPortResponse'
+    , returnReps
     , InputPipe
     , OutputPipe
     , makeJson
@@ -124,13 +126,16 @@ mimeText = "text/plain"
 mimeHtml :: ContentType
 mimeHtml = "text/html"
 
-getPortResponse :: Value -> SessionId -> Handler TypedContent
-getPortResponse input sessionId = do
-    ret <- getPortResponse' input sessionId
+returnReps :: String -> Handler TypedContent
+returnReps raw = do
     selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return ret
-        provideRepType  mimeText $ return ret
+        provideRepType  mimeJson $ return raw
+        provideRepType  mimeHtml $ return raw
+        provideRepType  mimeText $ return raw
+
+
+getPortResponse :: Value -> SessionId -> Handler TypedContent
+getPortResponse input sessionId = getPortResponse' input sessionId >>= returnReps
 
 
 --portErrorHandler :: String -> Handler TypedContent

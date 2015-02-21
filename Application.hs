@@ -51,6 +51,7 @@ import Handler.LogModel
 import Handler.StreamImages
 import Handler.Forward
 import Handler.SaveSession
+import Handler.ModelDB
 
 
 -- This line actually creates our YesodDispatch instance. It is the second half

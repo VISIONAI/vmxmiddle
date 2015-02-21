@@ -26,6 +26,8 @@ instance FromJSON VMXObject where
         VMXObject <$> (o .: "name") <*> (o .: "bb") <*> (o .:? "extra") <*> (o .:? "score")
     parseJSON _ = mzero
 
+    
+
 instance FromJSON VMXImage where
     parseJSON (Object o) =
         VMXImage <$> (o .: "image") <*> (o .:? "time") <*> (o .:? "objects")
