@@ -21,6 +21,7 @@ import           System.Directory (getDirectoryContents,doesFileExist)
 import qualified Data.Text.IO as DT (readFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Time (UTCTime)
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -83,9 +84,24 @@ type ErrorFlag = Int
 -- { "error": 0, "message": "Create Model Success (UUID=oneeye)", "warning": "Create Model (Model Not Saved)", "data": { "model": { "uuid": "1356ff35-e234-4487-8840-7d8ec4207d4b", "name": "oneeye", "size": [ 4, 4 ], "num_pos": 1, "num_neg": 86, "start_time": "2015-02-21T03:19:42.991Z", "end_time": "2015-02-21T03:19:42.991Z" }, "time": 2.3303579999999999 } }
 data CreateModelResponse = CreateModelResponse ErrorFlag CreateModelData
 
-data VMXModelData = VMXModelData ModelUuid ModelName
-instance FromJSON VMXModelData where
-    parseJSON (Object o) = VMXModelData <$> o .: "uuid" <*> o .: "name"
+data VMXModel = VMXModel {
+    vmxModelUuid :: String,
+    vmxModelName :: String,
+    vmxModelSize :: [Int],  -- should be a tuple
+    vmxModelNumPos  :: Int,
+    vmxModelNumNeg  :: Int,
+    vmxStartTime    :: UTCTime,
+    vmxEndTime    :: UTCTime
+}
+
+instance FromJSON VMXModel where
+    parseJSON (Object o) = VMXModel <$> o .: "uuid" 
+                                    <*> o .: "name"
+                                    <*> o .: "size"
+                                    <*> o .: "num_pos"
+                                    <*> o .: "num_neg"
+                                    <*> o .: "start_time"
+                                    <*> o .: "end_time"
     parseJSON _ = mzero
 
 
@@ -95,7 +111,7 @@ instance FromJSON CreateModelResponse where
     parseJSON _ = mzero
 
 type ModelName = String
-data CreateModelData = CreateModelData VMXModelData
+data CreateModelData = CreateModelData VMXModel
 
 instance FromJSON CreateModelData where
     parseJSON (Object o) = CreateModelData <$> o .: "model"
@@ -131,10 +147,10 @@ postModelR = do
     response <- getPortResponse' req sid
     let a :: Maybe CreateModelResponse = decode $  L.fromChunks $ [C.pack response]
     case a of 
-        Just (CreateModelResponse _ (CreateModelData (VMXModelData uuid name))) -> do
-            _ <- runDB $ insert $ Model mAuthId uuid name
+        Just (CreateModelResponse _ (CreateModelData (VMXModel uuid name size pos neg start end))) -> do
+            _ <- runDB $ insert $ Model mAuthId uuid name size pos neg start end
             return ()
-        _ -> return ()
+        _ -> error "could not decode"
     returnReps response
     where
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
@@ -222,16 +238,4 @@ instance ToJSON ListModelResponse where
                ]
         
 
-data VMXModel = VMXModel {
-    name :: String,
-    hg_size :: [Int],
-    num_pos :: Int,
-    num_neg :: Int,
-    image ::   String,
-    start_time :: Float,
-    end_time :: Float
-}  deriving (Data, Typeable, Show, Generic)
-
-instance FromJSON VMXModel
-instance ToJSON VMXModel
 

@@ -22,6 +22,7 @@ module Helper.Shared
     , mimeJson
     , mimeHtml
     , mimeText
+    , returnReps'
     ) where
 
 import Import
@@ -132,6 +133,13 @@ returnReps raw = do
         provideRepType  mimeJson $ return raw
         provideRepType  mimeHtml $ return raw
         provideRepType  mimeText $ return raw
+
+returnReps' :: (ToJSON a, Show a) => a -> Handler TypedContent
+returnReps' entity = do
+    selectRep $ do
+        provideJson entity
+        provideRepType  mimeHtml $ return $ show entity
+        provideRepType  mimeText $ return $ show entity
 
 
 getPortResponse :: Value -> SessionId -> Handler TypedContent

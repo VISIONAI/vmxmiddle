@@ -114,6 +114,7 @@ library
                  , connection
                  , HTTP
                  , lifted-base
+                 , time
 
 
 

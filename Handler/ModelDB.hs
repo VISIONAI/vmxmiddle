@@ -7,7 +7,7 @@ getModelDBR :: Handler TypedContent
 getModelDBR = do
     mAid <- maybeAuthId
     models <- runDB $ selectList ([ModelUser ==. mAid]) []
-    returnReps $ show models
+    returnReps' models
 
 
 postModelDBR :: Handler Html
