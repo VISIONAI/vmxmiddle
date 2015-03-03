@@ -5,13 +5,14 @@ import Import
 import Helper.Shared
 import Helper.VMXTypes
 
+import Data.Map.Strict as SM (member)
 
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
-    addHeader "Allow" "POST"
+    addHeader "Allow" "GET POST DELETE"
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "POST"
+    addHeader "Access-Control-Allow-Methods" "GET POST DELETE"
     return ()
 
 data ProcessImageCommand =  ProcessImageCommand {
@@ -30,11 +31,28 @@ instance FromJSON ProcessImageCommand where
         ProcessImageCommand "" <$> (o .: "images") <*> (o .:? "params")
     parseJSON _ = mzero
 
+getProcessImageR :: SessionId -> Handler TypedContent
+getProcessImageR sid = do
+  App _ _ _ _ portMap' _ _ <- getYesod
+  _ <- do
+        pm <- liftIO $ takeMVar portMap'
+        if member sid pm
+            then return pm
+            else do
+                liftIO $ putMVar portMap' pm
+                invalidArgs [pack $ "invalid session " ++ sid ]
+                
+  ret <- getSessionInfo sid
+  selectRep $ do
+    provideRepType  mimeJson $ return ret
+    provideRepType  mimeHtml $ return ret
+    provideRepType  mimeText $ return ret
+
 
 postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
-   addHeader "Content-Type" "application/json"
+   -- addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
    val <- processImage sid (processImageImages pic) params (processImageName pic)
