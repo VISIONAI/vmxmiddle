@@ -20,8 +20,15 @@ postLoadModelR sid = do
    addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: LoadModelCommand) <- requireJsonBody
-   val <- loadModel sid (loadModelUuids pic) (loadModelCompiled pic)
-   return val
+   _ <- loadModel sid (loadModelUuids pic) (loadModelCompiled pic)
+   -- return val
+   ret' <- getSessionInfo sid
+   let ret = object ["data" .= ret']
+   selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return ret
+        provideRepType  mimeText $ return ret
+
 
 
 
