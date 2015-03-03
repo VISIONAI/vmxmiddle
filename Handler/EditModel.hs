@@ -1,7 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Handler.EditModel where
 
 import Import
+import GHC.Generics
 import Helper.Shared
 --import Data.Aeson (decode', encode)
 --import Data.Aeson.Types (Result(..))
@@ -12,36 +14,39 @@ import Helper.Shared
 optionsEditModelR :: SessionId -> Handler ()
 optionsEditModelR _ = do
     addHeader "Allow" "PUT, POST"
-    addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    --addHeader "Access-Control-Allow-Origin" "*"
+    --addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "PUT, POST"
     return ()
 
 data VMXEditSettings = VMXEditSettings {
-    vmxESlearn_iterations  :: Maybe Integer,
-    vmxESmax_positives  :: Maybe Integer,
-    vmxESmax_negatives  :: Maybe Integer,
-    vmxESpositives_order  :: Maybe Integer,
-    vmxESnegatives_order  :: Maybe Integer
-}
+    learn_iterations  :: Maybe Integer,
+    max_positives  :: Maybe Integer,
+    max_negatives  :: Maybe Integer,
+    positives_order  :: Maybe Integer,
+    negatives_order  :: Maybe Integer
+} deriving (Show, Generic)
 
-instance ToJSON VMXEditSettings where
-    toJSON (VMXEditSettings lp maxp maxn po no) =
-            object ["learn_iterations" .= lp,
-                    "max_positives" .= maxp,
-                    "max_negatives" .= maxn,
-                    "positives_order" .= po,
-                    "negatives_order" .= no]
+instance ToJSON VMXEditSettings
+instance FromJSON VMXEditSettings
 
-instance FromJSON VMXEditSettings where
-    parseJSON (Object o) =
-        VMXEditSettings <$> (o .:? "learn_iterations")
-        <*> (o .:? "max_positives")
-        <*> (o .:? "max_negatives")
-        <*> (o .:? "positives_order")
-        <*> (o .:? "negatives_order")
+-- instance ToJSON VMXEditSettings where
+--     toJSON (VMXEditSettings lp maxp maxn po no) =
+--             object ["learn_iterations" .= lp,
+--                     "max_positives" .= maxp,
+--                     "max_negatives" .= maxn,
+--                     "positives_order" .= po,
+--                     "negatives_order" .= no]
+
+-- instance FromJSON VMXEditSettings where
+--     parseJSON (Object o) =
+--         VMXEditSettings <$> (o .:? "learn_iterations")
+--         <*> (o .:? "max_positives")
+--         <*> (o .:? "max_negatives")
+--         <*> (o .:? "positives_order")
+--         <*> (o .:? "negatives_order")
         
-    parseJSON _ = mzero
+--     parseJSON _ = mzero
 
 
 data VMXEditChange = VMXEditChange {
@@ -51,8 +56,10 @@ data VMXEditChange = VMXEditChange {
     vmxESid  :: Integer,
     vmxEStime  :: Maybe String,
     vmxESdata  :: Maybe [Float]
-}
+} deriving (Show)
 
+-- instance ToJSON VMXEditChange
+-- instance FromJSON VMXEditChange
 instance ToJSON VMXEditChange where
     toJSON (VMXEditChange image score class_label curid time curdata) =
             object ["image" .= image,
@@ -122,9 +129,9 @@ putEditModelR sid = genericEditModel sid "edit_model"
 
 genericEditModel :: SessionId -> String -> Handler TypedContent
 genericEditModel sid command = do
-    headers
-    addHeader "Content-Type" "application/json"
+--    liftIO $ print $ "About to requireJsonBody"
     (r :: EditModelCommand) <- requireJsonBody
+--    liftIO $ print $ "finished requireJsonBody"
     let req = object [ "command"  .= command
                      , "settings" .= (editModelSettings r)
                      , "changes"  .= (editModelChanges r)
