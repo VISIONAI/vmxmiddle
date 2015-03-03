@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
-    , headers
+    , vmxHeaders
     , getPipeResponse
     , getPortResponse
     , InputPipe
@@ -21,14 +21,18 @@ module Helper.Shared
     , mimeJson
     , mimeHtml
     , mimeText
+    , getSessionInfo
     ) where
 
 import Import
 import Data.Streaming.Network (bindPortTCP)
 import Network.Socket (sClose)
 import System.Random
+import Control.Monad (guard)
+import System.IO.Error (isDoesNotExistError)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
+import qualified Data.Text.IO as DT (readFile)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
 import Data.Aeson (encode)
@@ -112,8 +116,8 @@ drainFifo f = do
     o   <- Data.Text.IO.hGetContents hdl
     return $ unpack o
 
-headers :: Handler ()
-headers = do
+vmxHeaders :: Handler ()
+vmxHeaders = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
 
@@ -155,7 +159,7 @@ getPortResponse' input sessionId = do
             then return pm
             else do
                 liftIO $ putMVar portMap' pm
-                invalidArgs [pack sessionId, "invalid session"]
+                notFound -- [pack $ "invalid session " ++ sessionId ]
                 
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
@@ -169,11 +173,22 @@ getPortResponse' input sessionId = do
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
     res <- http req manager
-           `LX.catch`
-           (\(FailedConnectionException2 _ _ _ _) ->
-             do
-               removeVMXSession sessionId
-               error "Removed bad session")
+           -- `LX.catch` \e ->
+           --   case e of
+           --     FailedConnectionException2 {} ->
+           --       do
+           --         liftIO $ print "XXX5"
+           --         removeVMXSession sessionId
+           --         error "Removed bad session"
+               -- _ ->
+               --   do
+               --     liftIO $ print "XXX4"
+               --     error "other error"
+           -- `LX.catch`
+           -- (\(FailedConnectionException2 {}) ->
+           --   do
+           --     removeVMXSession sessionId
+           --     error "Removed bad session")
            `LX.finally` (liftIO $ releasePort sessionId portMap port)
      
 
@@ -293,5 +308,14 @@ makeJson s = do
         -- TODO .. properly handle errors
         Left _ -> undefined
 
-    
+
+getSessionInfo :: FilePath -> Handler Value
+getSessionInfo sid = do
+  sp' <- fmap (++ "sessions/") wwwDir 
+  mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ sid ++ "/model.json")
+  case mModelJson of
+    Right modelJson -> 
+      return $ object ["id" .= sid, "model" .= (makeJson . unpack)  modelJson]
+    Left _ -> return $ object ["id" .= sid, "model" .= Null]
+
 
