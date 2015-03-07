@@ -38,7 +38,7 @@ optionsSessionR = do
 postSessionR :: Handler String
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    -- addHeader "Content-Type" "application/json"
+    addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
     (_, payLoad) <- createSession (modelUUIDS csc)
     App {..} <- getYesod
@@ -135,6 +135,7 @@ list_sessions = do
 data VmxSessionFile = VmxSessionFile {
         pid :: String
 } 
+
 
 
 instance FromJSON VmxSessionFile where
