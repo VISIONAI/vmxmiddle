@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
-    , vmxHeaders
+    , headers
     , getPipeResponse
     , getPortResponse
     , InputPipe
@@ -116,8 +116,8 @@ drainFifo f = do
     o   <- Data.Text.IO.hGetContents hdl
     return $ unpack o
 
-vmxHeaders :: Handler ()
-vmxHeaders = do
+headers :: Handler ()
+headers = do
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Content-Type" "application/json"
 
