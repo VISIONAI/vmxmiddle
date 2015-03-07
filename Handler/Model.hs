@@ -57,6 +57,7 @@ instance FromJSON SaveModelCommand where
 -- save the model
 putModelR :: Handler TypedContent
 putModelR =  do
+    headers
     cmd :: SaveModelCommand <- requireJsonBody
     let sid = saveModelSid cmd
     let name = saveModelName cmd
@@ -96,6 +97,7 @@ instance FromJSON CreateModelCommand where
 --create new model
 postModelR :: Handler TypedContent
 postModelR = do
+    headers
     addHeader "Access-Control-Allow-Origin" "*"
     cmc <- requireJsonBody
     let sid = createModelSid cmc
