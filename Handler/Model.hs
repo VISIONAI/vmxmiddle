@@ -64,10 +64,6 @@ putModelR =  do
     let new_uuid = saveModelNewUUID cmd
 
     let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
-    --liftIO $ print $ "req is " ++ (show req)
-    --response <- getPortResponse req sid
-    --return response
-
     _ <- getPortResponse req sid
     ret <- getSessionInfo sid
     selectRep $ do
@@ -97,8 +93,9 @@ instance FromJSON CreateModelCommand where
 --create new model
 postModelR :: Handler TypedContent
 postModelR = do
-    headers
     addHeader "Access-Control-Allow-Origin" "*"
+    headers
+
     cmc <- requireJsonBody
     let sid = createModelSid cmc
     wwwDir' <- wwwDir

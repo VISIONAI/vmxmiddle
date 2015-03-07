@@ -16,21 +16,15 @@ import Data.List (isPrefixOf)
 import Network.HTTP.Conduit
 
 -- Downloads a file from URL and returns its contents as a 'B.ByteString'
+-- Allows for http and https downloads
 downloadFile :: String -> IO B.ByteString
---downloadFile url = response >>= getResponseBody
-  --where
 downloadFile url = do
-  b <- simpleHttp url -- >>= LB.putStr
+  b <- simpleHttp url
   return $ B.concat $ LB.toChunks b
-  -- a >>= getResponseBody
-    --response = simpleHTTP ((mkRequest GET $ fromJust $ parseURI url) :: Request B.ByteString)
 
 getForwardR :: Handler String
 getForwardR = do
   urlMaybe <- lookupGetParam "q"
-  --getParameters <- reqGetParams <$> Import.getRequest
-  --liftIO $ print $ concatMap (++ "Params: " ) getParameters
-  -- Import.getRequest >>= liftIO . print . ("Params :" ++) . concatMap show . reqGetParams
   case urlMaybe of
     Nothing -> do
       error "missing q param"
