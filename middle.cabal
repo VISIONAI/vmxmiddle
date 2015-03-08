@@ -104,7 +104,6 @@ library
                  , syb
                  , unordered-containers
                  , containers
-                 , cabal-macosx
                  , http-types
                  , filepath
                  , random
@@ -112,6 +111,7 @@ library
                  , aeson-pretty
                  , streaming-commons
                  , network
+                 , network-uri
                  , connection
                  , HTTP
                  , lifted-base
