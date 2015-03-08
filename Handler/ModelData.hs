@@ -38,7 +38,7 @@ getCompiledModelDataR muid = do
 
 
 
-getModelDatasetR :: ModelId -> Handler Html
+getModelDatasetR :: ModelUuid -> Handler Html
 getModelDatasetR muid = do
   getModelFile muid "data_set.json" typeJson
   -- wd <- wwwDir
@@ -62,7 +62,7 @@ getModelDatasetR muid = do
 --
 -- Example: /models/asdf/model.data will be downloaded ad asdf.model.data
 -- Example: /models/xxx/compiled.data will be downloaded ad xxx.compiled.data
-getModelFile :: ModelId -> String -> ContentType -> Handler Html
+getModelFile :: ModelUuid -> String -> ContentType -> Handler Html
 getModelFile muid shortName ctype = do
   wd <- wwwDir
   let save_name = pack $ muid ++ "." ++ shortName

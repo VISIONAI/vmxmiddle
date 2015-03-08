@@ -158,7 +158,7 @@ postModelR = do
             _ <- runDB $ insert $ Model mAuthId uuid name size pos neg start end
             return ()
         _ -> error "could not decode"
-    returnReps ret
+    returnReps . show $ ret
     where
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
         selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')

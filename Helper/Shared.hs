@@ -62,7 +62,7 @@ type Port = Int
 
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
-    App _ _ _ _ portMap' _ _ <- getYesod
+    App _ _ _ _ _ _ portMap' _ _ <- getYesod
     pm <- liftIO $ takeMVar portMap'
     liftIO $ putMVar portMap' (Data.Map.delete sid pm)
     return ()
