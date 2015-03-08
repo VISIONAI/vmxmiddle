@@ -6,7 +6,7 @@ import Network.HTTP( RequestMethod( GET ) )
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
 import Data.Maybe (fromJust)
-import Network.URI (parseURI)
+--import Network.URI (parseURI)
 import Data.List (isPrefixOf)
 
 -- useful example found at
@@ -32,8 +32,8 @@ getForwardR = do
       let url = add_prefix $ unpack u
       
       -- liftIO $ print ("URL is " ++ url)
-      liftIO $ print ("Downloading " ++ url)
-      liftIO $ print $ fromJust $ parseURI url
+      --liftIO $ print ("Downloading " ++ url)
+      --liftIO $ print $ fromJust $ parseURI url
       f <- liftIO $ downloadFile url
       sendResponse (typeJpeg, toContent f)
   where
