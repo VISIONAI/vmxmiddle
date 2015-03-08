@@ -111,7 +111,6 @@ library
                  , aeson-pretty
                  , streaming-commons
                  , network
-                 , network-uri
                  , connection
                  , HTTP
                  , lifted-base
