@@ -47,6 +47,8 @@ import Data.Map (delete)
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
+import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Aeson.Encode.Pretty (encodePretty)
 
 
 
@@ -151,7 +153,7 @@ returnReps' :: (ToJSON a, Show a) => a -> Handler TypedContent
 returnReps' entity = do
     selectRep $ do
         provideJson entity
-        provideRepType  mimeHtml $ return $ show entity
+        provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ entity) <> "</pre>")
         provideRepType  mimeText $ return $ show entity
 
 

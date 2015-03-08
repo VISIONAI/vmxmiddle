@@ -22,6 +22,7 @@ import qualified Data.Text.IO as DT (readFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Time (UTCTime)
+import Handler.ModelDB
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -34,13 +35,13 @@ optionsModelR = do
 
 --list all models
 getModelR :: Handler TypedContent
-getModelR = do
-    addHeader "Access-Control-Allow-Origin" "*"
-    ret <- list_models
-    selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
-        provideRepType  mimeText $ return ret
+getModelR = getModelDBR
+--    addHeader "Access-Control-Allow-Origin" "*"
+--    ret <- list_models
+--    selectRep $ do
+--        provideRepType  mimeJson $ return ret
+--        provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
+--        provideRepType  mimeText $ return ret
 
 data SaveModelCommand = SaveModelCommand {
     saveModelSid :: String,
@@ -141,10 +142,7 @@ postModelR = do
     mAuthId <- maybeAuthId
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
-    let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
-    --no longer writing images to disk, so this can be cleaned up quite a bit
-    --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
-    let images = map snd saf
+    let images = createModelImages cmc
     let req = object ["name"       .= createModelName cmc,
                       "params"     .= createModelParams cmc,
                       "images"     .= images,
@@ -155,42 +153,13 @@ postModelR = do
     let a :: Maybe CreateModelResponse = decode $  L.fromChunks $ [C.pack response]
     case a of 
         Just (CreateModelResponse _ (CreateModelData (VMXModel uuid name size pos neg start end))) -> do
-            _ <- runDB $ insert $ Model mAuthId uuid name size pos neg start end
+            _ <- runDB $ insert $ Model mAuthId (pack uuid) (pack name) size pos neg start end (image_url uuid)
             return ()
         _ -> error "could not decode"
-    returnReps . show $ ret
+    returnReps'  $ ret
     where
-        selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
-        selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')
-        selectionsAndFiles [] _ _ _ = []
+        image_url uuid = "models/" <> pack uuid <> "/image.jpg"
 
-list_models :: Handler Value
-list_models = do
-    modelsDir      <- (++ "models/") <$> wwwDir
-    -- all folders in the models directory that don't start with a dot
-    modelFolders   <- fmap (filter $ not . startsWithDot) $ liftIO $ getDirectoryContents modelsDir
-    let modelJsons = map (\x -> modelsDir ++ x) $ jsonFilesFrom modelFolders
-    --  only the model.jsons that actually exist
-    modelJsons'    <- liftIO $  filterM doesFileExist modelJsons
-    response       <- liftIO $ sequence $ fmap DT.readFile$ modelJsons'
-    let models     = map makeJson' (map unpack response)
-    return $ object ["data" .= zipWith (\a b-> a b) models (modelFolders)]
-    where
-        jsonFilesFrom folders = map (++ "/model.json") folders
-        startsWithDot (c:_)   = c == '.'
-        startsWithDot _       = undefined
-        makeJson' :: String -> (String -> ListModelResponse)
-        makeJson' s = do
-            -- String -> Char8 bystring
-            let packed = C.pack s
-            -- Char8 -> Lazy bytestring
-            let chunked = L.fromChunks [packed]
-            let eJ :: Either String (String -> ListModelResponse) = eitherDecode chunked
-            case eJ of
-                Right r -> r
-                -- TODO .. properly handle errors
-                Left e -> do
-                          ListModelResponse  e e [] [] 0 0  "error" "error"
 
 data ListModelResponse = ListModelResponse {
     listModelName :: String,

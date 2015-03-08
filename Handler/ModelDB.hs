@@ -7,7 +7,10 @@ getModelDBR :: Handler TypedContent
 getModelDBR = do
     mAid <- maybeAuthId
     models <- runDB $ selectList ([ModelUser ==. mAid]) []
-    returnReps' models
+    returnReps' $ object ["data" .= clean models]
+    where
+        clean :: [Entity Model] -> [Model]
+        clean = map entityVal
 
 
 postModelDBR :: Handler Html
