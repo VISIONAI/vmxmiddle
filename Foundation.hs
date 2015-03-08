@@ -122,10 +122,12 @@ instance Yesod App where
     maximumContentLength _ _ = Just (2 * 1024 * 1024)
 -- How to run database actions.
 instance YesodPersist App where
-    type YesodPersistBackend App = SqlPersistT
+    type YesodPersistBackend App = SqlBackend
     runDB = defaultRunDB persistConfig connPool
 instance YesodPersistRunner App where
     getDBRunner = defaultGetDBRunner connPool
+
+instance YesodAuthPersist App
 
 instance YesodAuth App where
     type AuthId App = UserId
