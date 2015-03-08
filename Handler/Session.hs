@@ -35,18 +35,20 @@ optionsSessionR = do
 
 
 
-postSessionR :: Handler String
+postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    (_, payLoad) <- createSession (modelUUIDS csc)
-    App {..} <- getYesod
-    return payLoad
+    response <- createSession (modelUUIDS csc)
+    selectRep $ do
+      provideRepType  mimeJson $ return response
+      provideRepType  mimeHtml $ return response
+      provideRepType  mimeText $ return response
+
 
 type ModelName = String
 
-createSession :: [String] -> Handler (SessionId, String)
+createSession :: [String] -> Handler Value
 createSession uuids = do
     sid             <- liftIO getSessionId
     sessionPath'    <- sessionPath sid
@@ -66,7 +68,7 @@ createSession uuids = do
     
     liftIO $ 
         waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
-    return $ (sid, asString $ object ["data" .= object ["id" .= sid]])
+    return $ object ["data" .= object ["id" .= sid]]
     where
         asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
