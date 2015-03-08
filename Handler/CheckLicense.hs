@@ -72,10 +72,10 @@ getCheckLicenseR = do
             return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= [version, versionMiddle]]
         ExitFailure 11 -> do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= [version, versionMiddle]]
-        ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
+        ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
-        ExitFailure 133  -> error $ "Error 33: Cannot Start " <> show vmxExecutable'
-        ExitFailure x  -> error $ "Undefined exit code: " <> show x <> vmxExecutable' <> " message: " <> stdout
+        ExitFailure 133  -> error $ "Error 133: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
+        ExitFailure x  -> error $ "Error " <> show x <> ": Cannot Start " <> vmxExecutable' <> " message: " <> stdout
     where
         getVersion :: VMXServerMessage -> String
         getVersion s = version s

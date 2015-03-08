@@ -98,6 +98,6 @@ if [ ! -d "../builds/" ]; then
 fi
 mv $TARBALL.gz ../builds/
 echo "Finished building builds/"$TARBALL.gz
-echo "Copying to files.vision.ai/vmx/"
+echo "Not Copying to files.vision.ai/vmx/"
 
 #scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/

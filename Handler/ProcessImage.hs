@@ -6,10 +6,9 @@ import Helper.Shared
 import Helper.VMXTypes
 
 
-
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
-    addHeader "Allow" "POST"
+    addHeader "Allow" "POST DELETE"
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "POST"
@@ -44,12 +43,19 @@ postProcessImageR sid = do
 deleteProcessImageR :: SessionId -> Handler ()
 deleteProcessImageR = deleteVMXSession
 
+
 deleteVMXSession :: SessionId -> Handler ()
 deleteVMXSession sid = do
-	-- stop process
-	_ <- exitVMXServer sid
-	delVMXFolder $ "sessions/" <> sid
-			
-	-- delete session files
+    
+    -- stop process
+    _ <- exitVMXServer sid
+
+    -- remove from port map
+    removeVMXSession sid
+
+    
+    return ()
+    -- delete session files
+    -- delVMXFolder $ "sessions/" <> sid			
 
 

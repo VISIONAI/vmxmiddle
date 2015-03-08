@@ -63,6 +63,7 @@ postResetCacheR :: ModelUuid -> Handler ()
 postResetCacheR mid = do
     App _ _ _ _ _ _ _ _ modelImageCache' <- getYesod
     seedRecursiveContentsCache mid modelImageCache'
+    _ <- seedRecursiveContentsCache mid modelImageCache'
     return ()
 
 -- This handler will return a random image from the modelsDir
