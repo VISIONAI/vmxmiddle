@@ -15,8 +15,7 @@ import Data.Aeson (encode)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception (tryJust)
-import Control.Monad (guard)
-import System.IO.Error (isDoesNotExistError)
+
 import qualified Data.Text.IO as DT (readFile)
 -- import Data.List (isInfixOf)
 import Data.Map (keys)
@@ -36,18 +35,20 @@ optionsSessionR = do
 
 
 
-postSessionR :: Handler String
+postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    (_, payLoad) <- createSession (modelUUIDS csc)
-    App {..} <- getYesod
-    return payLoad
+    response <- createSession (modelUUIDS csc)
+    selectRep $ do
+      provideRepType  mimeJson $ return response
+      provideRepType  mimeHtml $ return response
+      provideRepType  mimeText $ return response
+
 
 type ModelName = String
 
-createSession :: [String] -> Handler (SessionId, String)
+createSession :: [String] -> Handler Value
 createSession uuids = do
     sid             <- liftIO getSessionId
     sessionPath'    <- sessionPath sid
@@ -67,7 +68,7 @@ createSession uuids = do
     
     liftIO $ 
         waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
-    return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])
+    return $ object ["data" .= object ["id" .= sid]]
     where
         asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
@@ -131,28 +132,7 @@ list_sessions = do
     --liftIO $ print $ "portMap' is " ++ (show keys portMap')
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
-    where
-        sp = fmap (++ "sessions/") wwwDir 
-        getSessionInfo :: FilePath -> Handler Value
-        getSessionInfo fp = do
-            sp' <- sp
-            mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ fp ++ "/model.json")
-            case mModelJson of
-                Right modelJson -> 
-                    return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
-                Left _ -> return $ object ["session" .= fp, "model" .= Null]
-        -- notDead :: String -> FilePath -> Bool
-        -- notDead psOutput sessionDir = do
-        --     let possible = filter (isInfixOf sessionDir) (lines psOutput)
-        --     (not . null $ filter (isInfixOf "VMXserver") possible)
-        -- --check if running
-        -- notDots :: FilePath -> Bool
-        -- notDots fp = case fp of
-        --                 "."         -> False
-        --                 ".."        -> False
-        --                 ".DS_Store" -> False
-        --                 _ -> True
-
+          
 -- create a new session
 data VmxSessionFile = VmxSessionFile {
         pid :: String
