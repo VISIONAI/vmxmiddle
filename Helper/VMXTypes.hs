@@ -76,7 +76,7 @@ instance ToJSON   VMXParams where
   toJSON (VMXParams a b c d e f g h i j k l m n o p q r) =
     object ["train_max_negatives" .= fromMaybe (1000) a,
             "train_max_positives" .= fromMaybe (2000) b,
-            "detect_max_overlap" .= fromMaybe (0.3) c,
+            "detect_max_overlap" .= fromMaybe (0.1) c,
             "detect_add_flip" .= fromMaybe False d,
             "levels_per_octave" .= fromMaybe 10 e,
             "learn_threshold" .= fromMaybe 0.0 f,
@@ -84,7 +84,7 @@ instance ToJSON   VMXParams where
             "max_windows" .= fromMaybe 100 h,
             "max_image_size" .= fromMaybe 320 i,
             "learn_max_positives" .= fromMaybe 1 j,
-            "cell_size" .= fromMaybe 8 k,
+            "cell_size" .= fromMaybe 4 k,
             "initialize_max_cells" .= fromMaybe 12 l,
             "crop_radius" .= fromMaybe 80 m,
             "crop_threshold" .= fromMaybe (-1.0) n,

@@ -54,6 +54,7 @@ instance FromJSON SaveModelCommand where
         <*> (o .:? "new_uuid")
     parseJSON _ = mzero
 
+-- save the model
 putModelR :: Handler TypedContent
 putModelR =  do
     headers
@@ -63,9 +64,13 @@ putModelR =  do
     let new_uuid = saveModelNewUUID cmd
 
     let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
-    --liftIO $ print $ "req is " ++ (show req)
-    response <- getPortResponse req sid
-    return response
+    _ <- getPortResponse req sid
+    ret <- getSessionInfo sid
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return ret
+        provideRepType  mimeText $ return ret
+
     where
         save_model :: String = "save_model"
 
@@ -90,6 +95,7 @@ postModelR :: Handler TypedContent
 postModelR = do
     addHeader "Access-Control-Allow-Origin" "*"
     headers
+
     cmc <- requireJsonBody
     let sid = createModelSid cmc
     wwwDir' <- wwwDir
@@ -102,8 +108,14 @@ postModelR = do
                       "images"     .= images,
                       "command"    .= ("create_model" :: String)
                      ]
-    response <- getPipeResponse req sid
-    return response
+    _ <- getPortResponse req sid
+    ret <- getSessionInfo sid
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return ret
+        provideRepType  mimeText $ return ret
+
+
     where
         selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
         selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')

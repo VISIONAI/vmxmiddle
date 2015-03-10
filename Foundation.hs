@@ -64,7 +64,7 @@ instance Yesod App where
 
     errorHandler (InvalidArgs es) = 
         selectRep $ do
-            provideRepType  "application/json" $ return $ object ["invalid arguments" .= es] 
+            provideRepType  "application/json" $ return $ object ["invalid_arguments" .= es] 
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>invalid args</h1><p> #{show es}|]
 
