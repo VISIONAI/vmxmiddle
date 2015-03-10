@@ -46,6 +46,14 @@ This will generate a file called `VMXmiddle_${PLATFORM}_${GITTAG}` and
 scp it to `files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/`
 
 
+NOTES:
+
+cabal sandbox init
+
+.cabal/config must contain this extra line
+extra-lib-dirs:/opt/local/lib/
+
+
 ## Related Repositories
 
 Look at VMXserver and VMXAppBuilder
