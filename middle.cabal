@@ -41,6 +41,7 @@ library
                      Handler.SaveSession
                      Handler.Login
                      Handler.ModelDB
+                     Helper.Redis
                      Helper.Shared
                      Helper.VMXTypes
 
@@ -115,6 +116,7 @@ library
                  , HTTP
                  , lifted-base
                  , time
+                 , hedis
 
 
 

@@ -38,3 +38,4 @@
 /models/#ModelUuid/reset_cache ResetCacheR POST
 
 /db/model ModelDBR GET POST
+/admin/redis RedisR GET

@@ -20,6 +20,7 @@ import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
+import Data.Text (Text)
 import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFileExist)
 
 -- | The site argument for your application. This can be a good place to
@@ -33,7 +34,7 @@ data App = App
     , httpManager :: Manager
     , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , portMap      ::  MVar (Map String (MVar Int))
+    , portMap      ::  MVar (Map String (MVar Text))
     , machineIdent :: IORef (Maybe String)
     , imageStream  :: IORef (Map String [String])
     }

@@ -56,16 +56,12 @@ createSession uuids = do
     outLogPath'     <- outLogPath sid
     vmxExecutable'  <- vmxExecutable
     port            <- addLock sid Nothing
+    liftIO $ print $ "port is " <> port
     dataDir         <- wwwDir
 
-    let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
 
     log'    <- lift $ openFile outLogPath' AppendMode
-    (_,_,_,ph)      <- lift $ createProcess (shell $ shellLine)
-                         {std_out = UseHandle log'}
     
-    liftIO $ 
-        waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
     return $ (sid, asString $ object ["data" .= object ["id" .= sid]])
     where
         asString = C.unpack . C.concat . L.toChunks . encode

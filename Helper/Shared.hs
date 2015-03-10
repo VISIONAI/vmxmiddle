@@ -50,6 +50,8 @@ import Data.Text.IO (hGetContents)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Aeson.Encode.Pretty (encodePretty)
 
+import Helper.Redis
+
 
 
 
@@ -58,9 +60,9 @@ import Data.Conduit
 
 import Data.Conduit.List (consume)
 
-type LockMap = SM.Map String (MVar Int)
+type LockMap = SM.Map String (MVar VMXConnection)
 
-type Port = Int
+type Port = VMXConnection
 
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
@@ -71,7 +73,7 @@ removeVMXSession sid = do
 
 
 
-releasePort :: SessionId -> LockMap -> Port -> IO ()
+releasePort :: SessionId -> LockMap -> VMXConnection -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
 addLock :: SessionId -> Maybe Port -> Handler Port
@@ -103,15 +105,16 @@ addLock sid mbPort= do
             
             
 
-nextPort :: Handler Int
-nextPort = do
-    aPort <- liftIO $ randomRIO (1025, 65000)
-    valid <- liftIO $ checkPort aPort
-    if valid
-        then return aPort
-        else nextPort
+nextPort :: Handler VMXConnection
+nextPort = return "172.17.0.37:3201"
+--nextPort = do
+--    aPort <- liftIO $ randomRIO (1025, 65000)
+--    valid <- liftIO $ checkPort aPort
+--    if valid
+--        then return aPort
+--        else nextPort
 
-waitLock :: SessionId -> LockMap -> IO Int
+waitLock :: SessionId -> LockMap -> IO VMXConnection
 waitLock sid locks = takeMVar (locks ! sid) >>= return
 
 -- we use drainFifo instead of a normal readFile because Haskell's non-blocking IO treats FIFOs wrong
@@ -179,10 +182,11 @@ getPortResponse' input sessionId = do
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
 
-    let path = "http://127.0.0.1:" ++ show port ++ "/command"
+    let path = "http://" <> port <> "/command"
+    liftIO $ print $ "port is " <> path
 
 
-    req' <- liftIO $ parseUrl path
+    req' <- liftIO $ parseUrl $ unpack path
 
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
