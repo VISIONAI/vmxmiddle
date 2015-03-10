@@ -22,6 +22,7 @@ import Data.Map.Strict (Map)
 import Data.IORef (IORef)
 import Data.Text (Text)
 import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFileExist)
+import Data.ByteString (ByteString)
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -34,7 +35,7 @@ data App = App
     , httpManager :: Manager
     , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , portMap      ::  MVar (Map String (MVar Text))
+    , portMap      ::  MVar (Map String (MVar ByteString))
     , machineIdent :: IORef (Maybe String)
     , imageStream  :: IORef (Map String [String])
     }

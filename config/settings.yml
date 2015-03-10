@@ -2,7 +2,7 @@ Default: &defaults
   host: "*4" # any IPv4 host
   port: 3000
   approot: "http://localhost:3000"
-  copyright: Copyright vision.ai, LLC 2013-2014
+  copyright: Copyright vision.ai, LLC 2013-2015
   wwwdir: "/vmx/"
   vmxpath: "/vmx/build"
   #analytics: UA-YOURCODE

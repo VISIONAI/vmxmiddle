@@ -117,6 +117,7 @@ library
                  , lifted-base
                  , time
                  , hedis
+                 , safe
 
 
 

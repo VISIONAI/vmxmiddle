@@ -106,7 +106,7 @@ addLock sid mbPort= do
             
 
 nextPort :: Handler VMXConnection
-nextPort = return "172.17.0.37:3201"
+nextPort = getNextConn
 --nextPort = do
 --    aPort <- liftIO $ randomRIO (1025, 65000)
 --    valid <- liftIO $ checkPort aPort
@@ -183,31 +183,13 @@ getPortResponse' input sessionId = do
     port <- liftIO $ waitLock sessionId portMap
 
     let path = "http://" <> port <> "/command"
-    liftIO $ print $ "port is " <> path
 
 
-    req' <- liftIO $ parseUrl $ unpack path
+    req' <- liftIO $ parseUrl $ C.unpack path
 
 
-    --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
     res <- http req manager
-           -- `LX.catch` \e ->
-           --   case e of
-           --     FailedConnectionException2 {} ->
-           --       do
-           --         liftIO $ print "XXX5"
-           --         removeVMXSession sessionId
-           --         error "Removed bad session"
-               -- _ ->
-               --   do
-               --     liftIO $ print "XXX4"
-               --     error "other error"
-           -- `LX.catch`
-           -- (\(FailedConnectionException2 {}) ->
-           --   do
-           --     removeVMXSession sessionId
-           --     error "Removed bad session")
            `LX.finally` (liftIO $ releasePort sessionId portMap port)
      
 
