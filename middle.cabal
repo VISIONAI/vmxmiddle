@@ -50,6 +50,9 @@ library
     else
         ghc-options:   -Wall -O2
 
+    if os(osx)             
+        ghc-options: -optl-headerpad_max_install_names -Wall -O2
+
     extensions: TemplateHaskell
                 QuasiQuotes
                 OverloadedStrings
@@ -121,6 +124,9 @@ library
 executable         middle
     if flag(library-only)
         Buildable: False
+
+    if os(osx)
+        ghc-options: -optl-headerpad_max_install_names -threaded -O2
 
     main-is:           main.hs
     hs-source-dirs:    app
