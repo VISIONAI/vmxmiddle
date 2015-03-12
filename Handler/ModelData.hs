@@ -62,11 +62,11 @@ getModelDatasetR muid = do
 --
 -- Example: /models/asdf/model.data will be downloaded ad asdf.model.data
 -- Example: /models/xxx/compiled.data will be downloaded ad xxx.compiled.data
-getModelFile :: ModelUuid -> String -> ContentType -> Handler Html
+getModelFile :: ModelUuid -> Text -> ContentType -> Handler Html
 getModelFile muid shortName ctype = do
   wd <- wwwDir
-  let save_name = pack $ muid ++ "." ++ shortName
-  let file_name = (wd ++ "models/" ++ muid ++ "/" ++ shortName)
+  let save_name = muid <> "." <> shortName
+  let file_name = (wd <> "models/" <> unpack muid <> "/" <> (unpack shortName))
   
   e <- liftIO $ doesFileExist file_name
   if e

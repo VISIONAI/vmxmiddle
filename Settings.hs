@@ -17,6 +17,7 @@ import Settings.Development
 import Data.Default (def)
 import Text.Hamlet
 import Database.Persist.Postgresql (PostgresConf)
+import Data.Text (Text)
 
 
 -- Static setting below. Changing these requires a recompile
@@ -100,5 +101,5 @@ parseExtra _ o = Extra
 
 
 
-type SessionId = String
-type ModelUuid   = String
+type SessionId = Text
+type ModelUuid   = Text

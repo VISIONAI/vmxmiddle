@@ -14,7 +14,7 @@ getLogModelR sid = do
    addHeader "Content-Type" "application/json"
 
    dataDir         <- wwwDir
-   let shellLine = unwords ["tail -1",dataDir++"sessions/"++sid++"/log.txt"]
+   let shellLine = unwords ["tail -1",dataDir <> "sessions/" <> unpack sid <> "/log.txt"]
    (_,Just stdoutHdl,_,hdl)      <- lift $ createProcess (shell $ shellLine) {std_out = CreatePipe, close_fds = True}
    stdout <- liftIO $ Data.Text.IO.hGetContents stdoutHdl
    exitCode <- liftIO $ waitForProcess hdl

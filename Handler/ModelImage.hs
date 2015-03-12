@@ -7,7 +7,7 @@ import Import
 getModelImageR :: ModelUuid -> Handler Html
 getModelImageR muid = do
   wd <- wwwDir
-  let image_file = (wd ++ "models/" ++ muid ++ "/image.jpg")
+  let image_file = (wd <> "models/" <> unpack muid <> "/image.jpg")
   let default_file = "static/img/missing.jpg"
   e <- liftIO $ doesFileExist image_file
   if e

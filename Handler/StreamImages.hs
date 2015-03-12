@@ -47,9 +47,9 @@ getRecursiveContents topdir = do
 --     addHeader "Access-Control-Allow-Methods" "GET"
 --     return ()
 
-seedRecursiveContentsCache :: ModelUuid -> IORef (Map String [String]) -> Handler [String]
+seedRecursiveContentsCache :: ModelUuid -> IORef (Map Text [FilePath]) -> Handler [FilePath]
 seedRecursiveContentsCache muid cacheRef = do
-      modelsDir <- (++ ("models/" ++ muid)) <$> wwwDir
+      modelsDir <- (++ ("models/" ++ unpack muid)) <$> wwwDir
       modelFolders' <- liftIO $ getRecursiveContents modelsDir
       let modelFolders = filter (\x -> ".jpg" == fileEnding x) modelFolders'
       let modelFoldersClean = filter (\x -> "image.jpg" /= last9 x) modelFolders
@@ -86,7 +86,7 @@ getStreamImagesR muid = do
 
 getStreamImagesFirstR :: ModelUuid -> Handler Html
 getStreamImagesFirstR muid = do
-  modelDir <- (++ ("models/" ++ muid ++ "/data_set/")) <$> wwwDir
+  modelDir <- (++ ("models/" ++ unpack muid ++ "/data_set/")) <$> wwwDir
   sendFile "image/jpg" (modelDir ++ "000001.jpg")
 
 
@@ -100,8 +100,8 @@ getStreamImagesNextR muid = do
             else seedRecursiveContentsCache muid modelImageCache'
 
   let images = modelFoldersClean
-  mbIndex <- lookupSession $ pack muid
+  mbIndex <- lookupSession $ muid
   let index = maybe 0 (read . unpack) mbIndex
   let safeIndex = index `mod` length images
-  setSession (pack muid) $ pack $ show $ safeIndex + 1
+  setSession muid $ pack $ show $ safeIndex + 1
   sendFile "image/jpg" $ (images !! safeIndex)

@@ -44,8 +44,8 @@ getModelR = getModelDBR
 --        provideRepType  mimeText $ return ret
 
 data SaveModelCommand = SaveModelCommand {
-    saveModelSid :: String,
-    saveModelName :: String,
+    saveModelSid :: Text,
+    saveModelName :: Text,
     saveModelNewUUID :: Maybe Bool
                      
 }
@@ -79,49 +79,19 @@ putModelR =  do
         save_model :: String = "save_model"
 
 data CreateModelCommand = CreateModelCommand {
-    createModelName :: String,
+    createModelName :: Text,
     createModelParams :: Value,
     createModelImages :: [VMXImage],
-    createModelSid :: String
+    createModelSid :: Text
 }
 
-type ErrorFlag = Int
 
 -- { "error": 0, "message": "Create Model Success (UUID=oneeye)", "warning": "Create Model (Model Not Saved)", "data": { "model": { "uuid": "1356ff35-e234-4487-8840-7d8ec4207d4b", "name": "oneeye", "size": [ 4, 4 ], "num_pos": 1, "num_neg": 86, "start_time": "2015-02-21T03:19:42.991Z", "end_time": "2015-02-21T03:19:42.991Z" }, "time": 2.3303579999999999 } }
-data CreateModelResponse = CreateModelResponse ErrorFlag CreateModelData
-
-data VMXModel = VMXModel {
-    vmxModelUuid :: String,
-    vmxModelName :: String,
-    vmxModelSize :: [Int],  -- should be a tuple
-    vmxModelNumPos  :: Int,
-    vmxModelNumNeg  :: Int,
-    vmxStartTime    :: UTCTime,
-    vmxEndTime    :: UTCTime
-}
-
-instance FromJSON VMXModel where
-    parseJSON (Object o) = VMXModel <$> o .: "uuid" 
-                                    <*> o .: "name"
-                                    <*> o .: "size"
-                                    <*> o .: "num_pos"
-                                    <*> o .: "num_neg"
-                                    <*> o .: "start_time"
-                                    <*> o .: "end_time"
-    parseJSON _ = mzero
 
 
-instance FromJSON CreateModelResponse where
-    parseJSON (Object o) = CreateModelResponse <$> o .: "error" 
-                                               <*> o .: "data"
-    parseJSON _ = mzero
+
 
 type ModelName = String
-data CreateModelData = CreateModelData VMXModel
-
-instance FromJSON CreateModelData where
-    parseJSON (Object o) = CreateModelData <$> o .: "model"
-    parseJSON _ = mzero
 
 instance FromJSON CreateModelCommand where
     parseJSON (Object o) = do

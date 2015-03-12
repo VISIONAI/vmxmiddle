@@ -9,6 +9,7 @@ import GHC.Generics
 import Data.Typeable (Typeable)
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad     (mzero)
+import Data.Time (UTCTime)
 
 data VMXObject = VMXObject {
     vmxOName  :: String,
@@ -118,3 +119,46 @@ instance FromJSON VMXParams where
                          <*> (o .:? "initialize_add_flip")
                          <*> (o .:? "learn_mode")
     parseJSON _ = mzero
+
+type ErrorFlag = Int
+data CreateModelResponse = CreateModelResponse ErrorFlag CreateModelData
+instance FromJSON CreateModelResponse where
+    parseJSON (Object o) = CreateModelResponse <$> o .: "error" 
+                                               <*> o .: "data"
+    parseJSON _ = mzero
+
+instance ToJSON CreateModelResponse where
+    toJSON (CreateModelResponse error data') = object ["data" .= data', "error" .= error]
+
+data CreateModelData = CreateModelData VMXModel
+
+instance FromJSON CreateModelData where
+    parseJSON (Object o) = CreateModelData <$> o .: "model"
+    parseJSON _ = mzero
+
+instance ToJSON CreateModelData where
+    toJSON (CreateModelData model) = object ["model" .= model]
+
+data VMXModel = VMXModel {
+    vmxModelUuid :: String,
+    vmxModelName :: String,
+    vmxModelSize :: [Int],  -- should be a tuple
+    vmxModelNumPos  :: Int,
+    vmxModelNumNeg  :: Int,
+    vmxStartTime    :: UTCTime,
+    vmxEndTime    :: UTCTime
+}
+
+instance FromJSON VMXModel where
+    parseJSON (Object o) = VMXModel <$> o .: "uuid" 
+                                    <*> o .: "name"
+                                    <*> o .: "size"
+                                    <*> o .: "num_pos"
+                                    <*> o .: "num_neg"
+                                    <*> o .: "start_time"
+                                    <*> o .: "end_time"
+    parseJSON _ = mzero
+
+instance ToJSON VMXModel where
+    toJSON (VMXModel uuid name size pos neg start end) =
+            object ["uuid" .= uuid, "name" .= name, "size" .= size, "pos" .= pos, "neg" .= neg, "start" .= start, "end" .= end]

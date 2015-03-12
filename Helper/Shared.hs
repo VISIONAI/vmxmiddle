@@ -60,7 +60,7 @@ import Data.Conduit
 
 import Data.Conduit.List (consume)
 
-type LockMap = SM.Map String (MVar VMXConnection)
+type LockMap = SM.Map Text (MVar VMXConnection)
 
 type Port = VMXConnection
 
@@ -310,10 +310,10 @@ makeJson s = do
         Left _ -> undefined
 
 
-getSessionInfo :: FilePath -> Handler Value
+getSessionInfo :: SessionId -> Handler Value
 getSessionInfo sid = do
   sp' <- fmap (++ "sessions/") wwwDir 
-  mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ sid ++ "/model.json")
+  mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ unpack sid ++ "/model.json")
   case mModelJson of
     Right modelJson -> 
       return $ object ["id" .= sid, "model" .= (makeJson . unpack)  modelJson]

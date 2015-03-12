@@ -20,9 +20,10 @@ import Yesod.Core.Types (Logger)
 import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFileExist)
 import Data.ByteString (ByteString)
+import Data.Monoid ((<>))
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -35,9 +36,9 @@ data App = App
     , httpManager :: Manager
     , persistConfig :: Settings.PersistConf
     , appLogger :: Logger
-    , portMap      ::  MVar (Map String (MVar ByteString))
+    , portMap      ::  MVar (Map Text (MVar ByteString))
     , machineIdent :: IORef (Maybe String)
-    , imageStream  :: IORef (Map String [String])
+    , imageStream  :: IORef (Map Text [FilePath])
     }
 
 instance HasHttpManager App where
@@ -171,18 +172,18 @@ getExtra = fmap (appExtra . settings) getYesod
 --
 -- https://github.com/yesodweb/yesod/wiki/Sending-email
 
-getVmxPrefix :: Char -> String -> String
+getVmxPrefix :: Char -> FilePath -> FilePath
 getVmxPrefix '/' _ = ""
-getVmxPrefix _ cwd = cwd ++ "/"
+getVmxPrefix _ cwd = cwd <> "/"
 
 -- Does nothing for absolute locations (Starting with /) but will
 -- prepend the current work directory if the specief path is not
 -- relative (not starging with a /)
-finalPath :: String -> String -> String
+finalPath :: FilePath -> FilePath -> FilePath
 finalPath cwd s = do
   let firstChar = head s
   let prefix = getVmxPrefix firstChar cwd
-  prefix ++ s
+  prefix <> s
   
 wwwDir :: Handler String
 wwwDir = do
@@ -190,25 +191,25 @@ wwwDir = do
     cwd <- liftIO $ getCurrentDirectory
     case extraWwwDir extra of
         Just theDir -> do
-          let result = finalPath cwd $ theDir ++ "/"
-          let session_dir = result ++ "sessions"
-          let models_dir = result ++ "models"
+          let result = finalPath cwd $ theDir <> "/"
+          let session_dir = result <> "sessions"
+          let models_dir = result <> "models"
           liftIO $ createDirectoryIfMissing True session_dir
           liftIO $ createDirectoryIfMissing False models_dir
           return result
         Nothing  -> return "/www/vmx/"
 
-vmxExecutable :: Handler String
+vmxExecutable :: Handler FilePath
 vmxExecutable = do
     extra <- getExtra
     cwd <- liftIO $ getCurrentDirectory
     case extraVmxPath extra of
         Just theDir -> do
-          let result = finalPath cwd $ theDir ++ "/VMXserver"
+          let result = finalPath cwd $ theDir <> "/VMXserver"
           exist <- liftIO $ doesFileExist result
           case exist of
-            True -> liftIO $ print $ result ++ " exists"
-            False -> liftIO $ print $ "Warning " ++ result ++ " does not exist"
+            True -> liftIO $ print $ result <> " exists"
+            False -> liftIO $ print $ "Warning " <> result <> " does not exist"
           return result
         Nothing  -> return "/home/g/VMXserver/VMXserver"
 

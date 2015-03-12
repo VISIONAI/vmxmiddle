@@ -81,14 +81,16 @@ createSession uuids = do
         name = case length uuids of
                 0 -> "none"
                 _ -> uuids !! 0
-        getSessionId :: IO String
+
+        getSessionId :: IO Text
         getSessionId = do
             seed <- U4.nextRandom
-            return $ U.toString seed
+            return . pack $ U.toString seed
+
         sessionPath :: SessionId -> Handler String
         sessionPath  sid = do
             dir <- wwwDir 
-            return $ dir ++ "sessions/" ++ sid
+            return $ dir ++ "sessions/" ++ unpack sid
         outLogPath :: SessionId -> Handler String
         outLogPath  sid = fmap (++ "/log.txt") (sessionPath sid) >>= return
         --modelPath = case modelNameM of
@@ -122,7 +124,7 @@ list_sessions = do
     -- let sessions' = filter (notDead psOutput) sessions''
     -- liftIO $ print $ "sessions' is " ++ (show sessions')
     
-    let sessions' = keys $ portMap
+    let sessions' = keys portMap
     --liftIO $ print $ "portMap' is " ++ (show keys portMap')
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
