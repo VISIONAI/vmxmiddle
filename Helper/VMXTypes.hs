@@ -10,6 +10,7 @@ import Data.Typeable (Typeable)
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad     (mzero)
 import Data.Time (UTCTime)
+import Yesod (ToContent, toContent)
 
 data VMXObject = VMXObject {
     vmxOName  :: String,
@@ -147,7 +148,7 @@ data VMXModel = VMXModel {
     vmxModelNumNeg  :: Int,
     vmxStartTime    :: UTCTime,
     vmxEndTime    :: UTCTime
-}
+} deriving (Show)
 
 instance FromJSON VMXModel where
     parseJSON (Object o) = VMXModel <$> o .: "uuid" 
@@ -162,3 +163,6 @@ instance FromJSON VMXModel where
 instance ToJSON VMXModel where
     toJSON (VMXModel uuid name size pos neg start end) =
             object ["uuid" .= uuid, "name" .= name, "size" .= size, "pos" .= pos, "neg" .= neg, "start" .= start, "end" .= end]
+
+instance ToContent VMXModel where
+    toContent vmxmodel = toContent $ show vmxmodel

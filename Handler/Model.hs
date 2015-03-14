@@ -10,7 +10,7 @@ module Handler.Model where
 import Import
 import Helper.Shared
 import Control.Monad (filterM)
-import Data.Aeson (decode, withObject)
+import Data.Aeson (decode, withObject, encode)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
 import           Data.Typeable
@@ -23,6 +23,7 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Time (UTCTime)
 import Handler.ModelDB
+import Helper.Redis
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -119,14 +120,14 @@ postModelR = do
                       "command"    .= ("create_model" :: String)
                      ]
     response <- getPortResponse' req sid
-    ret <- getSessionInfo sid
+    liftIO $ print response
     let a :: Maybe CreateModelResponse = decode $  L.fromChunks $ [C.pack response]
     case a of 
-        Just (CreateModelResponse _ (CreateModelData (VMXModel uuid name size pos neg start end))) -> do
+        Just (CreateModelResponse _ (CreateModelData vmxmodel@(VMXModel uuid name size pos neg start end))) -> do
             _ <- runDB $ insert $ Model mAuthId (pack uuid) (pack name) size pos neg start end (image_url uuid)
-            return ()
+            _ <- setSessionInfo sid vmxmodel
+            returnReps' $ object ["id" .= sid, "model" .= vmxmodel]
         _ -> error "could not decode"
-    returnReps'  $ ret
     where
         image_url uuid = "models/" <> pack uuid <> "/image.jpg"
 

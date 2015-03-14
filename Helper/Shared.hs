@@ -38,7 +38,7 @@ import qualified Data.ByteString.Char8 as C
 import qualified Data.Text.IO as DT (readFile)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
-import Data.Aeson (encode)
+import Data.Aeson (encode, decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
 import Control.Exception.Lifted  as LX (catch,finally)
@@ -50,7 +50,7 @@ import Data.Text.IO (hGetContents)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Aeson.Encode.Pretty (encodePretty)
 
-import Helper.Redis
+import Helper.Redis as R
 
 
 
@@ -253,12 +253,27 @@ getPipeResponse = getPortResponse
 
 
 
+data ProcessImageResponse = ProcessImageResponse VMXModel
+
+instance FromJSON ProcessImageResponse where
+    parseJSON (Object o) = ProcessImageResponse <$> o .: "model"
+    parseJSON _ = mzero
+
+
+instance ToJSON ProcessImageResponse where
+    toJSON (ProcessImageResponse model) = object ["model" .= model]
 
 processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
 processImage sid image params name = do
    let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
-   response <- getPipeResponse req sid
-   return response
+   response <- getPortResponse' req sid
+   let mR :: Maybe ProcessImageResponse = decode $  L.fromChunks $ [C.pack response]
+   case mR of
+        Just (ProcessImageResponse model) -> do
+            _ <- setSessionInfo sid model
+            return ()
+        _ -> error "could not decode"
+   returnReps response
    where
         command :: String
         command = "process_image"
@@ -310,13 +325,13 @@ makeJson s = do
         Left _ -> undefined
 
 
-getSessionInfo :: SessionId -> Handler Value
-getSessionInfo sid = do
-  sp' <- fmap (++ "sessions/") wwwDir 
-  mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ unpack sid ++ "/model.json")
-  case mModelJson of
-    Right modelJson -> 
-      return $ object ["id" .= sid, "model" .= (makeJson . unpack)  modelJson]
-    Left _ -> return $ object ["id" .= sid, "model" .= Null]
+-- getSessionInfo :: SessionId -> Handler Value
+-- getSessionInfo sid = do
+--   sp' <- fmap (++ "sessions/") wwwDir 
+--   mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ unpack sid ++ "/model.json")
+--   case mModelJson of
+--     Right modelJson -> 
+--       return $ object ["id" .= sid, "model" .= (makeJson . unpack)  modelJson]
+--     Left _ -> return $ object ["id" .= sid, "model" .= Null]
 
 

@@ -1,20 +1,25 @@
+ {-# LANGUAGE OverloadedStrings #-}
+
 module Helper.Redis 
     ( getRedisR
     , VMXConnection
     , getNextConn
     , setSessionInfo
+    , getSessionInfo
     )
     where
 
-import Import
+import Import hiding (get)
 import Database.Redis
 import Data.ByteString (ByteString)
 import Safe (headNote)
 import Helper.VMXTypes (CreateModelResponse)
-import Data.Aeson (encode)
+import qualified Data.Aeson  as A (encode, decodeStrict)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.Text.Encoding (encodeUtf8)
+import Helper.VMXTypes
+import Data.Maybe (fromJust)
 
 type VMXConnection = ByteString
 
@@ -29,11 +34,22 @@ getRedisConn :: Handler Connection
 getRedisConn = liftIO $ connect defaultConnectInfo { connectHost = "redishost" } >>= return
 
 
-setSessionInfo :: SessionId -> CreateModelResponse -> Handler (Either Reply Status)
-setSessionInfo sid cmr = do
+setSessionInfo :: SessionId -> VMXModel -> Handler (Either Reply Status)
+setSessionInfo sid model = do
     conn <- getRedisConn
     liftIO $ runRedis conn $ do
-        set (encodeUtf8 sid) (B.concat . BL.toChunks $ encode cmr)
+        set (encodeUtf8 sid) (B.concat . BL.toChunks $ A.encode model)
+
+getSessionInfo :: SessionId -> Handler VMXModel
+getSessionInfo sid = do
+    conn <- getRedisConn
+    eBS <- liftIO $ runRedis conn $ get (encodeUtf8 sid) >>= return
+    return $ case eBS of 
+        Right (Just bs) -> fromJust $ A.decodeStrict bs
+        Right  Nothing -> error $ "no session information for " <> unpack sid
+        Left  y -> error $ show y
+
+
 
 -- right now this actually just grabs the first one in the list
 -- lrange will be lpop
