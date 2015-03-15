@@ -86,7 +86,7 @@ fi
 # Create a tarball and send it to the server
 BUILD_NAME="VMXmiddle_"$HASH
 echo build name is $BUILD_NAME
-echo $BUILD_NAME > $BUILD_DIR/version
+echo $BUILD_NAME > $BUILD_SUBDIR2/version
 
 TARBALL=$BUILD_NAME".tar"
 echo 'tarball is now ' $TARBALL
