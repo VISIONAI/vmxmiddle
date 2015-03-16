@@ -6,7 +6,6 @@ module Helper.Shared
     , headers
     , getPipeResponse
     , getPortResponse
-    , getPortResponse'
     , InputPipe
     , OutputPipe
     , makeJson
@@ -15,25 +14,33 @@ module Helper.Shared
     , waitLock
     , releasePort
     , exitVMXServer
+    , removeVMXSession
     , delVMXFolder
     , addLock
     , nextPort
+    , mimeJson
+    , mimeHtml
+    , mimeText
+    , getSessionInfo
     ) where
 
 import Import
 import Data.Streaming.Network (bindPortTCP)
 import Network.Socket (sClose)
 import System.Random
+import Control.Monad (guard)
+import System.IO.Error (isDoesNotExistError)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
+import qualified Data.Text.IO as DT (readFile)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-
+import Control.Exception.Lifted  as LX (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
-
+import Data.Map (delete)
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
@@ -49,6 +56,15 @@ import Data.Conduit.List (consume)
 type LockMap = SM.Map String (MVar Int)
 
 type Port = Int
+
+removeVMXSession :: SessionId -> Handler ()
+removeVMXSession sid = do
+    App _ _ _ _ portMap' _ _ <- getYesod
+    pm <- liftIO $ takeMVar portMap'
+    liftIO $ putMVar portMap' (Data.Map.delete sid pm)
+    return ()
+
+
 
 releasePort :: SessionId -> LockMap -> Port -> IO ()
 releasePort sid locks port = putMVar (locks ! sid) port >> return ()
@@ -114,6 +130,13 @@ type OutputPipe = FilePath
 --     dataDir <- wwwDir
 --     return $ dataDir ++ "/sessions/" ++ sid ++ "/"
 
+mimeJson :: ContentType
+mimeJson = "application/json"
+mimeText :: ContentType
+mimeText = "text/plain"
+mimeHtml :: ContentType
+mimeHtml = "text/html"
+
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
     ret <- getPortResponse' input sessionId
@@ -122,12 +145,6 @@ getPortResponse input sessionId = do
         provideRepType  mimeHtml $ return ret
         provideRepType  mimeText $ return ret
 
-mimeJson :: ContentType
-mimeJson = "application/json"
-mimeText :: ContentType
-mimeText = "text/plain"
-mimeHtml :: ContentType
-mimeHtml = "text/html"
 
 --portErrorHandler :: String -> Handler TypedContent
 --portErrorHandler msg = error msg
@@ -142,7 +159,7 @@ getPortResponse' input sessionId = do
             then return pm
             else do
                 liftIO $ putMVar portMap' pm
-                invalidArgs [pack sessionId, "invalid session"]
+                notFound -- [pack $ "invalid session " ++ sessionId ]
                 
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
@@ -156,12 +173,30 @@ getPortResponse' input sessionId = do
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
     res <- http req manager
-    resValue <- responseBody res $$+- consume
-    liftIO $ releasePort sessionId portMap port
+           -- `LX.catch` \e ->
+           --   case e of
+           --     FailedConnectionException2 {} ->
+           --       do
+           --         liftIO $ print "XXX5"
+           --         removeVMXSession sessionId
+           --         error "Removed bad session"
+               -- _ ->
+               --   do
+               --     liftIO $ print "XXX4"
+               --     error "other error"
+           -- `LX.catch`
+           -- (\(FailedConnectionException2 {}) ->
+           --   do
+           --     removeVMXSession sessionId
+           --     error "Removed bad session")
+           `LX.finally` (liftIO $ releasePort sessionId portMap port)
+     
 
-    let ret = concat $ map C.unpack resValue
+    resValue' <- responseBody res $$+- consume
+    
+    let ret = concat $ map C.unpack resValue'
     return ret
-
+        
 
 
 checkPort :: Int -> IO Bool
@@ -273,5 +308,14 @@ makeJson s = do
         -- TODO .. properly handle errors
         Left _ -> undefined
 
-    
+
+getSessionInfo :: FilePath -> Handler Value
+getSessionInfo sid = do
+  sp' <- fmap (++ "sessions/") wwwDir 
+  mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ sid ++ "/model.json")
+  case mModelJson of
+    Right modelJson -> 
+      return $ object ["id" .= sid, "model" .= (makeJson . unpack)  modelJson]
+    Left _ -> return $ object ["id" .= sid, "model" .= Null]
+
 

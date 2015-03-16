@@ -54,12 +54,12 @@ mkdir $CONFIG_DIR
 
 if [ `uname` == "Darwin" ]; then
     # copy over Mac bundle files
-    cp ./mac_builder/Info.plist $BUILD_SUBDIR/Info.plist
-    cp ./mac_builder/run.sh $BUILD_SUBDIR2/run.sh
+    cp ./mac_builder/mac_files/Info.plist $BUILD_SUBDIR/Info.plist
+    cp ./mac_builder/mac_files/run.sh $BUILD_SUBDIR2/run.sh
 fi
 
 #copy over necessary config files
-cp ./mac_builder/settings.yml $CONFIG_DIR/settings.yml
+cp ./mac_builder/mac_files/settings.yml $CONFIG_DIR/settings.yml
 
 
 cp ./config/favicon.ico $CONFIG_DIR/favicon.ico
@@ -78,32 +78,6 @@ cp dist/build/middle/middle $BINARY_NAME
 #strip binary
 strip $BINARY_NAME
 
-#copy over utility files
-#cp ~/projects/vmxmiddle/mac_builder/upload.sh $BUILD_DIR/Contents/MacOS/
-#cp ~/projects/vmxmiddle/mac_builder/download.sh $BUILD_DIR/Contents/MacOS/
-
-#mkdir $BUILD_DIR/Contents/MacOS/assets/
-#mkdir $BUILD_DIR/Contents/MacOS/assets/sessions/
-#mkdir $BUILD_DIR/Contents/MacOS/assets/models/
-#mkdir $BUILD_DIR/Contents/MacOS/static
-#mkdir $BUILD_DIR/Contents/MacOS/static/dist/
-#mkdir $BUILD_DIR/Contents/MacOS/static/fonts/
-#mkdir $BUILD_DIR/Contents/MacOS/static/enter_license/
-#mkdir $BUILD_DIR/Contents/MacOS/static/img
-#cp static/index.html $BUILD_DIR/Contents/MacOS/static/
-#cp static/models.html $BUILD_DIR/Contents/MacOS/static/
-#cp static/sessions.html $BUILD_DIR/Contents/MacOS/static/
-#cp static/dist/* $BUILD_DIR/Contents/MacOS/static/dist/
-#cp static/fonts/* $BUILD_DIR/Contents/MacOS/static/fonts/
-#cp static/img/missing.jpg $BUILD_DIR/Contents/MacOS/static/img/
-#cp -R static/enter_license/dist $BUILD_DIR/Contents/MacOS/static/enter_license/
-
-#copy over VMXserver from the build directory
-#cp -R /Users/tomasz/projects/VMXserver/build/VMXserver.app $BUILD_DIR/Contents/MacOS/
-
-#copy over initial network
-#cp /VMXdata/99* $BUILD_DIR/Contents/MacOS/build/VMXdata/
-
 if [ `uname` == "Darwin" ]; then
     # Clean and move libraries so they are located inside the bundle's Frameworks directory
     ./mac_builder/clean_libs.sh $BINARY_NAME
@@ -112,7 +86,7 @@ fi
 # Create a tarball and send it to the server
 BUILD_NAME="VMXmiddle_"$HASH
 echo build name is $BUILD_NAME
-echo $BUILD_NAME > $BUILD_DIR/version
+echo $BUILD_NAME > $BUILD_SUBDIR2/version
 
 TARBALL=$BUILD_NAME".tar"
 echo 'tarball is now ' $TARBALL
@@ -124,6 +98,6 @@ if [ ! -d "../builds/" ]; then
 fi
 mv $TARBALL.gz ../builds/
 echo "Finished building builds/"$TARBALL.gz
-echo "Copying to files.vision.ai/vmx/"
+echo "Not Copying to files.vision.ai/vmx/"
 
-scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
+#scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/

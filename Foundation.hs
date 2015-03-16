@@ -64,11 +64,16 @@ instance Yesod App where
 
     errorHandler (InvalidArgs es) = 
         selectRep $ do
-            provideRepType  "application/json" $ return $ object ["invalid arguments" .= es] 
+            provideRepType  "application/json" $ return $ object ["invalid_arguments" .= es] 
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>invalid args</h1><p> #{show es}|]
 
-    errorHandler other = defaultErrorHandler other
+    errorHandler other =
+      selectRep $ do
+            provideRepType  "application/json" $ return $ object ["error" .= show other] 
+            provideRep $ defaultLayout $ 
+                toWidget [hamlet|<h1>other error</h1><p> #{show other}|]
+      --defaultErrorHandler other
 
     -- Store session data on the client in encrypted cookies,
     -- default session idle timeout is 120 minutes

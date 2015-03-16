@@ -14,16 +14,19 @@
 /session/#SessionId/params SessionParamsR GET OPTIONS
 /session/#SessionId/edit EditModelR POST PUT OPTIONS
 /session/#SessionId/load LoadModelR POST OPTIONS
+/session/#SessionId/save SaveSessionR POST
 /session/#SessionId/log.txt LogModelR GET OPTIONS
 
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
+/models/#ModelId/compiled.data CompiledModelDataR GET
+/models/#ModelId/data_set.json ModelDatasetR GET
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
 /models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
 /models/#ModelId/data_set/image.jpg StreamImagesNextR GET
 /models.html ModelViewerR GET
 /sessions.html SessionViewerR GET
-/video.html VideoViewerR GET
+
 /random RandomImageR GET OPTIONS
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
@@ -32,4 +35,5 @@
 
 
 /models/#ModelId/reset_cache ResetCacheR POST
+
 

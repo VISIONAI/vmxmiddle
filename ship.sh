@@ -1,4 +1,6 @@
 #deprecated but useful script to look at
+echo 'Deprecated'
+exit;
 
 mkdir -p scratch/config
 cp dist/build/middle/middle scratch/vmx

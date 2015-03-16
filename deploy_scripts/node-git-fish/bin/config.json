@@ -1,0 +1,15 @@
+{
+  "port": 8000,
+  "token": "benmayer",
+  "vmxmiddle": {
+    "script": "/root/deploy_scripts/vmxmiddle/dev.sh",
+    "branch": ["master"]
+  },
+  "vmxmiddle_stable": {
+    "script": "/root/deploy_scripts/vmxmiddle/stable.sh",
+    "branch": ["stable"]
+  },
+  "vmxmiddle_tag": {
+    "script": "/root/deploy_scripts/vmxmiddle/tag.sh"
+  }
+}

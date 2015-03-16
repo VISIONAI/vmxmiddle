@@ -14,9 +14,9 @@ import System.Directory (doesFileExist)
 import Data.Text.IO (hGetContents)
 
 import System.Process
-
-
-
+import Control.Exception (tryJust)
+import System.IO.Error (isDoesNotExistError)
+import Control.Monad (guard)
 
 
 data VMXServerMessage = VMXServerMessage {
@@ -27,7 +27,10 @@ data VMXServerMessage = VMXServerMessage {
 }
 
 instance FromJSON VMXServerMessage where
-    parseJSON (Object o) = VMXServerMessage <$> (o .: "message") <*> (o .: "version") <*> (o .: "machine") <*> (o .: "user")
+    parseJSON (Object o) = VMXServerMessage <$> (o .: "message")
+                           <*> (o .: "version")
+                           <*> (o .: "machine")
+                           <*> (o .: "user")
     parseJSON _ = mzero
     
 
@@ -59,17 +62,20 @@ getCheckLicenseR = do
     let version = getVersion $ readJson $ List.head $ lines stdout
     -- liftIO $ print $ show . head . lines $ stdout
     setMachineIdent uuid
+    
+    e <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "version")
+    let versionMiddle = either (const "development") id e
 
     case exitCode of
         ExitSuccess    -> do
             liftIO $ DT.writeFile licensePath (pack . List.head . lines $ stdout)
-            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= version]
+            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= [version, versionMiddle]]
         ExitFailure 11 -> do
-            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= version]
-        ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable'
+            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= [version, versionMiddle]]
+        ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
-        ExitFailure 133  -> error $ "Error 33: Cannot Start " <> show vmxExecutable'
-        ExitFailure x  -> error $ "Undefined exit code: " <> show x <> vmxExecutable' <> " message: " <> stdout
+        ExitFailure 133  -> error $ "Error 133: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
+        ExitFailure x  -> error $ "Error " <> show x <> ": Cannot Start " <> vmxExecutable' <> " message: " <> stdout
     where
         getVersion :: VMXServerMessage -> String
         getVersion s = version s

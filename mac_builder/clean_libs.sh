@@ -38,23 +38,23 @@ for i in $LIBS; do
     #echo "LL is" $LOCAL_LIB
     echo install_name_tool -change $i $LOCAL_LIB $BINARY_NAME
     install_name_tool -change $i $LOCAL_LIB $BINARY_NAME
-    cp ${i} $BUILD_DIR/Contents/Frameworks/
+    cp -f ${i} $BUILD_DIR/Contents/Frameworks/
     LIBS2=`otool -L ${i} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
     for j in $LIBS2; do
         #echo "i j is " $i $j
-        cp ${j} $BUILD_DIR/Contents/Frameworks/
+        cp -f ${j} $BUILD_DIR/Contents/Frameworks/
         LIBS3=`otool -L ${j} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
         for k in $LIBS3; do
             #echo "j k is " $j $k
-            cp ${k} $BUILD_DIR/Contents/Frameworks/
+            cp -f ${k} $BUILD_DIR/Contents/Frameworks/
             LIBS4=`otool -L ${k} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
             for l in $LIBS4; do
                 #echo "k l is " $k $l
-                cp ${l} $BUILD_DIR/Contents/Frameworks/
+                cp -f ${l} $BUILD_DIR/Contents/Frameworks/
                 LIBS5=`otool -L ${l} | grep "\t" | grep "/opt/local/lib" | awk '{print($1)}'`
                 for m in $LIBS5; do
                     #echo "l m is " $l $m
-                    cp ${m} $BUILD_DIR/Contents/Frameworks/
+                    cp -f ${m} $BUILD_DIR/Contents/Frameworks/
                 done
 
                 
@@ -63,6 +63,9 @@ for i in $LIBS; do
         done
     done
 done
+
+#give write permissions to these files
+chmod u+w $BUILD_DIR/Contents/Frameworks/*
 
 ### go over all libs and replace /opt/local/bin with @executable_path\/..\/Frameworks
 

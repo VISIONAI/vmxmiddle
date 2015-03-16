@@ -8,44 +8,47 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import System.IO 
 import System.Process
-import System.Directory (getDirectoryContents, createDirectory, doesFileExist)
+import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
 import Data.Aeson (encode)
-
-import Helper.Shared
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception (tryJust)
-import Control.Monad (guard)
-import System.IO.Error (isDoesNotExistError)
-import qualified Data.Text.IO as DT (readFile)
-import Data.List (isInfixOf)
 
+import qualified Data.Text.IO as DT (readFile)
+-- import Data.List (isInfixOf)
+import Data.Map (keys)
+-- import qualified Data.ByteString.Lazy.Char8 as LC
 
 import Control.Concurrent (threadDelay)
+import Helper.Shared
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
-    addHeader "Allow" "Get, Put"
+    addHeader "Allow" "Get, Post"
     addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "GET, PUT"
+    addHeader "Access-Control-Allow-Methods" "GET, POST"
     return ()
 
 
 
 
-postSessionR :: Handler String
+postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    (_, payLoad) <- createSession (modelUUIDS csc)
-    App {..} <- getYesod
-    return payLoad
+    response <- createSession (modelUUIDS csc)
+    selectRep $ do
+      provideRepType  mimeJson $ return response
+      provideRepType  mimeHtml $ return response
+      provideRepType  mimeText $ return response
+
 
 type ModelName = String
 
-createSession :: [String] -> Handler (SessionId, String)
+createSession :: [String] -> Handler Value
 createSession uuids = do
     sid             <- liftIO getSessionId
     sessionPath'    <- sessionPath sid
@@ -65,7 +68,7 @@ createSession uuids = do
     
     liftIO $ 
         waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
-    return $ (sid, asString $ object ["data" .= object ["session_id" .= sid]])
+    return $ object ["data" .= object ["id" .= sid]]
     where
         asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
@@ -98,44 +101,38 @@ createSession uuids = do
         --        Just m -> "models/" ++ m ++ ".mat"
         --        Nothing -> ""
 
-
 --list all sessions
-getSessionR :: Handler Value
+getSessionR :: Handler TypedContent
 getSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
-    list_sessions
+    ret <- list_sessions
+    selectRep $ do
+        provideRepType  mimeJson $ return ret
+        provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
+        provideRepType  mimeText $ return ret
+
 
 list_sessions :: Handler Value
 list_sessions = do
-    sessions <-  sp >>= lift.getDirectoryContents 
-    let sessions'' = filter notDots sessions
-    psOutput <- liftIO $ readProcess "ps" ["aux"] ""
-    let sessions' = filter (notDead psOutput) sessions''
+    App _ _ _ _ portMap' _ _ <- getYesod
+    portMap <- do
+        pm <- liftIO $ takeMVar portMap'
+        liftIO $ putMVar portMap' pm
+        return pm
+               
+    -- liftIO $ print $ "keys are" ++ (show $ keys $ portMap)
+
+    -- sessions <-  sp >>= lift.getDirectoryContents 
+    -- let sessions'' = filter notDots sessions
+    -- psOutput <- liftIO $ readProcess "ps" ["aux"] ""
+    -- let sessions' = filter (notDead psOutput) sessions''
+    -- liftIO $ print $ "sessions' is " ++ (show sessions')
+    
+    let sessions' = keys $ portMap
+    --liftIO $ print $ "portMap' is " ++ (show keys portMap')
     out <- sequence $ map getSessionInfo sessions'
     return $ object ["data" .= out]
-    where
-        sp = fmap (++ "sessions/") wwwDir 
-        getSessionInfo :: FilePath -> Handler Value
-        getSessionInfo fp = do
-            sp' <- sp
-            mModelJson <- liftIO $ tryJust (guard . isDoesNotExistError) (DT.readFile  $ sp' ++ fp ++ "/model.json")
-            case mModelJson of
-                Right modelJson -> 
-                    return $ object ["session" .= fp, "model" .= (makeJson . unpack)  modelJson]
-                Left _ -> return $ object ["session" .= fp, "error" .= True]
-        notDead :: String -> FilePath -> Bool
-        notDead psOutput sessionDir = do
-            let possible = filter (isInfixOf sessionDir) (lines psOutput)
-            (not . null $ filter (isInfixOf "VMXserver") possible)
-        --check if running
-        notDots :: FilePath -> Bool
-        notDots fp = case fp of
-                        "."         -> False
-                        ".."        -> False
-                        ".DS_Store" -> False
-                        _ -> True
-
+          
 -- create a new session
 data VmxSessionFile = VmxSessionFile {
         pid :: String

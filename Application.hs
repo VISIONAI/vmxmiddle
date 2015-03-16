@@ -39,7 +39,6 @@ import Handler.ModelImage
 import Handler.ModelData
 import Handler.ModelViewer
 import Handler.SessionViewer
-import Handler.VideoViewer
 import Handler.RandomImage
 import Handler.CheckLicense
 import Handler.ActivateLicense
@@ -47,6 +46,7 @@ import Handler.LoadModel
 import Handler.LogModel
 import Handler.StreamImages
 import Handler.Forward
+import Handler.SaveSession
 
 
 -- This line actually creates our YesodDispatch instance. It is the second half
