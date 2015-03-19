@@ -56,10 +56,10 @@ getCheckLicenseR = do
                         (_, Just stdoutHdl, _, hdl) <- liftIO $ createProcess (proc vmxExecutable' ["-check"]) {std_out =CreatePipe}
                         stdout <- liftIO $ Data.Text.IO.hGetContents stdoutHdl 
                         exitCode <- liftIO $ waitForProcess hdl
-                        --(exitCode, stdout, _) <- liftIO $ readProcessWithExitCode  vmxExecutable' ["-check"] "" 
                         return (exitCode, unpack stdout)
-    let uuid = getUUID . readJson . List.head . lines $ stdout
-    let version = getVersion $ readJson $ List.head $ lines stdout
+    let obj = readJson $ safeHead $ lines stdout
+    let uuid = getUUID $ obj
+    let version = getVersion $ obj
     -- liftIO $ print $ show . head . lines $ stdout
     setMachineIdent uuid
     
@@ -68,7 +68,7 @@ getCheckLicenseR = do
 
     case exitCode of
         ExitSuccess    -> do
-            liftIO $ DT.writeFile licensePath (pack . List.head . lines $ stdout)
+            liftIO $ DT.writeFile licensePath (pack . safeHead . lines $ stdout)
             return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= [version, versionMiddle]]
         ExitFailure 11 -> do
             return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= [version, versionMiddle]]
@@ -77,6 +77,11 @@ getCheckLicenseR = do
         ExitFailure 133  -> error $ "Error 133: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure x  -> error $ "Error " <> show x <> ": Cannot Start " <> vmxExecutable' <> " message: " <> stdout
     where
+
+        safeHead :: [String] -> String
+        safeHead (x:_) = x
+        safeHead [] = ""
+
         getVersion :: VMXServerMessage -> String
         getVersion s = version s
         
@@ -94,9 +99,8 @@ getCheckLicenseR = do
             let eJ :: Either String VMXServerMessage = eitherDecode chunked
             case eJ of
                 Right r -> r
-                -- TODO .. properly handle errors
                 Left e -> do
-                         VMXServerMessage e e e e
+                         error $ "Invalid .vmxlicense file, please delete it and try again."
 
 setMachineIdent :: String -> Handler ()
 setMachineIdent  ident = do
