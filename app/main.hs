@@ -1,7 +1,6 @@
 import Import
 import Prelude              (IO)
 import Yesod.Default.Config (fromArgs)
-import Yesod.Default.Main   (defaultMainLog)
 import Settings             (parseExtra)
 import Application          (makeApplication)
 
@@ -23,4 +22,23 @@ main = do
   do
     cwd <- getCurrentDirectory
     defaultMainLog (withArgs ["Production"] (fromArgs parseExtra)) makeApplication
+
+
+defaultMainLog :: (Show env, Read env)
+               => IO (AppConfig env extra)
+               -> (AppConfig env extra -> IO (Application, LogFunc))
+               -> IO ()
+defaultMainLog load getApp = do
+    config <- load
+    (app, logFunc) <- getApp config
+    runSettings defaultSettings
+        { settingsPort = appPort config
+        , settingsHost = appHost config
+        , settingsTimeout = 90
+        , settingsOnException = const $ \e -> logFunc
+            $(qLocation >>= liftLoc)
+            "yesod"
+            LevelError
+            (toLogStr $ "Exception from Warp: " ++ show e)
+        } app
 

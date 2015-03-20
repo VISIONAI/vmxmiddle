@@ -1,7 +1,7 @@
 {-# LANGUAGE PackageImports #-}
 import "middle" Application (getApplicationDev)
 import Network.Wai.Handler.Warp
-    (runSettings, defaultSettings, setPort)
+    (runSettings, defaultSettings, setPort, setTimeout)
 import Control.Concurrent (forkIO)
 import System.Directory (doesFileExist, removeFile)
 import System.Exit (exitSuccess)
@@ -11,7 +11,7 @@ main :: IO ()
 main = do
     putStrLn "Starting devel application"
     (port, app) <- getApplicationDev
-    forkIO $ runSettings (setPort port defaultSettings) app
+    forkIO $ runSettings (setTimeout 90 $ setPort port $ defaultSettings) app
     loop
 
 loop :: IO ()
