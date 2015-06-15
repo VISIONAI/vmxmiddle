@@ -25,9 +25,12 @@ mkdir -p scratch/config
 cp dist/build/middle/middle scratch/vmx
 cp config/settings.yml config/favicon.ico config/robots.txt scratch/config
 
-BUILD_NAME=`git describe --tags`
-echo build name is $BUILD_NAME
-echo -n $BUILD_NAME > scratch/version
+PLATFORM="Linux"
+HASH=${PLATFORM}_`git describe --tags`
+BUILD_NAME="VMXmiddle_"$HASH
+echo "build name is" $BUILD_NAME
+
+echo $BUILD_NAME > scratch/version
 
 
 
