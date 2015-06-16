@@ -37,6 +37,18 @@ getCompiledModelDataR muid = do
   --   notFound
 
 
+getModelJsonR :: ModelId -> Handler Html
+getModelJsonR muid = do
+  wd <- wwwDir
+  let json_file = (wd ++ "models/" ++ muid ++ "/model.json")
+
+  e <- liftIO $ doesFileExist json_file
+  if e
+    then do
+    sendFile "json" json_file
+    else do
+    sendFile "json" json_file
+
 
 getModelDatasetR :: ModelId -> Handler Html
 getModelDatasetR muid = do
