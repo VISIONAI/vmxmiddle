@@ -20,6 +20,7 @@ import           System.Directory (getDirectoryContents,doesFileExist)
 import qualified Data.Text.IO as DT (readFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.String.Utils (replace)
 
 optionsModelR :: Handler ()
 optionsModelR = do
@@ -130,8 +131,10 @@ list_models = do
     --  only the model.jsons that actually exist
     modelJsons'    <- liftIO $  filterM doesFileExist modelJsons
     response       <- liftIO $ sequence $ fmap DT.readFile$ modelJsons'
+    -- Now take the valid json file names, and strip them to get the valid UUIDs
+    let validUUIDs = map (\x -> Data.String.Utils.replace "/model.json" "" x) $ map (\x -> Data.String.Utils.replace modelsDir "" x) modelJsons'
     let models     = map makeJson' (map unpack response)
-    return $ object ["data" .= zipWith (\a b-> a b) models (modelFolders)]
+    return $ object ["data" .= zipWith (\a b-> a b) models (validUUIDs)]
     where
         jsonFilesFrom folders = map (++ "/model.json") folders
         startsWithDot (c:_)   = c == '.'
