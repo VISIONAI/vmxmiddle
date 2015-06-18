@@ -22,6 +22,9 @@ fi
 #Make the scratch directory which will contain the tarball
 mkdir -p scratch/config
 
+#copy over upload_script
+cp scripts/upload_model.sh scratch/upload_model.sh
+
 cp dist/build/middle/middle scratch/vmx
 cp config/settings.yml config/favicon.ico config/robots.txt scratch/config
 
