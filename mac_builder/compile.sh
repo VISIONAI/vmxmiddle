@@ -56,6 +56,7 @@ if [ `uname` == "Darwin" ]; then
     # copy over Mac bundle files
     cp ./mac_builder/mac_files/Info.plist $BUILD_SUBDIR/Info.plist
     cp ./mac_builder/mac_files/run.sh $BUILD_SUBDIR2/run.sh
+    cp scripts/upload_model.sh $BUILD_SUBDIR2/upload_model.sh
 fi
 
 #copy over necessary config files
