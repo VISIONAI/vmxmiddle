@@ -66,12 +66,16 @@ getCheckLicenseR = do
     e <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "version")
     let versionMiddle = either (const "development") id e
 
+    e2 <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "static/dist/version")
+    let versionAppBuilder = either (const "development") id e2
+
+
     case exitCode of
         ExitSuccess    -> do
             liftIO $ DT.writeFile licensePath (pack . safeHead . lines $ stdout)
-            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= [version, versionMiddle]]
+            return $ object ["licensed" .= True, "uuid" .= uuid, "version" .= [version, versionMiddle, versionAppBuilder]]
         ExitFailure 11 -> do
-            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= [version, versionMiddle]]
+            return $ object ["licensed" .= False, "uuid" .= uuid, "version" .= [version, versionMiddle, versionAppBuilder]]
         ExitFailure 127  -> error $ "Error 127: Cannot Find " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure 126  -> error $ "Error 126: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
         ExitFailure 133  -> error $ "Error 133: Cannot Start " <> show vmxExecutable' <> " message: " <> stdout
