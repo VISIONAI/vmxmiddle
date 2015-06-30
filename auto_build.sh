@@ -33,7 +33,7 @@ HASH=${PLATFORM}_`git describe --tags`
 BUILD_NAME="VMXmiddle_"$HASH
 echo "build name is" $BUILD_NAME
 
-echo $BUILD_NAME > scratch/version
+echo -n $BUILD_NAME > scratch/version
 
 
 

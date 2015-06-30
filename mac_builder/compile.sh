@@ -48,25 +48,25 @@ mkdir $BUILD_DIR
 mkdir $BUILD_SUBDIR
 mkdir $BUILD_SUBDIR2
 
-CONFIG_DIR=$BUILD_SUBDIR2/config/
-mkdir $CONFIG_DIR
+CONFIG_DIR=${BUILD_SUBDIR2}/config/
+mkdir ${CONFIG_DIR}
 
 
 if [ `uname` == "Darwin" ]; then
     # copy over Mac bundle files
     cp ./mac_builder/mac_files/Info.plist $BUILD_SUBDIR/Info.plist
-    cp ./mac_builder/mac_files/run.sh $BUILD_SUBDIR2/run.sh
-    cp scripts/upload_model.sh $BUILD_SUBDIR2/upload_models.sh
-    cp scripts/import_models.sh $BUILD_SUBDIR2/import_models.sh
-    cp scripts/download_models.sh $BUILD_SUBDIR2/download_models.sh
+    cp ./mac_builder/mac_files/run.sh ${BUILD_SUBDIR2}/run.sh
+    cp scripts/upload_model.sh ${BUILD_SUBDIR2}/upload_models.sh
+    cp scripts/import_models.sh ${BUILD_SUBDIR2}/import_models.sh
+    cp scripts/download_models.sh ${BUILD_SUBDIR2}/download_models.sh
 fi
 
 #copy over necessary config files
-cp ./mac_builder/mac_files/settings.yml $CONFIG_DIR/settings.yml
+cp ./mac_builder/mac_files/settings.yml ${CONFIG_DIR}/settings.yml
 
 
-cp ./config/favicon.ico $CONFIG_DIR/favicon.ico
-cp ./config/robots.txt $CONFIG_DIR/robots.txt
+cp ./config/favicon.ico ${CONFIG_DIR}/favicon.ico
+cp ./config/robots.txt ${CONFIG_DIR}/robots.txt
 
 if [ `uname` == "Darwin" ]; then
     #copy over Mac Bundle icon
@@ -75,7 +75,7 @@ if [ `uname` == "Darwin" ]; then
 fi
 
 # copy over main binary
-BINARY_NAME=$BUILD_SUBDIR2/VMX
+BINARY_NAME=${BUILD_SUBDIR2}/VMX
 cp dist/build/middle/middle $BINARY_NAME
 
 #strip binary
@@ -88,19 +88,19 @@ fi
 
 # Create a tarball and send it to the server
 BUILD_NAME="VMXmiddle_"$HASH
-echo build name is $BUILD_NAME
-echo $BUILD_NAME > $BUILD_SUBDIR2/version
+echo build name is ${BUILD_NAME}
+echo -n ${BUILD_NAME} > ${BUILD_SUBDIR2}/version
 
-TARBALL=$BUILD_NAME".tar"
-echo 'tarball is now ' $TARBALL
+TARBALL=${BUILD_NAME}".tar"
+echo 'tarball is now ' ${TARBALL}
 cd dist/
-tar cf $TARBALL $APP_NAME
-gzip -f $TARBALL
+tar cf ${TARBALL} $APP_NAME
+gzip -f ${TARBALL}
 if [ ! -d "../builds/" ]; then
     mkdir ../builds/
 fi
-mv $TARBALL.gz ../builds/
-echo "Finished building builds/"$TARBALL.gz
+mv ${TARBALL}.gz ../builds/
+echo "Finished building builds/"${TARBALL}.gz
 echo "Not Copying to files.vision.ai/vmx/"
 
-#scp ../builds/$TARBALL.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
+scp ../builds/${TARBALL}.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
