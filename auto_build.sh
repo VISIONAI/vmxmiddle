@@ -43,4 +43,4 @@ tar cfzv $TARBALL  -C scratch .
 
 
 
-scp $TARBALL root@files.vision.ai:/usr/share/nginx/html/releases/middle
+scp $TARBALL root@files.vision.ai:/www/releases/middle
