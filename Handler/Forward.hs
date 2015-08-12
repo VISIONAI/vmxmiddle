@@ -30,7 +30,7 @@ simpleHTTPWithUserAgent :: String -> [Char] -> [Char] -> IO LZ.ByteString
 simpleHTTPWithUserAgent url version osv = do
     r  <- parseUrl url
 
-    let uuid' = C.pack $ concat [version, " (", os, osv, " ", arch, " https://vision.ai)"]
+    let uuid' = C.pack $ concat [version, " (", osv, " ", arch, " https://vision.ai)"]
     let request = r { requestHeaders =  [ ("User-Agent",uuid') ] }
     withManager $ (return.responseBody) <=< httpLbs request
 
@@ -48,17 +48,17 @@ getForwardR = do
   e <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "version")
   let versionMiddle = either (const "development") id e
 
-  osv <- case os of
-    "darwin" -> do
-      (_, Just hout, _, hdl) <- liftIO $ createProcess (proc "sw_vers" ["-productVersion"]){ std_out = CreatePipe }
-      osv <- liftIO $ Data.Text.IO.hGetContents hout
-      exitCode <- liftIO $ waitForProcess hdl
-      return osv
-    _ -> do
-      (_, Just hout, _, hdl) <- liftIO $ createProcess (proc "uname" ["-mrs"]){ std_out = CreatePipe }
-      osv <- liftIO $ Data.Text.IO.hGetContents hout
-      exitCode <- liftIO $ waitForProcess hdl
-      return osv
+  --osv <- case os of
+  --  "darwin" -> do
+  --    (_, Just hout, _, hdl) <- liftIO $ createProcess (proc "sw_vers" ["-productVersion"]){ std_out = CreatePipe }
+  --    osv <- liftIO $ Data.Text.IO.hGetContents hout
+  --    exitCode <- liftIO $ waitForProcess hdl
+  --    return osv
+  --  _ -> do
+  (_, Just hout, _, hdl) <- liftIO $ createProcess (proc "uname" ["-mrs"]){ std_out = CreatePipe }
+  osv <- liftIO $ Data.Text.IO.hGetContents hout
+  liftIO $ waitForProcess hdl
+      --return osv
 
   case urlMaybe of
     Nothing -> do
