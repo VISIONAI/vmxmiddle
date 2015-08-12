@@ -106,4 +106,4 @@ mv ${TARBALL}.gz ../builds/
 echo "Finished building builds/"${TARBALL}.gz
 echo "Not Copying to files.vision.ai/vmx/"
 
-#scp ../builds/${TARBALL}.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
+scp ../builds/${TARBALL}.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
