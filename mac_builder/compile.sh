@@ -56,9 +56,12 @@ if [ `uname` == "Darwin" ]; then
     # copy over Mac bundle files
     cp ./mac_builder/mac_files/Info.plist $BUILD_SUBDIR/Info.plist
     cp ./mac_builder/mac_files/run.sh ${BUILD_SUBDIR2}/run.sh
-    cp scripts/upload_model.sh ${BUILD_SUBDIR2}/upload_models.sh
-    cp scripts/import_models.sh ${BUILD_SUBDIR2}/import_models.sh
-    cp scripts/download_models.sh ${BUILD_SUBDIR2}/download_models.sh
+
+    curl -o ${BUILD_SUBDIR2}/models https://raw.githubusercontent.com/VISIONAI/vmx-docker-manager/master/models
+    chmod +x ${BUILD_SUBDIR2}/models
+    #cp scripts/upload_model.sh ${BUILD_SUBDIR2}/upload_models.sh
+    #cp scripts/import_models.sh ${BUILD_SUBDIR2}/import_models.sh
+    #cp scripts/download_models.sh ${BUILD_SUBDIR2}/download_models.sh
 fi
 
 #copy over necessary config files
@@ -103,4 +106,4 @@ mv ${TARBALL}.gz ../builds/
 echo "Finished building builds/"${TARBALL}.gz
 echo "Not Copying to files.vision.ai/vmx/"
 
-scp ../builds/${TARBALL}.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
+#scp ../builds/${TARBALL}.gz root@files.vision.ai:/www/vmx/VMXmiddle/${PLATFORM}/
