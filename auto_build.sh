@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #Make sure the branch is set, this is something done in node-git-fish first
 if [ -z "$VMXMIDDLE_BRANCH" ]
 then
@@ -5,9 +7,6 @@ then
   exit 1;
 fi
 
-TARBALL=middle.linux-${VMXMIDDLE_BRANCH}.tar.gz
-
-rm $TARBALL
 
 #Build the Haskell application using Docker
 ./cabal_build.sh
@@ -18,6 +17,9 @@ then
     echo "Cabal build failed"
     exit 1
 fi
+
+#Delete old files
+rm -rf scratch/
 
 #Make the scratch directory which will contain the tarball
 mkdir -p scratch/config
@@ -35,12 +37,13 @@ echo "build name is" $BUILD_NAME
 
 echo -n $BUILD_NAME > scratch/version
 
-
-
-
+TARBALL=${BUILD_NAME}.tar.gz
+#TARBALL=middle.linux-${VMXMIDDLE_BRANCH}.tar.gz
 
 tar cfzv $TARBALL  -C scratch .
+scp $TARBALL root@files.vision.ai:/www/vmx/VMXmiddle/Linux/
 
-
-
-scp $TARBALL root@files.vision.ai:/www/releases/middle
+if [ ! -d "builds/" ]; then
+    mkdir builds/
+fi
+mv $TARBALL builds/
