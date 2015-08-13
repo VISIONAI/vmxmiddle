@@ -30,7 +30,7 @@ auto_build.sh
 However, `auto_build.sh` requires the branch to be set, so it cannot
 be ran manually. auto_build will generate a file called: 
 `middle.linux-${VMXMIDDLE_BRANCH}.tar.gz` and scp it to
-`files.vision.ai:/usr/share/nginx/html/releases/middle`
+`files.vision.ai:/www/releases/middle`
 
 
 ## Build instructions for Mac OS X
