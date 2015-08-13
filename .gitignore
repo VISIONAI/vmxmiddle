@@ -4,6 +4,7 @@ dist*
 static/tmp/
 static/combined/
 static/fay*
+static3/
 config/client_session_key.aes
 *.hi
 *.o
