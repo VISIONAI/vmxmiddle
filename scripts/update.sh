@@ -8,7 +8,6 @@
 cd "`dirname "$0"`"
 M=`basename "$0"`
 
-JQ=`pwd`"/VMXserver.app/Contents/MacOS/jq"
 
 echo "VMX Mac Updater (version `md5 -r $M | awk '{print($1)}'`)"
 usage() {
@@ -21,6 +20,14 @@ usage() {
   usage
 }
 
+#Change the local URL if VMX is running on another port or using HTTPS
+VMX_LOCAL_URL=${VMX_LOCAL_URL:="http://localhost:3000"}
+JQ=`pwd`"/VMXserver.app/Contents/MacOS/jq"
+
+if [ ! -f $JQ ]; then
+    echo "The directory of this script "`pwd`" does not appear to be a valid VMX directory"
+    exit 1
+fi
 
 FLAG=$1
 
@@ -30,8 +37,13 @@ if [ "$FLAG" != "stable" ] && [ "$FLAG" != "latest" ]; then
 fi
 
 #Get our version
-CHECK=`curl localhost:3000/check 2>/dev/null`
+CHECK=`curl ${VMX_LOCAL_URL}/check 2>/dev/null`
 echo $CHECK | $JQ .
+
+if [ "$CHECK" == "" ]; then
+    echo "Cannot update vmx, because it is not running at ${VMX_LOCAL_URL}"
+    exit 1
+fi
 
 mkdir -p software_updates/
 
@@ -114,5 +126,5 @@ fi
 
 
 #Get our version
-CHECK=`curl localhost:3000/check 2>/dev/null`
+CHECK=`curl ${VMX_LOCAL_URL}/check 2>/dev/null`
 echo $CHECK | $JQ .
