@@ -59,6 +59,8 @@ if [ `uname` == "Darwin" ]; then
 
     curl -o ${BUILD_SUBDIR2}/models https://raw.githubusercontent.com/VISIONAI/vmx-docker-manager/master/models
     chmod +x ${BUILD_SUBDIR2}/models
+
+    cp scripts/update.sh ${BUILD_SUBDIR2}
     #cp scripts/upload_model.sh ${BUILD_SUBDIR2}/upload_models.sh
     #cp scripts/import_models.sh ${BUILD_SUBDIR2}/import_models.sh
     #cp scripts/download_models.sh ${BUILD_SUBDIR2}/download_models.sh
