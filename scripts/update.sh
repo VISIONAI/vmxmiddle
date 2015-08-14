@@ -7,6 +7,9 @@
 
 cd "`dirname "$0"`"
 M=`basename "$0"`
+
+JQ=`pwd`"/VMXserver.app/Contents/MacOS/jq"
+
 echo "VMX Mac Updater (version `md5 -r $M | awk '{print($1)}'`)"
 usage() {
     echo "Usage: $0 latest"
@@ -28,13 +31,13 @@ fi
 
 #Get our version
 CHECK=`curl localhost:3000/check 2>/dev/null`
-echo $CHECK | jq .
+echo $CHECK | $JQ .
 
 mkdir -p software_updates/
 
-CUR=`echo $CHECK | jq -r ".version[0]"`.tar.gz
+CUR=`echo $CHECK | $JQ -r ".version[0]"`.tar.gz
 SER=`curl -s https://files.vision.ai/vmx/VMXserver/Mac/MD5SUMS.json`
-REM=`echo $SER | jq -r "."$FLAG".file"`
+REM=`echo $SER | $JQ -r "."$FLAG".file"`
 echo "Installed VMXserver:" $CUR
 echo "$FLAG    VMXserver:" $REM
 
@@ -42,7 +45,7 @@ if [ "$CUR" != "$REM" ]; then
     echo "Downloading..."
     cd software_updates
     curl -# -o $REM https://files.vision.ai/vmx/VMXserver/Mac/$REM
-    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | jq -r "."$FLAG".md5"`" ]; then
+    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | $JQ -r "."$FLAG".md5"`" ]; then
         echo "md5 sums do not match"
         exit
     else
@@ -52,14 +55,14 @@ if [ "$CUR" != "$REM" ]; then
     rm build/VMXserver.app/Contents/MacOS/config.json
     cp -R build/VMXserver.app ../
     rm -rf build
-    cd -
+    cd - > /dev/null
 else
     echo "Not downloading, versions match"
 fi
 
-CUR=`echo $CHECK | jq -r ".version[1]"`.tar.gz
+CUR=`echo $CHECK | $JQ -r ".version[1]"`.tar.gz
 SER=`curl -s https://files.vision.ai/vmx/VMXmiddle/Mac/MD5SUMS.json`
-REM=`echo $SER| jq -r "."$FLAG".file"`
+REM=`echo $SER| $JQ -r "."$FLAG".file"`
 echo "Installed VMXmiddle:" $CUR
 echo "$FLAG    VMXmiddle:" $REM
 
@@ -68,7 +71,7 @@ if [ "$CUR" != "$REM" ]; then
     cd software_updates
     curl -# -o $REM https://files.vision.ai/vmx/VMXmiddle/Mac/$REM
 
-    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | jq -r "."$FLAG".md5"`" ]; then
+    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | $JQ -r "."$FLAG".md5"`" ]; then
         echo "md5 sums do not match"
         exit
     else
@@ -79,14 +82,14 @@ if [ "$CUR" != "$REM" ]; then
     rm VMX.app/Contents/MacOS/config/settings.yml 
     cp -R VMX.app/Contents/MacOS/ ../
     rm -rf VMX.app
-    cd -
+    cd - > /dev/null
 else
     echo "Not downloading, versions match"
 fi
 
-CUR=`echo $CHECK | jq -r ".version[2]"`.tar.gz
+CUR=`echo $CHECK | $JQ -r ".version[2]"`.tar.gz
 SER=`curl -s https://files.vision.ai/vmx/vmxAppBuilder/MD5SUMS.json`
-REM=`echo $SER | jq -r "."$FLAG".file"`
+REM=`echo $SER | $JQ -r "."$FLAG".file"`
 echo "Installed AppBuilder:" $CUR
 echo "$FLAG    AppBuilder:" $REM
 
@@ -94,7 +97,7 @@ if [ "$CUR" != "$REM" ]; then
     echo "Downloading..."
     cd software_updates
     curl -# -o $REM https://files.vision.ai/vmx/vmxAppBuilder/$REM
-    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | jq -r "."$FLAG".md5"`" ]; then
+    if [ "`md5 -r $REM | awk '{print($1)}'`" != "`echo $SER | $JQ -r "."$FLAG".md5"`" ]; then
         echo "md5 sums do not match"
         exit
     else
@@ -104,7 +107,7 @@ if [ "$CUR" != "$REM" ]; then
     tar xf $REM
     cp -R static/ ../
     rm -rf static
-    cd -
+    cd - > /dev/null
 else
     echo "Not downloading, versions match"
 fi
@@ -112,4 +115,4 @@ fi
 
 #Get our version
 CHECK=`curl localhost:3000/check 2>/dev/null`
-echo $CHECK | jq .
+echo $CHECK | $JQ .
