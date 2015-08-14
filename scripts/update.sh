@@ -68,6 +68,8 @@ if [ "$CUR" != "$REM" ]; then
     cp -R build/VMXserver.app ../
     rm -rf build
     cd - > /dev/null
+
+    rm VMXserver.app/Contents/MacOS/.vmxlicense
 else
     echo "Not downloading, versions match"
 fi
