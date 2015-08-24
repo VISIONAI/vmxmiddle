@@ -8,10 +8,10 @@ import Helper.VMXTypes
 
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
-    addHeader "Allow" "POST DELETE"
+    addHeader "Allow" "GET, POST, DELETE, OPTIONS"
     addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "POST"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type,Origin, X-Requested-With, Accept"
+    addHeader "Access-Control-Allow-Methods" "GET, POST, DELETE, OPTIONS"
     return ()
 
 data ProcessImageCommand =  ProcessImageCommand {
@@ -40,21 +40,25 @@ postProcessImageR sid = do
    val <- processImage sid (processImageImages pic) params (processImageName pic)
    return val
 
-deleteProcessImageR :: SessionId -> Handler ()
-deleteProcessImageR = deleteVMXSession
+deleteProcessImageR :: SessionId -> Handler TypedContent
+deleteProcessImageR sid = do
+  addHeader "Access-Control-Allow-Origin" "*"
+  addHeader "Content-Type" "application/json"
+    
+  deleteVMXSession sid
 
 
-deleteVMXSession :: SessionId -> Handler ()
+deleteVMXSession :: SessionId -> Handler TypedContent
 deleteVMXSession sid = do
     
     -- stop process
-    _ <- exitVMXServer sid
+    outski <- exitVMXServer sid
 
     -- remove from port map
     removeVMXSession sid
 
     
-    return ()
+    return outski
     -- delete session files
     -- delVMXFolder $ "sessions/" <> sid			
 
