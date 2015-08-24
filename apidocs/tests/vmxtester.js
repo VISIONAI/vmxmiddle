@@ -36,6 +36,7 @@ myrequest:function(inp,func) {
     //console.log('error is',error);
     //console.log('response is',response);
     //  console.log('error is',body);
+    console.log(response.statusCode);
     if (body.length > 0) {
       console.log(JSON.stringify(JSON.parse(body),null,4));
     }
