@@ -53,7 +53,7 @@ type Form x = Html -> MForm (HandlerT App IO) (FormResult x, Widget)
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
 instance Yesod App where
-    approot = ApprootMaster $ appRoot . settings
+    approot = ApprootRelative -- ApprootMaster $ appRoot . settings
 
 
     errorHandler (InternalError e) = 
