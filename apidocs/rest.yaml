@@ -46,13 +46,18 @@ paths:
         200:
           description: OK
           schema:
-           properties:
-            data:
-              type: array
-              items:
-                $ref: '#/definitions/ModelSummary'
-        500:
-          description: "Cannot create session (id contains illegal characters)"
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/ModelSummary'
+        400:
+          description: Cannot create session (id contains   illegal characters)
+          schema:
+            properties:
+              error:
+                type: string
+                description: "A description of the error"
 
     get:
       tags: 
@@ -70,7 +75,7 @@ paths:
               items:
                 $ref: '#/definitions/SessionSummary'
         400:
-          description: Problem Loading Model(s)
+          description: Problem Listing Model(s)
 
   /session/{sessionId}:
     get:
@@ -84,8 +89,17 @@ paths:
           required: true
       summary: "Get session info"
       responses:
-        400:
-          description: "Not defined"
+        200:
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    type: string
+                    description: "The id of the removed session"
+        404:
+          description: "Not Found"
     delete:
       tags:
         - session management
