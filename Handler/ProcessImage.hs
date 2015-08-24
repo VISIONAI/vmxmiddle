@@ -70,23 +70,31 @@ postProcessImageR sid = do
 deleteProcessImageR :: SessionId -> Handler TypedContent
 deleteProcessImageR sid = do
   addHeader "Access-Control-Allow-Origin" "*"
-  addHeader "Content-Type" "application/json"
+  -- addHeader "Content-Type" "application/json"
     
-  deleteVMXSession sid
+  response <- deleteVMXSession sid
+  selectRep $ do
+    provideRepType  mimeJson $ return response
+    provideRepType  mimeHtml $ return response
+    provideRepType  mimeText $ return response
 
 
-deleteVMXSession :: SessionId -> Handler TypedContent
+
+deleteVMXSession :: SessionId -> Handler Value
 deleteVMXSession sid = do
     
     -- stop process
-    outski <- exitVMXServer sid
+    _ <- exitVMXServer sid
 
     -- remove from port map
     removeVMXSession sid
 
     sessionPath'    <- sessionPath sid
     liftIO $ waitForFileGone (sessionPath' ++ "/url")
-    return outski
+
+    let o = object ["id" .= sid]
+    return $ object ["data" .= o]
+
     -- delete session files
     -- delVMXFolder $ "sessions/" <> sid
 
