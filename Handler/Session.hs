@@ -6,7 +6,8 @@ module Handler.Session where
 import Import
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
-import System.IO 
+import System.IO
+import System.IO.Error (isAlreadyExistsError)
 import System.Process
 import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
@@ -14,10 +15,11 @@ import Data.UUID as U (toString)
 import Data.Aeson (encode)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Control.Exception (tryJust)
+import Control.Exception (tryJust, catch)
+import Data.Char
 
 import qualified Data.Text.IO as DT (readFile)
--- import Data.List (isInfixOf)
+import Data.List (isInfixOf)
 import Data.Map (keys)
 -- import qualified Data.ByteString.Lazy.Char8 as LC
 
@@ -39,7 +41,7 @@ postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
     (csc :: CreateSessionCommand ) <- requireJsonBody
-    response <- createSession (modelUUIDS csc)
+    response <- createSession (sessionID csc)
     selectRep $ do
       provideRepType  mimeJson $ return response
       provideRepType  mimeHtml $ return response
@@ -48,19 +50,49 @@ postSessionR = do
 
 type ModelName = String
 
-createSession :: [String] -> Handler Value
-createSession uuids = do
-    sid             <- liftIO getSessionId
+createSession :: Maybe String -> Handler Value
+createSession msid = do
+    sid <- case msid of
+      Nothing -> do
+        liftIO $ getSessionId
+      Just s -> do
+        return s
+
+    let cleansid = filter good sid
+    if (length sid == 0) || (not $ isInfixOf sid cleansid)
+      then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
+      else liftIO $ print "No invalid characters here"
+
+
+    App _ _ _ _ portMap' _ _ <- getYesod
+    portMap <- do
+        pm <- liftIO $ takeMVar portMap'
+        liftIO $ putMVar portMap' pm
+        return pm
+               
+    let sessions' = keys $ portMap
+    if elem sid sessions'
+       then do
+         error $ "id already used up"
+      else do
+         liftIO $ print "New id is not used up"
+
+
+
+        
     sessionPath'    <- sessionPath sid
     lift $ 
-        createDirectory sessionPath' 
-
+        createDirectory sessionPath' `catch`
+        (\e -> if isAlreadyExistsError e 
+               then liftIO $ print "Welcome"
+               else liftIO $ print "Welcome2")
+    
     outLogPath'     <- outLogPath sid
     vmxExecutable'  <- vmxExecutable
     port            <- addLock sid Nothing
     dataDir         <- wwwDir
 
-    let shellLine = unwords [vmxExecutable', dataDir, sid, name, ":" ++ show port]
+    let shellLine = unwords [vmxExecutable', dataDir, sid, "none", ":" ++ show port]
 
     log'    <- lift $ openFile outLogPath' AppendMode
     (_,_,_,ph)      <- lift $ createProcess (shell $ shellLine)
@@ -68,8 +100,11 @@ createSession uuids = do
     
     liftIO $ 
         waitForFile (sessionPath' ++ "/url") ph vmxExecutable'
-    return $ object ["data" .= object ["id" .= sid]]
+    resid <- getSessionInfo sid
+    return $ object ["data" .= resid]
     where
+        -- we only allow session ids to contain alphanumeric caracters and dashes
+        good x = (not $ isUpper x) && isAlphaNum x || x == '-'
         asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
         waitForFile f ph vmxExecutable' = do
@@ -84,9 +119,7 @@ createSession uuids = do
                 else do
                     threadDelay 200
                     waitForFile f ph vmxExecutable'
-        name = case length uuids of
-                0 -> "none"
-                _ -> uuids !! 0
+
         getSessionId :: IO String
         getSessionId = do
             seed <- U4.nextRandom
@@ -147,13 +180,14 @@ instance FromJSON VmxSessionFile where
 
 -- create a new session
 data CreateSessionCommand = CreateSessionCommand {
-        modelUUIDS :: [String]
+--        modelUUIDS :: [String],
+        sessionID :: Maybe String
 } 
 
 
 
 instance FromJSON CreateSessionCommand where
-    parseJSON (Object o) = CreateSessionCommand <$> (o .: "uuids")
+    parseJSON (Object o) = CreateSessionCommand <$> (o .:? "id")
     parseJSON _ = mzero
 
 
