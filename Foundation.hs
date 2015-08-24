@@ -62,15 +62,21 @@ instance Yesod App where
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>500 error</h1><p> #{e}|]
 
-    errorHandler (InvalidArgs es) = 
+    errorHandler (InvalidArgs e) = 
         selectRep $ do
-            provideRepType  "application/json" $ return $ object ["invalid_arguments" .= es] 
+            provideRepType  "application/json" $ return $ object ["error" .= e] 
             provideRep $ defaultLayout $ 
-                toWidget [hamlet|<h1>invalid args</h1><p> #{show es}|]
+                toWidget [hamlet|<h1>invalid args</h1><p> #{show e}|]
+
+    errorHandler NotFound = 
+        selectRep $ do
+            provideRepType  "application/json" $ return $ object ["error" .= ("Not Found" :: String)] 
+            provideRep $ defaultLayout $ 
+                toWidget [hamlet|<h1>Not Found</h1><p> This resource cannot be found.|]
 
     errorHandler other =
       selectRep $ do
-            provideRepType  "application/json" $ return $ object ["error" .= show other] 
+            provideRepType  "application/json" $ return $ object ["error" .= ("Other Error: "++ (show other))] 
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>other error</h1><p> #{show other}|]
       --defaultErrorHandler other
