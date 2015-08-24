@@ -41,12 +41,12 @@ optionsSessionR = do
 postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    (csc:: Result CreateSessionCommand) <- parseJsonBody
-    let cmd = case csc of
-          Error err -> CreateSessionCommand Nothing
-          Success val -> val
-    --(csc :: CreateSessionCommand ) <- requireJsonBody
-    response <- createSession (sessionID cmd)
+    --(csc:: Result CreateSessionCommand) <- parseJsonBody
+    --let cmd = case csc of
+    --      Error err -> CreateSessionCommand Nothing
+    --      Success val -> val
+    (csc :: CreateSessionCommand ) <- requireJsonBody
+    response <- createSession (sessionID csc)
     selectRep $ do
       provideRepType  mimeJson $ return response
       provideRepType  mimeHtml $ return response
@@ -65,7 +65,7 @@ createSession msid = do
 
     let cleansid = filter good sid
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
-      then sendResponseStatus status400 $ A.object [ "message" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
+      then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
       --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
       else liftIO $ print "No invalid characters here"
 
