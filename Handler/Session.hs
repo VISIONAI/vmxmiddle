@@ -13,11 +13,12 @@ import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
 import Data.Aeson (encode)
+import Data.Aeson as A
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception (tryJust, catch)
 import Data.Char
-
+import Network.HTTP.Types (status400)
 import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
 import Data.Map (keys)
@@ -40,8 +41,12 @@ optionsSessionR = do
 postSessionR :: Handler TypedContent
 postSessionR = do
     addHeader "Access-Control-Allow-Origin" "*"
-    (csc :: CreateSessionCommand ) <- requireJsonBody
-    response <- createSession (sessionID csc)
+    (csc:: Result CreateSessionCommand) <- parseJsonBody
+    let cmd = case csc of
+          Error err -> CreateSessionCommand Nothing
+          Success val -> val
+    --(csc :: CreateSessionCommand ) <- requireJsonBody
+    response <- createSession (sessionID cmd)
     selectRep $ do
       provideRepType  mimeJson $ return response
       provideRepType  mimeHtml $ return response
@@ -60,7 +65,8 @@ createSession msid = do
 
     let cleansid = filter good sid
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
-      then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
+      then sendResponseStatus status400 $ A.object [ "message" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
+      --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
       else liftIO $ print "No invalid characters here"
 
 
