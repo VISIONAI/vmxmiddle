@@ -5,6 +5,9 @@ import Import
 import Helper.Shared
 import Helper.VMXTypes
 
+import System.Directory (doesFileExist)
+import Control.Concurrent (threadDelay)
+import Data.Map.Strict as SM (member) 
 
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
@@ -30,6 +33,30 @@ instance FromJSON ProcessImageCommand where
         ProcessImageCommand "" <$> (o .: "images") <*> (o .:? "params")
     parseJSON _ = mzero
 
+getProcessImageR :: SessionId -> Handler TypedContent
+getProcessImageR sid = do
+  addHeader "Access-Control-Allow-Origin" "*"
+
+  App _ _ _ _ portMap' _ _ <- getYesod
+  _ <- do
+    pm <- liftIO $ takeMVar portMap'
+    if member sid pm
+      then do
+        liftIO $ putMVar portMap' pm
+        return pm
+      else do
+        liftIO $ putMVar portMap' pm
+        notFound -- [pack $ "invalid session " ++ sessionId ]
+
+  
+  resid <- getSessionInfo sid
+  let response = object ["data" .= resid]
+  selectRep $ do
+    provideRepType  mimeJson $ return response
+    provideRepType  mimeHtml $ return response
+    provideRepType  mimeText $ return response
+
+  --return $ object ["data" .= resid]
 
 postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
@@ -57,9 +84,26 @@ deleteVMXSession sid = do
     -- remove from port map
     removeVMXSession sid
 
-    
+    sessionPath'    <- sessionPath sid
+    liftIO $ waitForFileGone (sessionPath' ++ "/url")
     return outski
     -- delete session files
-    -- delVMXFolder $ "sessions/" <> sid			
+    -- delVMXFolder $ "sessions/" <> sid
+
+    where
+      sessionPath :: SessionId -> Handler String
+      sessionPath s = do
+        dir <- wwwDir 
+        return $ dir ++ "sessions/" ++ s
+      waitForFileGone :: FilePath -> IO ()
+      waitForFileGone f = do
+        --liftIO $ print $ "Checking to see if " ++ f ++ " is still there"
+        stillThere <- doesFileExist f
+        case stillThere of
+          False -> return () --liftIO $ print "good"
+          True -> do
+            threadDelay 200
+            waitForFileGone f
+            
 
 
