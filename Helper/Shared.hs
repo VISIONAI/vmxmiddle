@@ -164,14 +164,14 @@ getPortResponse' input sessionId = do
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
 
-    let path = "http://127.0.0.1:" ++ show port ++ "/command"
+    let path = "http://127.0.0.1:" ++ show port ++ "/"
 
 
     req' <- liftIO $ parseUrl path
 
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
-    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
+    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input} --, checkStatus = \_ _ _ -> Nothing}
     res <- http req manager
            -- `LX.catch` \e ->
            --   case e of
@@ -243,15 +243,6 @@ getPipeResponse = getPortResponse
 --                    return ret
 --    where
 --        payload = encode v
-
-
-
-    
-    
-
-
-
-
 
 processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
 processImage sid image params name = do
