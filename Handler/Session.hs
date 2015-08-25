@@ -67,10 +67,10 @@ createSession msid = do
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
       then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
       --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
-      else liftIO $ print "No invalid characters here"
+      else liftIO $ print ("No invalid characters here" :: String)
 
 
-    App _ _ _ _ portMap' _ _ <- getYesod
+    App _ _ _ _ portMap' _ _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         liftIO $ putMVar portMap' pm
@@ -153,7 +153,7 @@ getSessionR = do
 
 list_sessions :: Handler Value
 list_sessions = do
-    App _ _ _ _ portMap' _ _ <- getYesod
+    App _ _ _ _ portMap' _ _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         liftIO $ putMVar portMap' pm

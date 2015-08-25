@@ -37,7 +37,7 @@ getProcessImageR :: SessionId -> Handler TypedContent
 getProcessImageR sid = do
   addHeader "Access-Control-Allow-Origin" "*"
 
-  App _ _ _ _ portMap' _ _ <- getYesod
+  App _ _ _ _ portMap' _ _ _ <- getYesod
   _ <- do
     pm <- liftIO $ takeMVar portMap'
     if member sid pm

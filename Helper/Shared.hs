@@ -38,7 +38,7 @@ import System.IO
 import Data.Aeson (encode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (catch,finally)
+import Control.Exception.Lifted  as LX (finally) -- (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 import Data.Map (delete)
 import Helper.VMXTypes
@@ -59,7 +59,7 @@ type Port = Int
 
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
-    App _ _ _ _ portMap' _ _ <- getYesod
+    App _ _ _ _ portMap' _ _ _ <- getYesod
     pm <- liftIO $ takeMVar portMap'
     liftIO $ putMVar portMap' (Data.Map.delete sid pm)
     return ()
@@ -71,7 +71,7 @@ releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
 addLock :: SessionId -> Maybe Port -> Handler Port
 addLock sid mbPort= do
-    App _ _ _ _ portMap' _ _  <- getYesod
+    App _ _ _ _ portMap' _ _ _  <- getYesod
     portMap <- liftIO $ takeMVar portMap'
     (port, newMap) <- case mbPort of 
                 Just requestedPort -> do  
@@ -152,7 +152,7 @@ getPortResponse input sessionId = do
 
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
-    App _ _ manager _ portMap' _ _ <- getYesod
+    App _ _ manager _ portMap' _ _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         if member sessionId pm

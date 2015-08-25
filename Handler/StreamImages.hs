@@ -61,7 +61,7 @@ seedRecursiveContentsCache muid cacheRef = do
     
 postResetCacheR :: ModelId -> Handler ()
 postResetCacheR mid = do
-    App _ _ _ _ _ _ modelImageCache' <- getYesod
+    App _ _ _ _ _ _ modelImageCache' _ <- getYesod
     _ <- seedRecursiveContentsCache mid modelImageCache'
     return ()
 
@@ -69,7 +69,7 @@ postResetCacheR mid = do
 -- directory, and an error is thrown if there are 0 images.
 getStreamImagesR :: ModelId -> Handler Html
 getStreamImagesR muid = do
-  App _ _ _ _ _ _ modelImageCache' <- getYesod
+  App _ _ _ _ _ _ modelImageCache' _ <- getYesod
   modelImageCache <- liftIO . readIORef $ modelImageCache'
   modelFoldersClean <- 
         if member muid modelImageCache 
@@ -91,7 +91,7 @@ getStreamImagesFirstR muid = do
 
 getStreamImagesNextR :: ModelId -> Handler Html
 getStreamImagesNextR muid = do
-  App _ _ _ _ _ _ modelImageCache' <- getYesod
+  App _ _ _ _ _ _ modelImageCache' _ <- getYesod
   modelImageCache <- liftIO . readIORef $ modelImageCache'
   modelFoldersClean <- 
         if member muid modelImageCache 
