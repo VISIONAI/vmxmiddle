@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
-    , headers
     , getPipeResponse
     , getPortResponse
     , InputPipe
@@ -33,29 +32,43 @@ import System.IO.Error (isDoesNotExistError)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import qualified Data.Text.IO as DT (readFile)
+import Data.Text.Encoding (decodeUtf8,encodeUtf8)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
-import Data.Aeson (encode)
+import Data.Aeson (encode,decode,object)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (finally) -- (catch,finally)
+import Control.Exception.Lifted  as LX (catch,finally) -- (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 import Data.Map (delete)
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
 
-
-
-
 import Network.HTTP.Conduit
+import Network.HTTP.Types.Status (status404,status500,status400)
 import Data.Conduit
 
 import Data.Conduit.List (consume)
+-- import qualified Data.ByteString.Lazy.Char8 as C
 
 type LockMap = SM.Map String (MVar Int)
 
 type Port = Int
+
+data VMXOutput = VMXOutput {
+    vmxOutputError   :: Int,
+    vmxOutputMessage :: String
+}
+
+instance FromJSON VMXOutput where
+    parseJSON (Object o) = 
+        VMXOutput <$> (o .: "error") <*> (o .: "message")
+    parseJSON _ = mzero
+
+instance ToJSON VMXOutput where
+  toJSON (VMXOutput e m) =
+    object ["error" .= e, "message" .= m]
 
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
@@ -116,10 +129,10 @@ drainFifo f = do
     o   <- Data.Text.IO.hGetContents hdl
     return $ unpack o
 
-headers :: Handler ()
-headers = do
-    addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
+--headers :: Handler ()
+--headers = do
+--    addHeader "Access-Control-Allow-Origin" "*"
+--    addHeader "Content-Type" "application/json"
 
 type InputPipe = FilePath
 type OutputPipe = FilePath
@@ -137,9 +150,30 @@ mimeText = "text/plain"
 mimeHtml :: ContentType
 mimeHtml = "text/html"
 
+
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
-    ret <- getPortResponse' input sessionId
+    ret  <- getPortResponse' input sessionId
+    let ret2 = (makeJson ret)
+    let ret3 = decode $ L.fromChunks [C.pack ret] :: Maybe VMXOutput
+    case ret3 of
+      Just out -> do
+        --liftIO $ print $ "out error is " ++ (show $ vmxOutputError out)
+        case (vmxOutputError out) of
+          0 -> do
+            liftIO $ print $ "code is 0!!!"
+          _ -> do
+            sendResponseStatus status400 $ object [ "error" .= (vmxOutputMessage out) ]
+      Nothing -> do
+        sendResponseStatus status500 $ object [ "error" .= ("Cannot parse output"::String) ]
+
+    
+    --let ret3 = (parseJSON ret2) :: VMXOutput
+    -- let ret3 = (decode ret2) :: Maybe VMXOutput
+    --let ret3 = (decode $ ret2 ):: Maybe VMXOutput
+    liftIO $ print $ show $ "Ret2 is " ++ (show ret2)
+    --let mr = (decode ret) :: Maybe VMXOutput
+    
     selectRep $ do
         provideRepType  mimeJson $ return ret
         provideRepType  mimeHtml $ return ret
@@ -148,7 +182,6 @@ getPortResponse input sessionId = do
 
 --portErrorHandler :: String -> Handler TypedContent
 --portErrorHandler msg = error msg
-
 
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
@@ -159,27 +192,25 @@ getPortResponse' input sessionId = do
             then return pm
             else do
                 liftIO $ putMVar portMap' pm
-                notFound -- [pack $ "invalid session " ++ sessionId ]
+                sendResponseStatus status404 $ object [ "error" .= ("Session " ++ sessionId ++ " Not Found" :: String) ]
+
                 
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
 
-    let path = "http://127.0.0.1:" ++ show port ++ "/"
+    let path = "http://127.0.0.1:" ++ show port
 
 
     req' <- liftIO $ parseUrl path
 
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
-    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input} --, checkStatus = \_ _ _ -> Nothing}
+    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input, checkStatus = \_ _ _ -> Nothing}
     res <- http req manager
-           -- `LX.catch` \e ->
-           --   case e of
-           --     FailedConnectionException2 {} ->
-           --       do
-           --         liftIO $ print "XXX5"
-           --         removeVMXSession sessionId
-           --         error "Removed bad session"
+            `LX.catch` (\(StatusCodeException s a b) ->
+                         do
+                           liftIO $ print $ "a is " ++ (show (a !! 0))
+                           error $ "baddie" ++ (show s)) -- $ statusMessage s))
                -- _ ->
                --   do
                --     liftIO $ print "XXX4"
@@ -192,9 +223,11 @@ getPortResponse' input sessionId = do
            `LX.finally` (liftIO $ releasePort sessionId portMap port)
      
 
+
     resValue' <- responseBody res $$+- consume
-    
     let ret = concat $ map C.unpack resValue'
+    --let rp = (decode $ decodeUtf8 $ pack ret) :: Maybe VMXOutput
+    --liftIO $ print $ "ret is " ++ (ret) -- show $ VMXOutput $ makeJson ret)
     return ret
         
 
