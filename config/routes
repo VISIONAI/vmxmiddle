@@ -1,40 +1,41 @@
+/ HomeR GET 
 /static      StaticR  Static  getStatic
-
+/models.html ModelViewerR GET
+/sessions.html SessionViewerR GET
 
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ HomeR GET 
+/sessions SessionR GET POST OPTIONS
+/sessions/#SessionId ProcessImageR GET POST OPTIONS DELETE
+/sessions/#SessionId/create CreateModelR POST OPTIONS
+/sessions/#SessionId/params SessionParamsR GET OPTIONS
+/sessions/#SessionId/edit EditModelR POST OPTIONS
+/sessions/#SessionId/load LoadModelR POST OPTIONS
+/sessions/#SessionId/save SaveSessionR POST
+/sessions/#SessionId/log.txt LogModelR GET OPTIONS
 
-
-
-/session SessionR GET POST OPTIONS
-/model ModelR GET POST PUT OPTIONS
-/session/#SessionId ProcessImageR GET POST OPTIONS DELETE
-/session/#SessionId/params SessionParamsR GET OPTIONS
-/session/#SessionId/edit EditModelR POST PUT OPTIONS
-/session/#SessionId/load LoadModelR POST OPTIONS
-/session/#SessionId/save SaveSessionR POST
-/session/#SessionId/log.txt LogModelR GET OPTIONS
-
+/models ModelR GET OPTIONS
+/models/#ModelId ModelBaseR GET
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
 /models/#ModelId/compiled.data CompiledModelDataR GET
 /models/#ModelId/data_set.json ModelDatasetR GET
 /models/#ModelId/model.json ModelJsonR GET
+
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
 /models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
 /models/#ModelId/data_set/image.jpg StreamImagesNextR GET
-/models.html ModelViewerR GET
-/sessions.html SessionViewerR GET
-
+/models/#ModelId/reset_cache ResetCacheR POST
 /random RandomImageR GET OPTIONS
+/forward ForwardR GET
+
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
 
-/forward ForwardR GET
 
 
-/models/#ModelId/reset_cache ResetCacheR POST
+
+
 
 
