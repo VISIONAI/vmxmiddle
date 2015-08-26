@@ -34,7 +34,6 @@ getRecursiveContents topdir = do
 optionsRandomImageR :: Handler ()
 optionsRandomImageR = do
     addHeader "Allow" "GET"
-    addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "GET"
     return ()
