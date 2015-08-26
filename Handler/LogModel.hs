@@ -10,7 +10,6 @@ import Data.Text.IO (hGetContents)
 
 getLogModelR :: SessionId -> Handler String
 getLogModelR sid = do
-   addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
 
    dataDir         <- wwwDir
@@ -27,7 +26,6 @@ getLogModelR sid = do
 optionsLogModelR :: SessionId -> Handler ()
 optionsLogModelR _ = do
     addHeader "Allow" "POST"
-    addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "GET"
     return ()
