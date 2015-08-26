@@ -69,7 +69,7 @@ createSession msid = do
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
       then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
       --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
-      else liftIO $ print ("No invalid characters here" :: String)
+      else return () -- liftIO $ print ("No invalid characters here" :: String)
 
 
     App _ _ _ _ portMap' _ _ _ <- getYesod
@@ -82,9 +82,9 @@ createSession msid = do
     if elem sid sessions'
        then do
          sendResponseStatus status409 $ A.object [ "error" .= ("Id " ++ sid ++ " is already taken"::String) ]
-         --error $ "id already used up"
+         
       else do
-         liftIO $ print ("New id is not used up"::String)
+         return ()
 
 
 
