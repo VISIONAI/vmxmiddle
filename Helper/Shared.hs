@@ -150,38 +150,24 @@ mimeText = "text/plain"
 mimeHtml :: ContentType
 mimeHtml = "text/html"
 
-
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
     ret  <- getPortResponse' input sessionId
-    let ret2 = (makeJson ret)
+    --let ret2 = (makeJson ret)
     let ret3 = decode $ L.fromChunks [C.pack ret] :: Maybe VMXOutput
-    case ret3 of
+    _ <- case ret3 of
       Just out -> do
-        --liftIO $ print $ "out error is " ++ (show $ vmxOutputError out)
         case (vmxOutputError out) of
-          0 -> do
-            liftIO $ print $ ("code is 0!!!"::String)
-          _ -> do
-            sendResponseStatus status400 $ object [ "error" .= (vmxOutputMessage out) ]
+          1 -> sendResponseStatus status400 $ object [ "error" .= (vmxOutputMessage out) ]
+          _ -> return (0::Integer)
+        
       Nothing -> do
         sendResponseStatus status500 $ object [ "error" .= ("Cannot parse output"::String) ]
-
-    
-    --let ret3 = (parseJSON ret2) :: VMXOutput
-    -- let ret3 = (decode ret2) :: Maybe VMXOutput
-    --let ret3 = (decode $ ret2 ):: Maybe VMXOutput
-    liftIO $ print $ show $ "Ret2 is " ++ (show ret2)
-    --let mr = (decode ret) :: Maybe VMXOutput
     
     selectRep $ do
         provideRepType  mimeJson $ return ret
         provideRepType  mimeHtml $ return ret
         provideRepType  mimeText $ return ret
-
-
---portErrorHandler :: String -> Handler TypedContent
---portErrorHandler msg = error msg
 
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
