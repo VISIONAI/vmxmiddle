@@ -18,7 +18,10 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception (tryJust, catch)
 import Data.Char
-import Network.HTTP.Types (status400)
+import Network.HTTP.Types (status400,status409,statusCode,statusMessage)
+import Network.HTTP.Types.Status
+import Network.HTTP.Conduit
+--import Network.HTTP.Types.Status
 import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
 import Data.Map (keys)
@@ -27,10 +30,10 @@ import Data.Map (keys)
 import Control.Concurrent (threadDelay)
 import Helper.Shared
 
+
 optionsSessionR :: Handler ()
 optionsSessionR = do
     addHeader "Allow" "Get, Post"
-    addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "GET, POST"
     return ()
@@ -40,7 +43,6 @@ optionsSessionR = do
 
 postSessionR :: Handler TypedContent
 postSessionR = do
-    addHeader "Access-Control-Allow-Origin" "*"
     --(csc:: Result CreateSessionCommand) <- parseJsonBody
     --let cmd = case csc of
     --      Error err -> CreateSessionCommand Nothing
@@ -79,7 +81,8 @@ createSession msid = do
     let sessions' = keys $ portMap
     if elem sid sessions'
        then do
-         error $ "id already used up"
+         sendResponseStatus status409 $ A.object [ "error" .= ("Id " ++ sid ++ " is already taken"::String) ]
+         --error $ "id already used up"
       else do
          liftIO $ print "New id is not used up"
 
@@ -143,7 +146,6 @@ createSession msid = do
 --list all sessions
 getSessionR :: Handler TypedContent
 getSessionR = do
-    addHeader "Access-Control-Allow-Origin" "*"
     ret <- list_sessions
     selectRep $ do
         provideRepType  mimeJson $ return ret
