@@ -242,9 +242,11 @@ vmxExecutable = do
         Just theDir -> do
           let result = finalPath cwd $ theDir ++ "/VMXserver"
           exist <- liftIO $ doesFileExist result
-          case exist of
-            True -> liftIO $ print $ result ++ " exists"
-            False -> liftIO $ print $ "Warning " ++ result ++ " does not exist"
+          _ <- case exist of
+            True -> return () -- liftIO $ print $ result ++ " exists"
+            False -> do
+              liftIO $ print $ "Warning " ++ result ++ " does not exist"
+              return ()
           return result
         Nothing  -> return "/home/g/VMXserver/VMXserver"
 
