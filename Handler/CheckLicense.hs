@@ -38,7 +38,6 @@ instance FromJSON VMXServerMessage where
 
 getCheckLicenseR :: Handler Value
 getCheckLicenseR = do
-    addHeader "Access-Control-Allow-Origin" "*"
     extra <-getExtra
     let vmxPath     = (fromMaybe "/vmx/build" $ extraVmxPath extra)
         licensePath = vmxPath ++ "/.vmxlicense"
