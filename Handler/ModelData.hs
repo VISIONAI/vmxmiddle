@@ -37,7 +37,8 @@ getCompiledModelDataR muid = do
   --   notFound
 
 
-getModelJsonR :: ModelId -> Handler Html
+
+getModelJsonR :: ModelId -> Handler TypedContent
 getModelJsonR muid = do
   wd <- wwwDir
   let json_file = (wd ++ "models/" ++ muid ++ "/model.json")
@@ -48,6 +49,10 @@ getModelJsonR muid = do
     sendFile "json" json_file
     else do
     sendFile "json" json_file
+
+getModelBaseR :: ModelId -> Handler TypedContent
+getModelBaseR muid = do
+  getModelJsonR muid --getModelFile muid "model.json" typeJson
 
 
 getModelDatasetR :: ModelId -> Handler Html
