@@ -98,7 +98,6 @@ instance FromJSON ActivatePayload where
 
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
-    addHeader "Access-Control-Allow-Origin" "*"
     incoming <- requireJsonBody
     ident' <- getMachineIdent
     val <- case ident' of 
