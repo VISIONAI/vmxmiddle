@@ -8,11 +8,11 @@ import Helper.VMXTypes
 import System.Directory (doesFileExist)
 import Control.Concurrent (threadDelay)
 import Data.Map.Strict as SM (member) 
+import Network.HTTP.Types.Status (status404)
 
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
     addHeader "Allow" "GET, POST, DELETE, OPTIONS"
-    addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type,Origin, X-Requested-With, Accept"
     addHeader "Access-Control-Allow-Methods" "GET, POST, DELETE, OPTIONS"
     return ()
@@ -35,8 +35,7 @@ instance FromJSON ProcessImageCommand where
 
 getProcessImageR :: SessionId -> Handler TypedContent
 getProcessImageR sid = do
-  addHeader "Access-Control-Allow-Origin" "*"
-
+  
   App _ _ _ _ portMap' _ _ _ <- getYesod
   _ <- do
     pm <- liftIO $ takeMVar portMap'
@@ -46,7 +45,7 @@ getProcessImageR sid = do
         return pm
       else do
         liftIO $ putMVar portMap' pm
-        notFound -- [pack $ "invalid session " ++ sessionId ]
+        sendResponseStatus status404 $ object [ "error" .= ("Session " ++ sid ++ " Not Found" :: String) ]
 
   
   resid <- getSessionInfo sid
@@ -60,7 +59,6 @@ getProcessImageR sid = do
 
 postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
-   addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
@@ -69,7 +67,6 @@ postProcessImageR sid = do
 
 deleteProcessImageR :: SessionId -> Handler TypedContent
 deleteProcessImageR sid = do
-  addHeader "Access-Control-Allow-Origin" "*"
   -- addHeader "Content-Type" "application/json"
     
   response <- deleteVMXSession sid
