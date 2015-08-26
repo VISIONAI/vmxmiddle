@@ -32,13 +32,13 @@ import System.IO.Error (isDoesNotExistError)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import qualified Data.Text.IO as DT (readFile)
-import Data.Text.Encoding (decodeUtf8,encodeUtf8)
+--import Data.Text.Encoding (decodeUtf8,encodeUtf8)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
-import Data.Aeson (encode,decode,object)
+import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (catch,finally) -- (catch,finally)
+import Control.Exception.Lifted  as LX (finally) -- (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 import Data.Map (delete)
 import Helper.VMXTypes
@@ -161,7 +161,7 @@ getPortResponse input sessionId = do
         --liftIO $ print $ "out error is " ++ (show $ vmxOutputError out)
         case (vmxOutputError out) of
           0 -> do
-            liftIO $ print $ "code is 0!!!"
+            liftIO $ print $ ("code is 0!!!"::String)
           _ -> do
             sendResponseStatus status400 $ object [ "error" .= (vmxOutputMessage out) ]
       Nothing -> do
@@ -207,10 +207,10 @@ getPortResponse' input sessionId = do
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
     let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input, checkStatus = \_ _ _ -> Nothing}
     res <- http req manager
-            `LX.catch` (\(StatusCodeException s a b) ->
-                         do
-                           liftIO $ print $ "a is " ++ (show (a !! 0))
-                           error $ "baddie" ++ (show s)) -- $ statusMessage s))
+            --`LX.catch` (\(StatusCodeException s a _) ->
+            --             do
+            --               liftIO $ print $ "a is " ++ (show (a !! 0))
+            --               error $ "baddie" ++ (show s)) -- $ statusMessage s))
                -- _ ->
                --   do
                --     liftIO $ print "XXX4"
