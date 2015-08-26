@@ -7,8 +7,8 @@ import qualified Data.Text.IO as DT (readFile,writeFile)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as L
 import System.Exit (ExitCode(..))
-import qualified Data.List as List (head)
-import Prelude (tail)
+--import qualified Data.List as List (head)
+--import Prelude (tail)
 import Data.IORef (readIORef, writeIORef)
 import System.Directory (doesFileExist)
 import Data.Text.IO (hGetContents)
@@ -102,7 +102,7 @@ getCheckLicenseR = do
             let eJ :: Either String VMXServerMessage = eitherDecode chunked
             case eJ of
                 Right r -> r
-                Left e -> do
+                Left _ -> do
                          error $ "Invalid .vmxlicense file, please delete it and try again."
 
 setMachineIdent :: String -> Handler ()

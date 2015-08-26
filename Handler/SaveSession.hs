@@ -36,7 +36,7 @@ postSaveSessionR sid = do
     --liftIO $ print $ "body is" ++ (show $ S.length $ S.concat body)
     cmd2::Result SaveSessionCommand  <- parseJsonBody
     let cmd = case cmd2 of
-                 Error s -> SaveSessionCommand Nothing Nothing
+                 Error _ -> SaveSessionCommand Nothing Nothing
                  Success val -> val
 
     --response <- getPortResponse (toJSON cmd) sid

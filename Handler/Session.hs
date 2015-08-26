@@ -4,25 +4,25 @@
 module Handler.Session where
 
 import Import
-import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString.Char8 as C
+--import qualified Data.ByteString.Lazy as L
+--import qualified Data.ByteString.Char8 as C
 import System.IO
 import System.IO.Error (isAlreadyExistsError)
 import System.Process
 import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
-import Data.Aeson (encode)
+--import Data.Aeson (encode)
 import Data.Aeson as A
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
-import Control.Exception (tryJust, catch)
+import Control.Exception (catch)
 import Data.Char
-import Network.HTTP.Types (status400,status409,statusCode,statusMessage)
+import Network.HTTP.Types () -- status400,status409)
 import Network.HTTP.Types.Status
-import Network.HTTP.Conduit
+--import Network.HTTP.Conduit
 --import Network.HTTP.Types.Status
-import qualified Data.Text.IO as DT (readFile)
+--import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
 import Data.Map (keys)
 -- import qualified Data.ByteString.Lazy.Char8 as LC
@@ -84,7 +84,7 @@ createSession msid = do
          sendResponseStatus status409 $ A.object [ "error" .= ("Id " ++ sid ++ " is already taken"::String) ]
          --error $ "id already used up"
       else do
-         liftIO $ print "New id is not used up"
+         liftIO $ print ("New id is not used up"::String)
 
 
 
@@ -93,8 +93,8 @@ createSession msid = do
     lift $ 
         createDirectory sessionPath' `catch`
         (\e -> if isAlreadyExistsError e 
-               then liftIO $ print "Welcome"
-               else liftIO $ print "Welcome2")
+               then liftIO $ print ("Welcome to making new directory"::String)
+               else liftIO $ print ("Welcome2 to new directory"::String))
     
     outLogPath'     <- outLogPath sid
     vmxExecutable'  <- vmxExecutable
@@ -114,7 +114,7 @@ createSession msid = do
     where
         -- we only allow session ids to contain alphanumeric caracters and dashes
         good x = (not $ isUpper x) && isAlphaNum x || x == '-'
-        asString = C.unpack . C.concat . L.toChunks . encode
+        --asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
         waitForFile f ph vmxExecutable' = do
             --liftIO $ print "Waiting..."

@@ -103,9 +103,9 @@ postActivateLicenseR key = do
     val <- case ident' of 
         Nothing -> error "no ident"
         Just uuid -> do 
-            let settings = mkManagerSettings (TLSSettingsSimple True False False) Nothing
+            let settings' = mkManagerSettings (TLSSettingsSimple True False False) Nothing
             liftIO $ handle catchException $
-                withManagerSettings settings $ \manager -> do
+                withManagerSettings settings' $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
                     let valueBs = encode $ object ["email" .= activationPayloadEmail incoming]
                     let req = req' { method = "POST", requestBody = RequestBodyLBS valueBs}

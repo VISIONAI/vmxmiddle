@@ -15,7 +15,7 @@ import qualified Data.ByteString.Lazy as L
 import           Data.Typeable
 import           GHC.Generics
 import           Data.Data
-import           Helper.VMXTypes
+--import           Helper.VMXTypes
 import           System.Directory (getDirectoryContents,doesFileExist)
 import qualified Data.Text.IO as DT (readFile)
 import Data.Aeson.Encode.Pretty (encodePretty)
