@@ -17,7 +17,6 @@ instance FromJSON LoadModelCommand where
 
 postLoadModelR :: SessionId -> Handler TypedContent
 postLoadModelR sid = do
-   addHeader "Access-Control-Allow-Origin" "*"
    addHeader "Content-Type" "application/json"
    (pic :: LoadModelCommand) <- requireJsonBody
    _ <- loadModel sid (loadModelUuids pic) (loadModelCompiled pic)
@@ -35,7 +34,6 @@ postLoadModelR sid = do
 optionsLoadModelR :: SessionId -> Handler ()
 optionsLoadModelR _ = do
     addHeader "Allow" "POST"
-    addHeader "Access-Control-Allow-Origin" "*"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "GET"
     return ()
