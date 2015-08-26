@@ -8,13 +8,11 @@ import Helper.Shared
 --import qualified Data.ByteString.Lazy.Char8 as LBS
 --import Network.HTTP.Types (status400)
 
-
 optionsEditModelR :: SessionId -> Handler ()
 optionsEditModelR _ = do
-    addHeader "Allow" "PUT, POST"
-    addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Allow" "POST"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "PUT, POST"
+    addHeader "Access-Control-Allow-Methods" "POST"
     return ()
 
 data VMXEditSettings = VMXEditSettings {
@@ -27,11 +25,11 @@ data VMXEditSettings = VMXEditSettings {
 
 instance ToJSON VMXEditSettings where
     toJSON (VMXEditSettings lp maxp maxn po no) =
-            object ["learn_iterations" .= lp,
-                    "max_positives" .= maxp,
-                    "max_negatives" .= maxn,
-                    "positives_order" .= po,
-                    "negatives_order" .= no]
+            object ["learn_iterations" .= fromMaybe 0 lp,
+                    "max_positives" .= fromMaybe 20 maxp,
+                    "max_negatives" .= fromMaybe 20 maxn,
+                    "positives_order" .= fromMaybe 1 po,
+                    "negatives_order" .= fromMaybe (-1) no]
 
 instance FromJSON VMXEditSettings where
     parseJSON (Object o) =
@@ -88,41 +86,40 @@ instance FromJSON EditModelCommand where
                          <*> (o .: "changes")
     parseJSON _ = mzero
 
-data EditModelResponse = EditModelResponse Value String | EditModelResponseError Integer String
-editModelData :: EditModelResponse -> Value
-editModelData (EditModelResponse d _ ) = d
-editModelData (EditModelResponseError _ _ ) = undefined
+-- data EditModelResponse = EditModelResponse Value String | EditModelResponseError Integer String
+-- editModelData :: EditModelResponse -> Value
+-- editModelData (EditModelResponse d _ ) = d
+-- editModelData (EditModelResponseError _ _ ) = undefined
 
 
-instance ToJSON EditModelResponse where
-    toJSON (EditModelResponse d m)= 
-        object ["data" .= d
-               , "message" .= m
-               ]
-    toJSON (EditModelResponseError b m)= 
-        object ["error" .= b, "message" .= m]
+-- instance ToJSON EditModelResponse where
+--     toJSON (EditModelResponse d m)= 
+--         object ["data" .= d
+--                , "message" .= m
+--                ]
+--     toJSON (EditModelResponseError b m)= 
+--         object ["error" .= b, "message" .= m]
 
 
-instance FromJSON EditModelResponse where
-    parseJSON (Object o) = EditModelResponse <$> (o .: "data") <*> (o .: "message")
-      -- case o of
-      --   EditModelResponse d m -> EditModelResponse <$> (o .: "data") <*> (o .: "message")
-      --   EditModelResponseError b m -> EditModelResponseError <$> (o .: "error") <*> (o .: "message")
-    parseJSON _ = mzero
+-- instance FromJSON EditModelResponse where
+--     parseJSON (Object o) = EditModelResponse <$> (o .: "data") <*> (o .: "message")
+--       -- case o of
+--       --   EditModelResponse d m -> EditModelResponse <$> (o .: "data") <*> (o .: "message")
+--       --   EditModelResponseError b m -> EditModelResponseError <$> (o .: "error") <*> (o .: "message")
+--     parseJSON _ = mzero
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- this is a read against the current model running at the session
 postEditModelR :: SessionId -> Handler TypedContent
-postEditModelR sid = genericEditModel sid "show_model"
+postEditModelR sid = genericEditModel sid "edit_model"
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- a write against the current model
-putEditModelR :: SessionId -> Handler TypedContent
-putEditModelR sid = genericEditModel sid "edit_model"
+--putEditModelR :: SessionId -> Handler TypedContent
+--putEditModelR sid = genericEditModel sid "edit_model"
 
 genericEditModel :: SessionId -> String -> Handler TypedContent
 genericEditModel sid command = do
-    headers
     addHeader "Content-Type" "application/json"
     (r :: EditModelCommand) <- requireJsonBody
     let req = object [ "command"  .= command
