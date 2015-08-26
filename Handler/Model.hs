@@ -24,103 +24,55 @@ import Data.String.Utils (replace)
 
 optionsModelR :: Handler ()
 optionsModelR = do
-    addHeader "Allow" "Get, Put, Post"
-    addHeader "Access-Control-Allow-Origin" "*"
+    addHeader "Allow" "Get"
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "GET, PUT, POST"
+    addHeader "Access-Control-Allow-Methods" "GET"
     return ()
 
 
 --list all models
 getModelR :: Handler TypedContent
 getModelR = do
-    addHeader "Access-Control-Allow-Origin" "*"
     ret <- list_models
     selectRep $ do
         provideRepType  mimeJson $ return ret
         provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
         provideRepType  mimeText $ return ret
 
-data SaveModelCommand = SaveModelCommand {
-    saveModelSid :: String,
-    saveModelName :: String,
-    saveModelNewUUID :: Maybe Bool
+-- data SaveModelCommand = SaveModelCommand {
+--     saveModelSid :: String,
+--     saveModelName :: String,
+--     saveModelNewUUID :: Maybe Bool
                      
-}
+-- }
 
-instance FromJSON SaveModelCommand where
-    parseJSON (Object o) =
-        SaveModelCommand <$> (o .: "session_id")
-        <*> (o .: "name")
-        <*> (o .:? "new_uuid")
-    parseJSON _ = mzero
+-- instance FromJSON SaveModelCommand where
+--     parseJSON (Object o) =
+--         SaveModelCommand <$> (o .: "session_id")
+--         <*> (o .: "name")
+--         <*> (o .:? "new_uuid")
+--     parseJSON _ = mzero
 
 -- save the model
-putModelR :: Handler TypedContent
-putModelR =  do
-    headers
-    cmd :: SaveModelCommand <- requireJsonBody
-    let sid = saveModelSid cmd
-    let name = saveModelName cmd
-    let new_uuid = saveModelNewUUID cmd
+-- putModelR :: Handler TypedContent
+-- putModelR =  do
+--     addHeader "Content-Type" "application/json"
+--     cmd :: SaveModelCommand <- requireJsonBody
+--     let sid = saveModelSid cmd
+--     let name = saveModelName cmd
+--     let new_uuid = saveModelNewUUID cmd
 
-    let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
-    _ <- getPortResponse req sid
-    ret <- getSessionInfo sid
-    selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return ret
-        provideRepType  mimeText $ return ret
+--     let req = object ["command" .= save_model, "name" .= name, "new_uuid" .= new_uuid]
+--     _ <- getPortResponse req sid
+--     ret <- getSessionInfo sid
+--     selectRep $ do
+--         provideRepType  mimeJson $ return ret
+--         provideRepType  mimeHtml $ return ret
+--         provideRepType  mimeText $ return ret
 
-    where
-        save_model :: String = "save_model"
+--     where
+--         save_model :: String = "save_model"
 
-data CreateModelCommand = CreateModelCommand {
-    createModelName :: String,
-    createModelParams :: Value,
-    createModelImages :: [VMXImage],
-    createModelSid :: String
-}
-
-instance FromJSON CreateModelCommand where
-    parseJSON (Object o) = do
-        CreateModelCommand <$> (o .: "name") <*> (o .: "params") <*> (o .: "images") <*> (o .: "session_id")
-    parseJSON _ = mzero
-
-
-
-
-
---create new model
-postModelR :: Handler TypedContent
-postModelR = do
-    addHeader "Access-Control-Allow-Origin" "*"
-    headers
-
-    cmc <- requireJsonBody
-    let sid = createModelSid cmc
-    wwwDir' <- wwwDir
-    let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
-    --no longer writing images to disk, so this can be cleaned up quite a bit
-    --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
-    let images = map snd saf
-    let req = object ["name"       .= createModelName cmc,
-                      "params"     .= createModelParams cmc,
-                      "images"     .= images,
-                      "command"    .= ("create_model" :: String)
-                     ]
-    _ <- getPortResponse req sid
-    ret <- getSessionInfo sid
-    selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return ret
-        provideRepType  mimeText $ return ret
-
-
-    where
-        selectionsAndFiles :: [VMXImage] -> SessionId -> Int -> FilePath -> [(FilePath, VMXImage)]
-        selectionsAndFiles (x:xs) sid' counter wwwDir' = (wwwDir' ++ "sessions/" ++ sid' ++ "/image" ++ (show counter) ++ ".jpg", x) : (selectionsAndFiles xs sid' (counter + 1) wwwDir')
-        selectionsAndFiles [] _ _ _ = []
 
 list_models :: Handler Value
 list_models = do
