@@ -14,16 +14,23 @@ data VMXObject = VMXObject {
     vmxOName  :: String,
     vmxOBB    :: [Float],
     vmxOScore :: Maybe Float,
-    vmxOExtra :: Maybe [Float]
+    vmxOData  :: Maybe [Float],
+    vmxOId    :: Maybe Integer,
+    vmxOClassLabel :: Maybe Integer
 }
 
 instance ToJSON VMXObject where
-    toJSON (VMXObject name bbs score extra) =
-            object ["name" .= name, "bb" .= bbs, "score" .= score, "extra" .= extra]
+    toJSON (VMXObject name bbs score extra theid label) =
+            object ["name" .= name,
+                    "bb" .= bbs,
+                    "score" .= score,
+                    "data" .= extra,
+                    "id" .= theid,
+                    "class_label" .= label]
 
 instance FromJSON VMXObject where
     parseJSON (Object o) =
-        VMXObject <$> (o .: "name") <*> (o .: "bb") <*> (o .:? "extra") <*> (o .:? "score")
+        VMXObject <$> (o .: "name") <*> (o .: "bb") <*> (o .:? "data") <*> (o .:? "score") <*> (o .:? "id") <*> (o .:? "class_label")
     parseJSON _ = mzero
 
 instance FromJSON VMXImage where
@@ -45,11 +52,11 @@ instance ToJSON VMXImage where
                     objects' = fromMaybe ([]) objects
 
 
-data CreateModel = CreateModel {
-    cmImages :: [VMXImage],
-    cmParams :: Value,
-    cmName   :: String
-}
+--data CreateModel = CreateModel {
+--    cmImages :: [VMXImage],
+--    cmParams :: Value,
+--    cmName   :: String
+--}
 
 
 data VMXParams = VMXParams {                 
