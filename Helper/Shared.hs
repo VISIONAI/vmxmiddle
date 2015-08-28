@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
-    , getPipeResponse
     , getPortResponse
     , InputPipe
     , OutputPipe
@@ -228,8 +227,8 @@ checkPort p = do
             return True
 
     
-getPipeResponse :: Value -> SessionId -> Handler TypedContent
-getPipeResponse = getPortResponse
+--getPipeResponse :: Value -> SessionId -> Handler TypedContent
+--getPipeResponse = getPortResponse
 --getPipeResponse v sid = do
 --    App _ _ _ _ lm _ _  <- getYesod
 --    locks' <- liftIO $ takeMVar lm
@@ -266,7 +265,7 @@ getPipeResponse = getPortResponse
 processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
 processImage sid image params name = do
    let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
-   response <- getPipeResponse req sid
+   response <- getPortResponse req sid
    return response
    where
         command :: String
@@ -275,7 +274,7 @@ processImage sid image params name = do
 loadModel :: SessionId -> [String] -> Bool -> Handler TypedContent
 loadModel sid uuids compiled = do
    let req = object ["command" .= command, "uuids" .= uuids, "compiled" .= compiled]
-   response <- getPipeResponse req sid
+   response <- getPortResponse req sid
    return response
    where
         command :: String
@@ -283,7 +282,7 @@ loadModel sid uuids compiled = do
 
 
 exitVMXServer :: SessionId -> Handler TypedContent
-exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return
+exitVMXServer sid = getPortResponse (object ["command" .= exit]) sid >>=  return
 	where 	
 		exit :: String
 		exit = "exit"
