@@ -33,6 +33,7 @@ import Control.Monad (guard)
 -- Don't forget to add new modules to your cabal file!
 import Handler.Home
 import Handler.Session
+import Handler.ManageSession
 import Handler.ProcessImage
 import Handler.SessionParams
 import Handler.EditModel

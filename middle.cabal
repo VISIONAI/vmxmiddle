@@ -22,6 +22,7 @@ library
                      Settings.Development
                      Handler.Home
                      Handler.Session
+                     Handler.ManageSession
                      Handler.ProcessImage
                      Handler.SessionParams
                      Handler.EditModel
