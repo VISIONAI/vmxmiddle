@@ -87,9 +87,11 @@ instance Yesod App where
 
     yesodMiddleware handler = do
       addHeader "Access-Control-Allow-Origin" "*"
+      addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type,Origin, X-Requested-With, Accept"
       App _ _ _ _ _ _ _ vmxVersion' <- getYesod
       v <- liftIO $ readIORef vmxVersion'
       setHeader "Server" $ T.pack v
+      
       --addHeader "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE, OPTIONS"
       --addHeader "Access-Control-Allow-Headers" "Accept, Origin, X-Requested-With"
       handler

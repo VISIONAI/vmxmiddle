@@ -13,7 +13,6 @@ import Network.HTTP.Types.Status (status404)
 optionsProcessImageR :: SessionId -> Handler ()
 optionsProcessImageR _ = do
     addHeader "Allow" "GET, POST, DELETE, OPTIONS"
-    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type,Origin, X-Requested-With, Accept"
     addHeader "Access-Control-Allow-Methods" "GET, POST, DELETE, OPTIONS"
     return ()
 
