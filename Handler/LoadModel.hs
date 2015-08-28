@@ -7,19 +7,20 @@ import Helper.Shared
 
 data LoadModelCommand =  LoadModelCommand {
     loadModelUuids      :: [String],
-    loadModelCompiled   :: Bool
+    loadModelCompiled   :: Maybe Bool
 }
 
 instance FromJSON LoadModelCommand where
     parseJSON (Object o) = 
-        LoadModelCommand <$> (o .: "uuids") <*> (o .: "compiled")
+        LoadModelCommand <$> (o .: "uuids") <*> (o .:? "compiled")
     parseJSON _ = mzero
 
 postLoadModelR :: SessionId -> Handler TypedContent
 postLoadModelR sid = do
    addHeader "Content-Type" "application/json"
    (pic :: LoadModelCommand) <- requireJsonBody
-   _ <- loadModel sid (loadModelUuids pic) (loadModelCompiled pic)
+   let c = fromMaybe False (loadModelCompiled pic)
+   _ <- loadModel sid (loadModelUuids pic) c
    -- return val
    ret' <- getSessionInfo sid
    let ret = object ["data" .= ret']
