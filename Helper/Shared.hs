@@ -269,7 +269,7 @@ processImage sid image params name = do
    return response
    where
         command :: String
-        command = "process_image"
+        command = "process"
 
 loadModel :: SessionId -> [String] -> Bool -> Handler TypedContent
 loadModel sid uuids compiled = do
@@ -278,7 +278,7 @@ loadModel sid uuids compiled = do
    return response
    where
         command :: String
-        command = "load_model"
+        command = "load"
 
 
 exitVMXServer :: SessionId -> Handler TypedContent
