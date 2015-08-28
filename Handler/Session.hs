@@ -112,8 +112,8 @@ createSession msid = do
     resid <- getSessionInfo sid
     return $ object ["data" .= resid]
     where
-        -- we only allow session ids to contain alphanumeric caracters and dashes
-        good x = (not $ isUpper x) && isAlphaNum x || x == '-'
+        -- we only allow session ids to contain alphanumeric caracters and dashes and underscores
+        good x = (not $ isUpper x) && isAlphaNum x || x == '-' || x == '_'
         --asString = C.unpack . C.concat . L.toChunks . encode
         waitForFile :: FilePath -> ProcessHandle -> String -> IO ()
         waitForFile f ph vmxExecutable' = do
