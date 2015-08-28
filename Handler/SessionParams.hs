@@ -20,5 +20,5 @@ getSessionParamsR sid = do
     return response
     where
         command :: String
-        command = "get_params"
+        command = "params"
 
