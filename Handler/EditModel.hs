@@ -111,7 +111,7 @@ instance FromJSON EditModelCommand where
 -- RESPONDS TO /sessions/#SessionId/edit
 -- this is a read against the current model running at the session
 postEditModelR :: SessionId -> Handler TypedContent
-postEditModelR sid = genericEditModel sid "edit_model"
+postEditModelR sid = genericEditModel sid "edit"
 
 -- RESPONDS TO /sessions/#SessionId/edit
 -- a write against the current model
