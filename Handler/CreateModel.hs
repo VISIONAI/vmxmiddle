@@ -18,14 +18,14 @@ optionsCreateModelR _ = do
 
 data CreateModelCommand = CreateModelCommand {
     createModelName :: String,
-    createModelParams :: Value,
+    createModelParams :: Maybe VMXParams,
     createModelImages :: [VMXImage],
-    createModelPretrained :: String
+    createModelPretrained :: Maybe String
 }
 
 instance FromJSON CreateModelCommand where
     parseJSON (Object o) = do
-        CreateModelCommand <$> (o .: "name") <*> (o .: "params") <*> (o .: "images") <*> (o .: "pretrained")
+        CreateModelCommand <$> (o .: "name") <*> (o .:? "params") <*> (o .: "images") <*> (o .:? "pretrained")
     parseJSON _ = mzero
 
 
@@ -33,24 +33,26 @@ instance FromJSON CreateModelCommand where
 postCreateModelR :: SessionId -> Handler TypedContent
 postCreateModelR sid = do
     addHeader "Content-Type" "application/json"
-    cmc <- requireJsonBody
+    (cmc :: CreateModelCommand) <- requireJsonBody
     
     wwwDir' <- wwwDir
     let saf = (selectionsAndFiles (createModelImages cmc) sid 1 wwwDir')
     --no longer writing images to disk, so this can be cleaned up quite a bit
     --liftIO $ sequence $ map (\(x, y) -> writeImage y x)  saf
     let images = map snd saf
+    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (createModelParams cmc)
     let req = object ["name"       .= createModelName cmc,
-                      "params"     .= createModelParams cmc,
+                      "params"     .= params,
                       "images"     .= images,
-                      "command"    .= ("create_model" :: String)
+                      "pretrained" .= fromMaybe "" (createModelPretrained cmc),
+                      "command"    .= ("create" :: String)
                      ]
-    _ <- getPortResponse req sid
+    ret2 <- getPortResponse req sid
     ret <- getSessionInfo sid
     selectRep $ do
-        provideRepType  mimeJson $ return ret
-        provideRepType  mimeHtml $ return ret
-        provideRepType  mimeText $ return ret
+        provideRepType  mimeJson $ return ret2
+        provideRepType  mimeHtml $ return ret2
+        provideRepType  mimeText $ return ret2
 
 
     where
