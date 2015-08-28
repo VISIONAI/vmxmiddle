@@ -27,8 +27,15 @@ instance ToJSON SaveSessionCommand where
     toJSON (SaveSessionCommand name new_uuid) =
             object ["name" .= fromMaybe "" name,
                     "new_uuid" .= fromMaybe False new_uuid,
-                    "command" .= ("save_model" :: String)]
- 
+                    "command" .= ("save" :: String)]
+
+optionsSaveSessionR :: SessionId -> Handler ()
+optionsSaveSessionR _ = do
+    addHeader "Allow" "POST"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET"
+    return ()
+
 postSaveSessionR :: SessionId -> Handler TypedContent
 postSaveSessionR sid = do
     --liftIO $ print "About to get json body"
