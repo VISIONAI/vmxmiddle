@@ -6,13 +6,16 @@
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/sessions SessionR GET POST OPTIONS
-/sessions/#SessionId ProcessImageR GET POST OPTIONS DELETE
+/sessions SessionR GET POST OPTIONS -- done
+/sessions/#SessionId ManageSessionR GET POST DELETE OPTIONS
+
 /sessions/#SessionId/create CreateModelR POST OPTIONS
-/sessions/#SessionId/params SessionParamsR GET OPTIONS
+/sessions/#SessionId/process ProcessImageR POST OPTIONS
 /sessions/#SessionId/edit EditModelR POST OPTIONS
+/sessions/#SessionId/params SessionParamsR GET OPTIONS
 /sessions/#SessionId/load LoadModelR POST OPTIONS
-/sessions/#SessionId/save SaveSessionR POST
+/sessions/#SessionId/save SaveSessionR POST OPTIONS
+
 /sessions/#SessionId/log.txt LogModelR GET OPTIONS
 
 /models ModelR GET OPTIONS
@@ -23,6 +26,7 @@
 /models/#ModelId/data_set.json ModelDatasetR GET
 /models/#ModelId/model.json ModelJsonR GET
 
+-- dataset access functions
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
 /models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
 /models/#ModelId/data_set/image.jpg StreamImagesNextR GET
@@ -32,10 +36,4 @@
 
 /check CheckLicenseR GET
 /activate/#LicenseKey ActivateLicenseR POST
-
-
-
-
-
-
 
