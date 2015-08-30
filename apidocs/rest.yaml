@@ -17,12 +17,14 @@ info:
     ```
     cd /Applications/VMX.app/Contents/MacOS/
     ./run.sh
+    curl localhost:3000
     ```
 
     **On Linux**
     ```
     cd ~/vmx-docker-manager
     ./vmx start 3000
+    curl localhost:3000
     ```
       
   contact:
