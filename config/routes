@@ -9,16 +9,16 @@
 /sessions SessionR GET POST OPTIONS -- done
 /sessions/#SessionId ManageSessionR GET POST DELETE OPTIONS
 
-/sessions/#SessionId/create CreateModelR POST OPTIONS
-/sessions/#SessionId/process ProcessImageR POST OPTIONS
-/sessions/#SessionId/edit EditModelR POST OPTIONS
-/sessions/#SessionId/params SessionParamsR GET OPTIONS
-/sessions/#SessionId/load LoadModelR POST OPTIONS
-/sessions/#SessionId/save SaveSessionR POST OPTIONS
+/sessions/#SessionId/process ProcessImageR POST OPTIONS -- done
+/sessions/#SessionId/create CreateModelR POST OPTIONS -- done
+/sessions/#SessionId/edit EditModelR POST OPTIONS -- done
+/sessions/#SessionId/params SessionParamsR GET OPTIONS -- done
+/sessions/#SessionId/load LoadModelR POST OPTIONS -- done
+/sessions/#SessionId/save SaveSessionR POST OPTIONS -- done
 
 /sessions/#SessionId/log.txt LogModelR GET OPTIONS
 
-/models ModelR GET OPTIONS
+/models ModelR GET
 /models/#ModelId ModelBaseR GET
 /models/#ModelId/image.jpg ModelImageR GET
 /models/#ModelId/model.data ModelDataR GET
