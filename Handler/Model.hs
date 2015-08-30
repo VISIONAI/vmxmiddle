@@ -22,12 +22,12 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.String.Utils (replace)
 
-optionsModelR :: Handler ()
-optionsModelR = do
-    addHeader "Allow" "Get"
-    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "GET"
-    return ()
+-- optionsModelR :: Handler ()
+-- optionsModelR = do
+--     addHeader "Allow" "Get"
+--     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+--     addHeader "Access-Control-Allow-Methods" "GET"
+--     return ()
 
 
 --list all models
@@ -86,87 +86,113 @@ list_models = do
     -- Now take the valid json file names, and strip them to get the valid UUIDs
     let validUUIDs = map (\x -> Data.String.Utils.replace "/model.json" "" x) $ map (\x -> Data.String.Utils.replace modelsDir "" x) modelJsons'
     let models     = map makeJson' (map unpack response)
-    return $ object ["data" .= zipWith (\a b-> a b) models (validUUIDs)]
+    return $ object ["data" .= models] --zipWith (\a b-> a b) models (validUUIDs)]
     where
         jsonFilesFrom folders = map (++ "/model.json") folders
         startsWithDot (c:_)   = c == '.'
         startsWithDot _       = undefined
-        makeJson' :: String -> (String -> ListModelResponse)
+        makeJson' :: String -> (ListModelResponse)
         makeJson' s = do
             -- String -> Char8 bystring
             let packed = C.pack s
             -- Char8 -> Lazy bytestring
             let chunked = L.fromChunks [packed]
-            let eJ :: Either String (String -> ListModelResponse) = eitherDecode chunked
+            let eJ :: Either String (ListModelResponse) = eitherDecode chunked
             case eJ of
                 Right r -> r
                 -- TODO .. properly handle errors
                 Left e -> do
-                          ListModelResponse  e e [] [] 0 0  "error" "error"
+                          ListModelResponse e e e [] False e e [] 0 0 e e
 
 data ListModelResponse = ListModelResponse {
     listModelName :: String,
+    listModelUUID      :: String,
     listModelMeta :: String,
-    listModelSize :: [Int],
     listModelHistory :: [String],
+    listModelCompiled :: Bool,
+    listModelVersion   :: String,
+    listModelImage :: String,
+    listModelSize :: [Int],
     listModelNumPos   :: Int,
     listModelNumNeg   :: Int,
     listModelStartTime :: String,
-    listModelEndTime   :: String,
-    listModelUUID      :: String
+    listModelEndTime   :: String
+                          
 }
 
 
 instance FromJSON ListModelResponse where
     parseJSON (Object o) = do
         ListModelResponse <$> (o .: "name")
+                         <*> (o .: "uuid")
                          <*> (o .: "meta")
-                         <*> (o .: "size")
                          <*> (o .: "history")
+                         <*> (o .: "compiled")
+                         <*> (o .: "version")
+                         <*> (o .: "image")
+                         <*> (o .: "size")
                          <*> (o .: "num_pos")
                          <*> (o .: "num_neg")
                          <*> (o .: "start_time")
                          <*> (o .: "end_time")
-                         <*> (o .: "uuids")
     parseJSON _ = mzero
 
-instance FromJSON (String -> ListModelResponse) where
-    parseJSON (Object o) = do
-        ListModelResponse <$> (o .: "name")
-                         <*> (o .: "meta")
-                         <*> (o .: "size")
-                         <*> (o .: "history")
-                         <*> (o .: "num_pos")
-                         <*> (o .: "num_neg")
-                         <*> (o .: "start_time")
-                         <*> (o .: "end_time")
-    parseJSON _ = mzero
+-- instance FromJSON (String -> ListModelResponse) where
+--     parseJSON (Object o) = do
+--         ListModelResponse <$> (o .: "name")
+--                          <*> (o .: "uuid")
+--                          <*> (o .: "meta")
+--                          <*> (o .: "history")
+--                          <*> (o .: "compiled")
+--                          <*> (o .: "version")
+--                          <*> (o .: "image")
+--                          <*> (o .: "size")
+--                          <*> (o .: "num_pos")
+--                          <*> (o .: "num_neg")
+--                          <*> (o .: "start_time")
+--                          <*> (o .: "end_time")
+--     parseJSON _ = mzero
+
+
+-- instance FromJSON (String -> ListModelResponse) where
+--     parseJSON (Object o) = do
+--         ListModelResponse <$> (o .: "name")
+--                          <*> (o .: "meta")
+--                          <*> (o .: "size")
+--                          <*> (o .: "history")
+--                          <*> (o .: "num_pos")
+--                          <*> (o .: "num_neg")
+--                          <*> (o .: "start_time")
+--                          <*> (o .: "end_time")
+--     parseJSON _ = mzero
 
 instance ToJSON ListModelResponse where
-    toJSON (ListModelResponse name' meta' size' history' num_pos' num_neg' start_time' end_time' uuid')= 
+    toJSON (ListModelResponse name' uuid' meta' history' compiled' version' image' size' num_pos' num_neg' start_time' end_time')= 
         object ["name" .= name'
+               , "uuid" .= uuid'
                , "meta" .= meta'
-               , "size" .= size'
                , "history" .= history'
+               , "compiled" .= compiled'
+               , "version" .= version'
+               , "image" .= image'
+               , "size" .= size'
                , "num_pos" .= num_pos'
                , "num_neg" .= num_neg'
                , "start_time" .= start_time'
                , "end_time" .= end_time'
-               , "uuid" .= uuid'
-               , "image" .= ("models/" <> uuid' <> "/image.jpg")
                ]
         
 
-data VMXModel = VMXModel {
-    name :: String,
-    hg_size :: [Int],
-    num_pos :: Int,
-    num_neg :: Int,
-    image ::   String,
-    start_time :: Float,
-    end_time :: Float
-}  deriving (Data, Typeable, Show, Generic)
+-- data VMXModel = VMXModel {
+--     name :: String,
+--     hg_size :: [Int],
+--     num_pos :: Int,
+--     num_neg :: Int,
+--     image ::   String,
+--     start_time :: Float,
+--     end_time :: Float
+-- }  deriving (Data, Typeable, Show, Generic)
 
-instance FromJSON VMXModel
-instance ToJSON VMXModel
+-- instance FromJSON VMXModel
+-- instance ToJSON VMXModel
 
