@@ -7,33 +7,35 @@
 /robots.txt RobotsR GET
 
 /sessions SessionR GET POST OPTIONS -- done
-/sessions/#SessionId ManageSessionR GET POST DELETE OPTIONS
+/sessions/#SessionId ManageSessionR GET POST DELETE OPTIONS -- done
 
 /sessions/#SessionId/process ProcessImageR POST OPTIONS -- done
 /sessions/#SessionId/create CreateModelR POST OPTIONS -- done
 /sessions/#SessionId/edit EditModelR POST OPTIONS -- done
 /sessions/#SessionId/params SessionParamsR GET OPTIONS -- done
+/sessions/#SessionId/config SessionConfigR GET POST OPTIONS
 /sessions/#SessionId/load LoadModelR POST OPTIONS -- done
 /sessions/#SessionId/save SaveSessionR POST OPTIONS -- done
 
-/sessions/#SessionId/log.txt LogModelR GET OPTIONS
+/sessions/#SessionId/log.txt LogModelR GET OPTIONS -- done
 
-/models ModelR GET
-/models/#ModelId ModelBaseR GET
-/models/#ModelId/image.jpg ModelImageR GET
-/models/#ModelId/model.data ModelDataR GET
-/models/#ModelId/compiled.data CompiledModelDataR GET
-/models/#ModelId/data_set.json ModelDatasetR GET
-/models/#ModelId/model.json ModelJsonR GET
+/models ModelR GET -- done
+/models/#ModelId ModelBaseR GET -- done
+/models/#ModelId/image.jpg ModelImageR GET -- done
+/models/#ModelId/model.data ModelDataR GET -- done
+/models/#ModelId/compiled.data CompiledModelDataR GET -- done
+/models/#ModelId/data_set.json ModelDatasetR GET -- done
+/models/#ModelId/model.json ModelJsonR GET -- done
 
 -- dataset access functions
 /models/#ModelId/data_set/random.jpg StreamImagesR GET
 /models/#ModelId/data_set/first.jpg StreamImagesFirstR GET
 /models/#ModelId/data_set/image.jpg StreamImagesNextR GET
 /models/#ModelId/reset_cache ResetCacheR POST
-/random RandomImageR GET OPTIONS
-/forward ForwardR GET
 
-/check CheckLicenseR GET
-/activate/#LicenseKey ActivateLicenseR POST
+/random RandomImageR GET OPTIONS -- done
+/forward ForwardR GET -- done
+
+/check CheckLicenseR GET -- done
+/activate/#LicenseKey ActivateLicenseR POST -- done
 
