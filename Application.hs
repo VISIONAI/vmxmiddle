@@ -36,6 +36,7 @@ import Handler.Session
 import Handler.ManageSession
 import Handler.ProcessImage
 import Handler.SessionParams
+import Handler.SessionConfig
 import Handler.EditModel
 import Handler.CreateModel
 import Handler.Model

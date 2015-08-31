@@ -25,6 +25,7 @@ library
                      Handler.ManageSession
                      Handler.ProcessImage
                      Handler.SessionParams
+                     Handler.SessionConfig
                      Handler.EditModel
                      Handler.CreateModel
                      Handler.Model
