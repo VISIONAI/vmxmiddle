@@ -175,7 +175,7 @@ paths:
   /session/{sessionId}/save:
     post:
       tags: 
-        - model_library
+        - model_loading
       summary: Save currently loaded model
       description: "Save the currently loaded model into the `${VMX_DIR}` directory. Allows for renaming the model as well as generating a new UUID for the saved model. If the currently loaded model is a bundle, then a new UUID cannot be generated since bundle UUIDs are determined from the component UUIDs. Will not allow save operation when `config.read_only` is set to `true`."
       parameters:
@@ -211,7 +211,7 @@ paths:
   /session/{sessionId}/load:
     post:
       tags: 
-        - model_library
+        - model_loading
       summary: Load models
       description: "Load one or moremodels from `${VMX_DIR}` into the worker. If a group of models is loaded, a bundle is created (a new model which contains the submodels) and saved. Loading will not work if `config.read_only` is `true`."
       parameters:
@@ -376,7 +376,7 @@ paths:
             properties:
               data:
                 $ref: "#/definitions/Params"
-  /session/{sessionId}/get_config:
+  /session/{sessionId}/config:
     get:
       tags: 
         - settings
@@ -395,10 +395,6 @@ paths:
             properties:
               data:
                 $ref: "#/definitions/Config"
-
-
-
-  /session/{sessionId}/set_config:
     post:
       tags: 
         - settings
@@ -422,6 +418,24 @@ paths:
             properties:
               data:
                 $ref: "#/definitions/Config"
+                
+  /session/{sessionId}/log.txt:
+    get:
+      tags: 
+        - settings
+      summary: Get the last line of the log
+      description: "Get the last line of the log"
+      parameters:
+        - name: sessionId
+          in: path
+          type: string
+          description: ID of the session
+          required: true
+      responses:
+        200:
+          description: OK
+             
+        
 
   /exit:
     post:
@@ -436,6 +450,297 @@ paths:
           description: Cannot shutdown (`config.read_only` is `true`)
 
 
+  /models:
+     get:
+      tags: 
+        - model_library
+      summary: List models
+      description: "List the models inside `${VMX_DIR}` by returning a summary representation of each model"
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              type: array
+              items:
+                $ref: '#/definitions/ModelSummary'
+        400:
+          description: Model Library Broken
+
+  /models/{modelUUID}:
+     get:
+      tags: 
+        - model_library
+      summary: List model summary
+      description: "List the model summary"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              $ref: '#/definitions/ModelSummary'
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/model.json:
+     get:
+      tags: 
+        - model_library
+      summary: List model summary
+      description: "List the model summary. Same as `/models/{modelUUID}` "
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              $ref: '#/definitions/ModelSummary'
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/model.data:
+     get:
+      tags: 
+        - model_library
+      summary: Get full model (binary format)
+      description: "Get the full uncompiled model in binary form"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              $ref: '#/definitions/ModelSummary'
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/compiled.data:
+     get:
+      tags: 
+        - model_library
+      summary: Get compiled model (binary format)
+      description: "Get the compiled model in binary form"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              $ref: '#/definitions/ModelSummary'
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/image.jpg:
+     get:
+      tags: 
+        - model_library
+      summary: Get model summary icon
+      description: "Get the model summary icon"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              $ref: '#/definitions/ModelSummary'
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/data_set.json:
+    get:
+      tags: 
+        - model_library
+      summary: Get model's dataset as json
+      description: "Get the model's dataset as json"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            data:
+              type: array 
+              items:
+                $ref: '#/definitions/Image'
+            
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/data_set/first.jpg:
+    get:
+      tags: 
+        - model_library
+      summary: Get model's dataset's first image
+      description: "Get the model's dataset as json"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/data_set/image.jpg:
+    get:
+      tags: 
+        - model_library
+      summary: Get model's dataset's next image
+      description: "Get the model's dataset as json"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Model Not Found
+          
+  /models/{modelUUID}/data_set/random.jpg:
+    get:
+      tags: 
+        - model_library
+      summary: Get model's dataset's random image
+      description: "Get the model's dataset as json"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Model Not Found
+  /models/{modelUUID}/reset_cache:
+    post:
+      tags: 
+        - model_library
+      summary: Reset model cache
+      description: "Reset model cache"
+      parameters:
+        - name: modelUUID
+          in: path
+          type: string
+          description: UUID of the model
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Model Not Found
+          
+          
+          
+  /check:
+    get:
+      tags: 
+        - activation
+      summary: Check VMX version and whether it is activated
+      description: "Check VMX version"
+      responses:
+        200:
+          description: OK
+          schema:
+           properties:
+            uuid:
+              type: string
+              description: "The identifier for this VMX install"
+            licensed:
+              type: boolean
+              description: "Whether this copy is licensed or not"
+            version:
+              type: array
+              items:
+                type: string
+              description: "The three versions of the VMX components used in this install"
+              
+  /activate/{LicenseKey}:
+    post:
+      tags: 
+        - activation
+      summary: Activate this copy of VMX
+      description: "Activate this copy of VMX"
+      parameters:
+        - name: LicenseKey
+          in: path
+          type: string
+          description: An unused VMX License Key
+          required: true
+        - in: body
+          name: body
+          description: Licening Payload
+          required: true
+          schema:
+            $ref: "#/definitions/ActivateInput"
+      responses:
+        200:
+          description: OK
+          
+          
+  /random:
+    get:
+      tags:
+        - utility
+      summary: Get a random image from the model library
+      responses:
+        200:
+          description: OK
+          
+  /forward:
+    get:
+      tags:
+        - utility
+      summary: Forward from a remote IP camera to local
+      responses:
+        200:
+          description: OK
+          
+    
 definitions:
   LoadModelInput:
     required:
@@ -805,7 +1110,11 @@ definitions:
         type: number
         description: "The objective function value (without regularization terms added). The lower the better."
         
-        
+  ActivateInput:
+    properties:
+      email:
+        type: string
+        description: "your email address"
         
   CreateSessionInput:
     properties:
