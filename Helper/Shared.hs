@@ -56,18 +56,18 @@ type LockMap = SM.Map String (MVar Int)
 type Port = Int
 
 data VMXOutput = VMXOutput {
-    vmxOutputError   :: Int,
-    vmxOutputMessage :: String
+    vmxOutputError   :: Maybe String
+    --vmxOutputMessage :: String
 }
 
 instance FromJSON VMXOutput where
     parseJSON (Object o) = 
-        VMXOutput <$> (o .: "error") <*> (o .: "message")
+        VMXOutput <$> (o .:? "error")
     parseJSON _ = mzero
 
 instance ToJSON VMXOutput where
-  toJSON (VMXOutput e m) =
-    object ["error" .= e, "message" .= m]
+  toJSON (VMXOutput e) =
+    object ["error" .= e]
 
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
@@ -156,9 +156,11 @@ getPortResponse input sessionId = do
     let ret3 = decode $ L.fromChunks [C.pack ret] :: Maybe VMXOutput
     _ <- case ret3 of
       Just out -> do
-        case (vmxOutputError out) of
-          1 -> sendResponseStatus status400 $ object [ "error" .= (vmxOutputMessage out) ]
-          _ -> return (0::Integer)
+        let l = (fromMaybe "" (vmxOutputError out))
+        case l of
+          "" -> return (0::Integer)
+          _ -> sendResponseStatus status400 $ object [ "error" .= l ]
+          
         
       Nothing -> do
         sendResponseStatus status500 $ object [ "error" .= ("Cannot parse output"::String) ]
