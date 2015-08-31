@@ -67,7 +67,7 @@ createSession msid = do
 
     let cleansid = filter good sid
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
-      then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes)" :: String) ]
+      then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes or hyphens)" :: String) ]
       --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
       else return () -- liftIO $ print ("No invalid characters here" :: String)
 
