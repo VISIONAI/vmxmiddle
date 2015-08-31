@@ -13,25 +13,22 @@ myrequest({method: 'DELETE', url:url+'/sessions/bad_evil_id'},function(error, re
 
   myrequest({method: 'GET', url:url+'/sessions'},function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
-    var sessions = JSON.parse(body).data;
-    
-
+    var sessions = body.data;
     
     myrequest({method: 'DELETE', url:url+'/sessions/bad_evil_id'},function(error, response, body) {
       assert.equal(response.statusCode, 404, 'Problem with status code');
       
-
       for (var i = 0; i < sessions.length; ++i) {
 
         var id = sessions[i].id;
         
         myrequest({method: 'GET', url:url+'/sessions/'+id},function(error, response, body) {
           assert.equal(response.statusCode, 200, 'Problem with status code');
-          body = JSON.parse(body);
+
           var newid = body.data.id;
           myrequest({method: 'DELETE', url:url+'/sessions/'+newid},function(error, response, body) {
             assert.equal(response.statusCode, 200, 'Problem with status code');
-            body = JSON.parse(body);
+
             var newerid = body.data.id;
             myrequest({method: 'GET', url:url+'/sessions/'+newerid},function(error, response, body) {
               assert.equal(response.statusCode, 404, 'Problem with status code');
