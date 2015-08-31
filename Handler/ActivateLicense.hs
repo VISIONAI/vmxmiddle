@@ -101,7 +101,7 @@ postActivateLicenseR key = do
     incoming <- requireJsonBody
     ident' <- getMachineIdent
     val <- case ident' of 
-        Nothing -> error "no ident"
+        Nothing -> error "No identity, please run /check first"
         Just uuid -> do 
             let settings' = mkManagerSettings (TLSSettingsSimple True False False) Nothing
             liftIO $ handle catchException $
