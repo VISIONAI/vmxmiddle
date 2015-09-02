@@ -11,6 +11,7 @@ var session_id = 'temp-session2';
 
 var url = 'http://localhost:3000';
 var local_url = url;
+var main_url = url;
 
 console.log('URL: '+url);
 console.log('Testing simple creation from a blank slate');
@@ -69,7 +70,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
         assert.equal(response.statusCode, 200, 'Problem with status code');
 
         // check that we are starting out with no model
-        myrequest({method: 'POST', url:local_url+'/list_models', json:{}}, function(error, response, body) {
+        myrequest({method: 'GET', url:main_url+'/models', json:{}}, function(error, response, body) {
           assert.equal(response.statusCode, 200, 'Problem with status code');
 
           assert.equal(body.data.length,0,'initial models are not empty');
@@ -127,7 +128,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
               assert.equal(response.statusCode, 200, 'Problem with status code'); 
               //assert.equal(body.data.model.num_pos,2,'num_pos is three after learning mode');
 
-  myrequest({method: 'POST', url:local_url+'/config', json:{read_only: false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: false }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
@@ -171,7 +172,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
               assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
-  myrequest({method: 'POST', url:local_url+'/config',json:{display_images: true ,log_memory:true}}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config',json:{config:{display_images: true ,log_memory:true }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
     //assert.equal(body.error,0,'Error is not 0');
 
@@ -186,7 +187,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
               assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
-  myrequest({method: 'POST', url:local_url+'/config',json:{display_images: false, log_memory:false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config',json:{config:{display_images: false, log_memory:false }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
     //assert.equal(body.error,0,'Error is not 0');
 
@@ -246,7 +247,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
               //var new_uuid = body.data.model.uuid;
               //assert.notEqual(valid_uuid,new_uuid,'New uuid should be different');
 
-            myrequest({method: 'POST', url:url+'/save', json:{name:[]}}, function(error, response, body) {
+            myrequest({method: 'POST', url:url+'/save', json:{name:" "}}, function(error, response, body) {
               assert.equal(response.statusCode, 400, 'Problem with status code');
               //assert.equal(body.message.indexOf('Expected a string')>-1,1);
 
@@ -314,7 +315,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
               assert.equal(response.statusCode, 200, 'Problem with status code');
                   
                   
-                  myrequest({method: 'POST', url:local_url+'/list_models', json:{}}, function(error, response, body) {
+                  myrequest({method: 'GET', url:main_url+'/models', json:{}}, function(error, response, body) {
                     assert.equal(response.statusCode, 200, 'Problem with status code');
                     //assert.equal(body.error,0,'Error is not 0');
                     assert.equal(body.data.length,4,'initial models should be four');
@@ -334,7 +335,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
                         assert.equal(response.statusCode, 200, 'Problem with status code');
                         
                         
-                        myrequest({method: 'POST', url:local_url+'/list_models', json:{}}, function(error, response, body) {
+                        myrequest({method: 'GET', url:main_url+'/models', json:{}}, function(error, response, body) {
                           assert.equal(response.statusCode, 200, 'Problem with status code');
                           //assert.equal(body.error,0,'Error is not 0');
                           assert.equal(body.data.length,5,'initial models should be five');
@@ -397,17 +398,17 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
                                         
 
                                         myrequest({method: 'POST', url:url+'/bad_command', json:{}}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 400, 'Problem with status code');
+                                          assert.equal(response.statusCode, 404, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url+'/bad_command', json:{}}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 400, 'Problem with status code');
+                                          assert.equal(response.statusCode, 404, 'Problem with status code');
 
 
                                         myrequest({method: 'POST', url:url+'/hi', json:'hi'}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 400, 'Problem with status code');
+                                          assert.equal(response.statusCode, 404, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url+'/hi bob', json:'hi , bob, there'}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 400, 'Problem with status code');
+                                          assert.equal(response.statusCode, 404, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url}, function(error, response, body) {
                                           assert.equal(response.statusCode, 400, 'Problem with status code');
