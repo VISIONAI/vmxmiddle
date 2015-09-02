@@ -25,7 +25,7 @@ myrequest({method: 'POST', url:url+'/sessions',json:{}},function(error, response
   var id = body.data.id;
   url = url+'/sessions/'+id;
   local_url = url;
-  myrequest({method: 'POST', url:url+'/config', json:{read_only: false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:url+'/config', json:{config:{read_only: false} }}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
 myrequest({method: 'POST', url:url+'/load', json:{uuids:["none"]}}, function(error, response, body) {
@@ -51,10 +51,10 @@ myrequest({method: 'POST', url:url+'/save', json:{name:[]}}, function(error, res
 myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, body) {
   assert.equal(response.statusCode, 400, 'Problem with status code');
 
-  myrequest({method: 'POST', url:local_url+'/config', json:{invalid_parameter: true }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{pretrained: true} }}, function(error, response, body) {
     assert.equal(response.statusCode, 400, 'Problem with status code');
   
-  myrequest({method: 'POST', url:local_url+'/config', json:{read_only: true }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: true }}}, function(error, response, body) {
 
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
@@ -65,7 +65,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
     myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, body) {
       assert.equal(response.statusCode, 400, 'Problem with status code');
       
-      myrequest({method: 'POST', url:local_url+'/config', json:{read_only: false }}, function(error, response, body) {
+      myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: false} }}, function(error, response, body) {
         assert.equal(response.statusCode, 200, 'Problem with status code');
 
         // check that we are starting out with no model
@@ -77,7 +77,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
 
           var images = [{"image":imageurl,"objects":[{"name":"face","bb":[100,100,300,300]}]}];
 
-  myrequest({method: 'POST', url:local_url+'/config', json:{read_only: true }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: true} }}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
@@ -85,7 +85,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
                       images:images,pretrained:'109e8c80074201cda9cfe4d167868337'}}, function(error, response, body) {
             assert.equal(response.statusCode, 400, 'Problem with status code');
           
-  myrequest({method: 'POST', url:local_url+'/config', json:{read_only: false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: false }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
@@ -118,7 +118,7 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
               assert.equal(response.statusCode, 200, 'Problem with status code'); 
               assert.equal(body.data.model.num_pos,2,'num_pos is two after learning mode');
 
-  myrequest({method: 'POST', url:local_url+'/config', json:{read_only: true }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: true }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
 
@@ -295,7 +295,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
 
                   //return
       
-                    myrequest({method: 'POST', url:local_url+'/config',json:{read_only: false }}, function(error, response, body) {
+                    myrequest({method: 'POST', url:local_url+'/config',json:{config:{read_only: false }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
     //assert.equal(body.error,0,'Error is not 0');
 
@@ -304,7 +304,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
               assert.equal(response.statusCode, 200, 'Problem with status code'); 
 
 
-  myrequest({method: 'POST', url:local_url+'/config',json:{read_only: false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config',json:{config:{read_only: false} }}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
     //assert.equal(body.error,0,'Error is not 0');
 
@@ -475,7 +475,7 @@ myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:2,class_label:1}]
 
 
 
-  myrequest({method: 'POST', url:local_url+'/config',json:{read_only: true }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config',json:{config:{read_only: true }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 //    assert.equal(body.error,0,'Error is not 0');
 
@@ -483,7 +483,7 @@ myrequest({method: 'POST', url:url+'/edit', json:{changes:[],settings:{}}}, func
             assert.equal(response.statusCode, 400, 'Problem with status code');
   //          assert.equal(body.error,1,'Error is not 1');
 
-  myrequest({method: 'POST', url:local_url+'/config',json:{read_only: false }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config',json:{config:{read_only: false }}}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
     //assert.equal(body.error,0,'Error is not 0');
 
