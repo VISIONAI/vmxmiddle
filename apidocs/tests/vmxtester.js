@@ -32,8 +32,11 @@ module.exports = {
     
     function mybody(error, response, body) {
       console.log(response.statusCode);
+      //console.log('body is',body)
       if (body.length > 0) {
-        body = JSON.parse(body);
+        try {
+          body = JSON.parse(body);
+        } finally {}
       }
        
       
