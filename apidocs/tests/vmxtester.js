@@ -15,6 +15,10 @@ function load_session_model(vmx_dir,session_id) {
 
 module.exports = {
 
+  is400ish:function(val) {
+    return (val>=400 && val<500);
+  },
+
   myexec:function(str) {
     console.log(str);
     exec(str,puts);
