@@ -7,7 +7,7 @@ var assert = require('assert');
 var myrequest = require('./vmxtester').myrequest;
 
 var vmx_dir = '/tmp/blank/';
-var session_id = 'temp-session2';
+
 
 var url = 'http://localhost:3000';
 var local_url = url;
