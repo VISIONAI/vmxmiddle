@@ -8,8 +8,9 @@ var myrequest = require('./vmxtester').myrequest;
 
 var vmx_dir = '/tmp/blank/';
 
-
+//var url = 'http://localhost:8081';
 var url = 'http://localhost:3000';
+
 var local_url = url;
 var main_url = url;
 
@@ -17,15 +18,17 @@ console.log('URL: '+url);
 console.log('Testing simple creation from a blank slate');
 
 require('./vmxtester').myexec("rm -rf "+vmx_dir+"/models/*");
+var is400ish = require('./vmxtester').is400ish;
 
 var imageurl = '/Users/tomasz/projects/VMXserver/tests/testapi/tomasz_blue_crop.jpg';
 
 myrequest({method: 'POST', url:url+'/sessions',json:{}},function(error, response, body) {
   assert.equal(response.statusCode, 200, 'Problem with status code');
-//  console.log('body is',body)
   var id = body.data.id;
   url = url+'/sessions/'+id;
   local_url = url;
+
+
   myrequest({method: 'POST', url:url+'/config', json:{config:{read_only: false} }}, function(error, response, body) {
     assert.equal(response.statusCode, 200, 'Problem with status code');
 
@@ -52,7 +55,7 @@ myrequest({method: 'POST', url:url+'/save', json:{name:[]}}, function(error, res
 myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, body) {
   assert.equal(response.statusCode, 400, 'Problem with status code');
 
-  myrequest({method: 'POST', url:local_url+'/config', json:{config:{pretrained: true} }}, function(error, response, body) {
+  myrequest({method: 'POST', url:local_url+'/config', json:{config:{pretrained: []} }}, function(error, response, body) {
     assert.equal(response.statusCode, 400, 'Problem with status code');
   
   myrequest({method: 'POST', url:local_url+'/config', json:{config:{read_only: true }}}, function(error, response, body) {
@@ -212,6 +215,14 @@ myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, 
 
               var combined_uuid = body.data.model.uuid;
 
+            myrequest({method: 'POST', url:url+'/save', json:{uuids:[new_uuid,new_uuid]}}, function(error, response, body) {
+              assert.equal(response.statusCode, 200, 'Problem with status code');
+
+            myrequest({method: 'POST', url:url+'/save', json:{uuids:[new_uuid,new_uuid]}}, function(error, response, body) {
+              assert.equal(response.statusCode, 200, 'Problem with status code');
+
+
+
             myrequest({method: 'GET', url:url+'/params', json:{}}, function(error, response, body) {
               assert.equal(response.statusCode, 200, 'Problem with status code');
 
@@ -293,6 +304,16 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
                 myrequest({method: 'POST', url:url+'/load', json:myjson}, function(error, response, body) {
                   assert.equal(response.statusCode, 200, 'Problem with status code');
                   assert.equal(body.data.model.compiled,true,'just loaded a compiled model');
+
+                  myrequest({method:'POST',url:url+'/save',json:{}},function(error,response,body) {
+
+                    assert.equal(response.statusCode, 200, 'problem with status code');
+
+                  myrequest({method:'POST',url:url+'/save',json:{}},function(error,response,body) {
+
+                    assert.equal(response.statusCode, 200, 'problem with status code');
+
+                    
 
                   //return
       
@@ -398,17 +419,17 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
                                         
 
                                         myrequest({method: 'POST', url:url+'/bad_command', json:{}}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 404, 'Problem with status code');
+                                          assert.equal(is400ish(response.statusCode), 1, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url+'/bad_command', json:{}}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 404, 'Problem with status code');
+                                          assert.equal(is400ish(response.statusCode), 1, 'Problem with status code');
 
 
                                         myrequest({method: 'POST', url:url+'/hi', json:'hi'}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 404, 'Problem with status code');
+                                          assert.equal(is400ish(response.statusCode), 1, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url+'/hi bob', json:'hi , bob, there'}, function(error, response, body) {
-                                          assert.equal(response.statusCode, 404, 'Problem with status code');
+                                          assert.equal(is400ish(response.statusCode), 1, 'Problem with status code');
 
                                         myrequest({method: 'POST', url:url}, function(error, response, body) {
                                           assert.equal(response.statusCode, 400, 'Problem with status code');
@@ -756,4 +777,13 @@ myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:2,class_label:1}]
 
 });
 });
+//});
+
+});
+
+});
+
+});
+});
+
 });
