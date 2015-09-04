@@ -10,11 +10,8 @@ optionsSessionParamsR _ = do
     addHeader "Access-Control-Allow-Methods" "GET"
     return ()
 
-
 getSessionParamsR :: SessionId -> Handler TypedContent
 getSessionParamsR sid = do
-     -- trace "start of get session params" $ liftIO $ print sid
-    addHeader "Content-Type" "application/json"
     let req = object ["command" .= command]
     response <- getPortResponse req sid
     return response
