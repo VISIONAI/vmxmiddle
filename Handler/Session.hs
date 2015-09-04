@@ -4,32 +4,23 @@
 module Handler.Session where
 
 import Import
---import qualified Data.ByteString.Lazy as L
---import qualified Data.ByteString.Char8 as C
 import System.IO
 import System.IO.Error (isAlreadyExistsError)
 import System.Process
 import System.Directory (createDirectory, doesFileExist)
 import Data.UUID.V4 as U4 (nextRandom)
 import Data.UUID as U (toString)
---import Data.Aeson (encode)
 import Data.Aeson as A
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Control.Exception (catch)
 import Data.Char
-import Network.HTTP.Types () -- status400,status409)
+import Network.HTTP.Types ()
 import Network.HTTP.Types.Status
---import Network.HTTP.Conduit
---import Network.HTTP.Types.Status
---import qualified Data.Text.IO as DT (readFile)
 import Data.List (isInfixOf)
 import Data.Map (keys)
--- import qualified Data.ByteString.Lazy.Char8 as LC
-
 import Control.Concurrent (threadDelay)
 import Helper.Shared
-
 
 optionsSessionR :: Handler ()
 optionsSessionR = do
@@ -37,9 +28,6 @@ optionsSessionR = do
     addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
     addHeader "Access-Control-Allow-Methods" "GET, POST"
     return ()
-
-
-
 
 postSessionR :: Handler TypedContent
 postSessionR = do
@@ -54,7 +42,6 @@ postSessionR = do
       provideRepType  mimeHtml $ return response
       provideRepType  mimeText $ return response
 
-
 type ModelName = String
 
 createSession :: Maybe String -> Handler Value
@@ -68,9 +55,7 @@ createSession msid = do
     let cleansid = filter good sid
     if (length sid == 0) || (not $ isInfixOf sid cleansid)
       then sendResponseStatus status400 $ A.object [ "error" .= ("id is empty or contains invalid character (must be lowercase alphanumeric with dashes or hyphens)" :: String) ]
-      --then error $ "id is empty or contains invalid character (must be lowercase alphanumeric with dashes)"
-      else return () -- liftIO $ print ("No invalid characters here" :: String)
-
+      else return ()
 
     App _ _ _ _ portMap' _ _ _ <- getYesod
     portMap <- do
@@ -81,13 +66,9 @@ createSession msid = do
     let sessions' = keys $ portMap
     if elem sid sessions'
        then do
-         sendResponseStatus status409 $ A.object [ "error" .= ("Id " ++ sid ++ " is already taken"::String) ]
-         
+         sendResponseStatus status409 $ A.object [ "error" .= ("Id " ++ sid ++ " is already taken"::String) ]         
       else do
          return ()
-
-
-
         
     sessionPath'    <- sessionPath sid
     lift $ 
@@ -152,7 +133,6 @@ getSessionR = do
         provideRepType  mimeHtml $ return $ ("<pre>" <> (decodeUtf8 $ encodePretty $ ret) <> "</pre>")
         provideRepType  mimeText $ return ret
 
-
 list_sessions :: Handler Value
 list_sessions = do
     App _ _ _ _ portMap' _ _ _ <- getYesod
@@ -179,19 +159,15 @@ data VmxSessionFile = VmxSessionFile {
         pid :: String
 } 
 
-
-
 instance FromJSON VmxSessionFile where
     parseJSON (Object o) = VmxSessionFile <$> (o .: "pid")
     parseJSON _ = mzero
-
 
 -- create a new session
 data CreateSessionCommand = CreateSessionCommand {
 --        modelUUIDS :: [String],
         sessionID :: Maybe String
 } 
-
 
 
 instance FromJSON CreateSessionCommand where
