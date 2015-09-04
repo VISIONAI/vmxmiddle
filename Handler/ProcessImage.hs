@@ -5,17 +5,6 @@ import Import
 import Helper.Shared
 import Helper.VMXTypes
 
---import System.Directory (doesFileExist)
---import Control.Concurrent (threadDelay)
---import Data.Map.Strict as SM (member) 
---import Network.HTTP.Types.Status (status404)
-
-optionsProcessImageR :: SessionId -> Handler ()
-optionsProcessImageR _ = do
-    addHeader "Allow" "GET, POST, OPTIONS"
-    addHeader "Access-Control-Allow-Methods" "GET, POST, OPTIONS"
-    return ()
-
 data ProcessImageCommand =  ProcessImageCommand {
     processImageName   :: Maybe String,
     processImageImages :: Maybe [VMXImage],
@@ -29,18 +18,23 @@ data ProcessImageCommand =  ProcessImageCommand {
 -- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
-        ProcessImageCommand <$> (o .:? "name") <*> (o .:? "images") <*> (o .:? "params")
+        ProcessImageCommand <$> (o .:? "name")
+                            <*> (o .:? "images")
+                            <*> (o .:? "params")
     parseJSON _ = mzero
+
+optionsProcessImageR :: SessionId -> Handler ()
+optionsProcessImageR _ = do
+    addHeader "Allow" "Get, Post"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET, POST"
+    return ()
 
 postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
-   addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
    let images = fromMaybe ([]) (processImageImages pic)
    let name = fromMaybe "" (processImageName pic);
    val <- processImage sid images params name
    return val
-
-
-
