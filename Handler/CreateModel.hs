@@ -4,10 +4,6 @@ module Handler.CreateModel where
 import Import
 import Helper.Shared
 import Helper.VMXTypes
---import Data.Aeson (decode', encode)
---import Data.Aeson.Types (Result(..))
---import qualified Data.ByteString.Lazy.Char8 as LBS
---import Network.HTTP.Types (status400)
 
 data CreateModelCommand = CreateModelCommand {
     createModelName :: String,
