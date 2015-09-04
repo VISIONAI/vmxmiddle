@@ -10,17 +10,19 @@ data VMXEditSettings = VMXEditSettings {
     vmxESmax_negatives  :: Maybe Integer,
     vmxESpositives_order  :: Maybe Integer,
     vmxESnegatives_order  :: Maybe Integer,
-    vmxESpad_scale :: Maybe Float
+    vmxESpad_scale :: Maybe Float,
+    vmxESimage_size :: Maybe Integer
 }
 
 instance ToJSON VMXEditSettings where
-    toJSON (VMXEditSettings lp maxp maxn po no ps) =
+    toJSON (VMXEditSettings lp maxp maxn po no ps is) =
             object ["learn_iterations" .= fromMaybe 0 lp,
                     "max_positives" .= fromMaybe 20 maxp,
                     "max_negatives" .= fromMaybe 20 maxn,
                     "positives_order" .= fromMaybe 1 po,
                     "negatives_order" .= fromMaybe (-1) no,
-                    "pad_scale" .= fromMaybe (1.0) ps]
+                    "pad_scale" .= fromMaybe (1.0) ps,
+                    "image_size" .= fromMaybe (100) is]
 
 instance FromJSON VMXEditSettings where
     parseJSON (Object o) =
@@ -30,6 +32,7 @@ instance FromJSON VMXEditSettings where
         <*> (o .:? "positives_order")
         <*> (o .:? "negatives_order")
         <*> (o .:? "pad_scale")
+        <*> (o .:? "image_size")
     parseJSON _ = mzero
 
 
@@ -75,7 +78,6 @@ instance FromJSON EditModelCommand where
 
 genericEditModel :: SessionId -> String -> Handler TypedContent
 genericEditModel sid command = do
-    --addHeader "Content-Type" "application/json"
     (r :: EditModelCommand) <- requireJsonBody
     let req = object [ "command"  .= command
                      , "settings" .= (editModelSettings r)
