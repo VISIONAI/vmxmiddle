@@ -10,12 +10,6 @@ import Control.Concurrent (threadDelay)
 import Data.Map.Strict as SM (member) 
 import Network.HTTP.Types.Status (status404)
 
-optionsManageSessionR :: SessionId -> Handler ()
-optionsManageSessionR _ = do
-    addHeader "Allow" "GET, POST, DELETE, OPTIONS"
-    addHeader "Access-Control-Allow-Methods" "GET, POST, DELETE, OPTIONS"
-    return ()
-
 data ManageSessionCommand =  ManageSessionCommand {
     processImageName   :: Maybe String,
     processImageImages :: Maybe [VMXImage],
@@ -29,12 +23,20 @@ data ManageSessionCommand =  ManageSessionCommand {
 -- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ManageSessionCommand where
     parseJSON (Object o) = do
-        ManageSessionCommand <$> (o .:? "name") <*> (o .:? "images") <*> (o .:? "params")
+        ManageSessionCommand <$> (o .:? "name")
+                             <*> (o .:? "images")
+                             <*> (o .:? "params")
     parseJSON _ = mzero
 
+optionsManageSessionR :: SessionId -> Handler ()
+optionsManageSessionR _ = do
+    addHeader "Allow" "Get, Post, Delete"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET, POST, DELETE"
+    return ()
+
 getManageSessionR :: SessionId -> Handler TypedContent
-getManageSessionR sid = do
-  
+getManageSessionR sid = do  
   App _ _ _ _ portMap' _ _ _ <- getYesod
   _ <- do
     pm <- liftIO $ takeMVar portMap'
@@ -56,7 +58,6 @@ getManageSessionR sid = do
 
 postManageSessionR :: SessionId -> Handler TypedContent
 postManageSessionR sid = do
-   addHeader "Content-Type" "application/json"
    (pic :: ManageSessionCommand) <- requireJsonBody
    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
    let images = fromMaybe ([]) (processImageImages pic)
@@ -75,19 +76,13 @@ deleteManageSessionR sid = do
 deleteVMXSession :: SessionId -> Handler Value
 deleteVMXSession sid = do
     _ <- exitVMXServer sid
-
-    -- remove from port map
     removeVMXSession sid
-
     sessionPath'    <- sessionPath sid
     liftIO $ waitForFileGone (sessionPath' ++ "/url")
-
     let o = object ["id" .= sid]
     return $ object ["data" .= o]
-
     -- delete session files
     -- delVMXFolder $ "sessions/" <> sid
-
     where
       sessionPath :: SessionId -> Handler String
       sessionPath s = do
