@@ -119,7 +119,7 @@ if [ "$CUR" != "$REM" ]; then
     fi
 
     tar xf $REM
-    cp -R static/ ../
+    cp -R static ../
     rm -rf static
     cd - > /dev/null
 else
