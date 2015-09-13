@@ -16,7 +16,10 @@ import Control.Concurrent.MVar
 import Data.Map.Strict (Map)
 import Data.IORef (IORef)
 import System.Directory     (getCurrentDirectory,createDirectoryIfMissing,doesFileExist)
-
+import Network.Wai as Wai
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
+import Data.IORef (readIORef)
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
 -- starts running, such as database connections. Every handler will have
@@ -31,6 +34,7 @@ data App = App
     , portMap      ::  MVar (Map String (MVar Int))
     , machineIdent :: IORef (Maybe String)
     , imageStream  :: IORef (Map String [String])
+    , vmxVersion   :: IORef (String)
     }
 
 instance HasHttpManager App where
@@ -50,10 +54,47 @@ mkYesodData "App" $(parseRoutesFile "config/routes")
 
 type Form x = Html -> MForm (HandlerT App IO) (FormResult x, Widget)
 
+approotViaRequest :: App -> Wai.Request -> T.Text
+approotViaRequest ar req =
+    case requestHeaderHost req of
+        Just a  -> prefix `T.append` decodeUtf8 a
+        Nothing -> appRoot $ settings ar
+    where
+        prefix =
+            case isSecure req of
+                True  -> "https://"
+                False -> "http://"
+
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
 instance Yesod App where
-    approot = ApprootMaster $ appRoot . settings
+    -- uses the host flag in the request
+    approot = ApprootRequest approotViaRequest
+
+    -- if enabled use relative paths for redirects, so that
+    -- a request for localhost:3000/sessions/ will give you /sessions
+    --approot = ApprootRelative
+
+    -- This will use the appRoot inside the config file, so that a
+    -- request for http://retbone.local:3000/sessions/ will give you
+    -- http://localhost:3000/sessions assuming that localhost:300 was
+    -- your approot in the config file
+    --approot = ApprootMaster $ appRoot . settings
+
+    --e <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "version")
+    --let versionMiddle = either (const "development") id e
+
+
+    yesodMiddleware handler = do
+      addHeader "Access-Control-Allow-Origin" "*"
+      addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type,Origin, X-Requested-With, Accept"
+      App _ _ _ _ _ _ _ vmxVersion' <- getYesod
+      v <- liftIO $ readIORef vmxVersion'
+      setHeader "Server" $ T.pack v
+      
+      --addHeader "Access-Control-Allow-Methods" "GET, PUT, POST, DELETE, OPTIONS"
+      --addHeader "Access-Control-Allow-Headers" "Accept, Origin, X-Requested-With"
+      handler
 
 
     errorHandler (InternalError e) = 
@@ -62,15 +103,21 @@ instance Yesod App where
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>500 error</h1><p> #{e}|]
 
-    errorHandler (InvalidArgs es) = 
+    errorHandler (InvalidArgs e) = 
         selectRep $ do
-            provideRepType  "application/json" $ return $ object ["invalid_arguments" .= es] 
+            provideRepType  "application/json" $ return $ object ["error" .= e] 
             provideRep $ defaultLayout $ 
-                toWidget [hamlet|<h1>invalid args</h1><p> #{show es}|]
+                toWidget [hamlet|<h1>invalid args</h1><p> #{show e}|]
+
+    errorHandler NotFound = 
+        selectRep $ do
+            provideRepType  "application/json" $ return $ object ["error" .= ("Not Found" :: String)] 
+            provideRep $ defaultLayout $ 
+                toWidget [hamlet|<h1>Not Found</h1><p> This resource cannot be found.|]
 
     errorHandler other =
       selectRep $ do
-            provideRepType  "application/json" $ return $ object ["error" .= show other] 
+            provideRepType  "application/json" $ return $ object ["error" .= ("Other Error: "++ (show other))] 
             provideRep $ defaultLayout $ 
                 toWidget [hamlet|<h1>other error</h1><p> #{show other}|]
       --defaultErrorHandler other
@@ -197,9 +244,11 @@ vmxExecutable = do
         Just theDir -> do
           let result = finalPath cwd $ theDir ++ "/VMXserver"
           exist <- liftIO $ doesFileExist result
-          case exist of
-            True -> liftIO $ print $ result ++ " exists"
-            False -> liftIO $ print $ "Warning " ++ result ++ " does not exist"
+          _ <- case exist of
+            True -> return () -- liftIO $ print $ result ++ " exists"
+            False -> do
+              liftIO $ print $ "Warning " ++ result ++ " does not exist"
+              return ()
           return result
         Nothing  -> return "/home/g/VMXserver/VMXserver"
 

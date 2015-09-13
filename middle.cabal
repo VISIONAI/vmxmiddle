@@ -22,9 +22,12 @@ library
                      Settings.Development
                      Handler.Home
                      Handler.Session
+                     Handler.ManageSession
                      Handler.ProcessImage
                      Handler.SessionParams
+                     Handler.SessionConfig
                      Handler.EditModel
+                     Handler.CreateModel
                      Handler.Model
                      Handler.ModelImage
                      Handler.ModelData

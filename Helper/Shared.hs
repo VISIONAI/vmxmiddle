@@ -3,8 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Helper.Shared
     ( drainFifo
-    , headers
-    , getPipeResponse
     , getPortResponse
     , InputPipe
     , OutputPipe
@@ -33,33 +31,47 @@ import System.IO.Error (isDoesNotExistError)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as C
 import qualified Data.Text.IO as DT (readFile)
+--import Data.Text.Encoding (decodeUtf8,encodeUtf8)
 import System.Directory (removeDirectoryRecursive)
 import System.IO
-import Data.Aeson (encode)
+import Data.Aeson (encode,decode)
 import GHC.IO.Handle.FD (openFileBlocking)
 import Control.Exception  as Ex hiding (Handler) 
-import Control.Exception.Lifted  as LX (catch,finally)
+import Control.Exception.Lifted  as LX (finally) -- (catch,finally)
 import Data.Map.Strict as SM (member, (!), insert,  Map) 
 import Data.Map (delete)
 import Helper.VMXTypes
 
 import Data.Text.IO (hGetContents)
 
-
-
-
 import Network.HTTP.Conduit
+import Network.HTTP.Types.Status (status404,status500,status400)
 import Data.Conduit
 
 import Data.Conduit.List (consume)
+-- import qualified Data.ByteString.Lazy.Char8 as C
 
 type LockMap = SM.Map String (MVar Int)
 
 type Port = Int
 
+data VMXOutput = VMXOutput {
+    vmxOutputError   :: Maybe String
+    --vmxOutputMessage :: String
+}
+
+instance FromJSON VMXOutput where
+    parseJSON (Object o) = 
+        VMXOutput <$> (o .:? "error")
+    parseJSON _ = mzero
+
+instance ToJSON VMXOutput where
+  toJSON (VMXOutput e) =
+    object ["error" .= e]
+
 removeVMXSession :: SessionId -> Handler ()
 removeVMXSession sid = do
-    App _ _ _ _ portMap' _ _ <- getYesod
+    App _ _ _ _ portMap' _ _ _ <- getYesod
     pm <- liftIO $ takeMVar portMap'
     liftIO $ putMVar portMap' (Data.Map.delete sid pm)
     return ()
@@ -71,7 +83,7 @@ releasePort sid locks port = putMVar (locks ! sid) port >> return ()
 
 addLock :: SessionId -> Maybe Port -> Handler Port
 addLock sid mbPort= do
-    App _ _ _ _ portMap' _ _  <- getYesod
+    App _ _ _ _ portMap' _ _ _  <- getYesod
     portMap <- liftIO $ takeMVar portMap'
     (port, newMap) <- case mbPort of 
                 Just requestedPort -> do  
@@ -116,10 +128,10 @@ drainFifo f = do
     o   <- Data.Text.IO.hGetContents hdl
     return $ unpack o
 
-headers :: Handler ()
-headers = do
-    addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Content-Type" "application/json"
+--headers :: Handler ()
+--headers = do
+--    addHeader "Access-Control-Allow-Origin" "*"
+--    addHeader "Content-Type" "application/json"
 
 type InputPipe = FilePath
 type OutputPipe = FilePath
@@ -139,47 +151,53 @@ mimeHtml = "text/html"
 
 getPortResponse :: Value -> SessionId -> Handler TypedContent
 getPortResponse input sessionId = do
-    ret <- getPortResponse' input sessionId
+    ret  <- getPortResponse' input sessionId
+    --let ret2 = (makeJson ret)
+    let ret3 = decode $ L.fromChunks [C.pack ret] :: Maybe VMXOutput
+    _ <- case ret3 of
+      Just out -> do
+        let l = (fromMaybe "" (vmxOutputError out))
+        case l of
+          "" -> return (0::Integer)
+          _ -> sendResponseStatus status400 $ object [ "error" .= l ]
+          
+        
+      Nothing -> do
+        sendResponseStatus status500 $ object [ "error" .= ("Cannot parse output"::String) ]
+    
     selectRep $ do
         provideRepType  mimeJson $ return ret
         provideRepType  mimeHtml $ return ret
         provideRepType  mimeText $ return ret
 
-
---portErrorHandler :: String -> Handler TypedContent
---portErrorHandler msg = error msg
-
-
 getPortResponse' :: Value -> SessionId -> Handler String
 getPortResponse' input sessionId = do
-    App _ _ manager _ portMap' _ _ <- getYesod
+    App _ _ manager _ portMap' _ _ _ <- getYesod
     portMap <- do
         pm <- liftIO $ takeMVar portMap'
         if member sessionId pm
             then return pm
             else do
                 liftIO $ putMVar portMap' pm
-                notFound -- [pack $ "invalid session " ++ sessionId ]
+                sendResponseStatus status404 $ object [ "error" .= ("Session " ++ sessionId ++ " Not Found" :: String) ]
+
                 
     liftIO $ putMVar portMap' portMap
     port <- liftIO $ waitLock sessionId portMap
 
-    let path = "http://127.0.0.1:" ++ show port ++ "/command"
+    let path = "http://127.0.0.1:" ++ show port
 
 
     req' <- liftIO $ parseUrl path
 
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
-    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input}
+    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input, checkStatus = \_ _ _ -> Nothing}
     res <- http req manager
-           -- `LX.catch` \e ->
-           --   case e of
-           --     FailedConnectionException2 {} ->
-           --       do
-           --         liftIO $ print "XXX5"
-           --         removeVMXSession sessionId
-           --         error "Removed bad session"
+            --`LX.catch` (\(StatusCodeException s a _) ->
+            --             do
+            --               liftIO $ print $ "a is " ++ (show (a !! 0))
+            --               error $ "baddie" ++ (show s)) -- $ statusMessage s))
                -- _ ->
                --   do
                --     liftIO $ print "XXX4"
@@ -192,9 +210,11 @@ getPortResponse' input sessionId = do
            `LX.finally` (liftIO $ releasePort sessionId portMap port)
      
 
+
     resValue' <- responseBody res $$+- consume
-    
     let ret = concat $ map C.unpack resValue'
+    --let rp = (decode $ decodeUtf8 $ pack ret) :: Maybe VMXOutput
+    --liftIO $ print $ "ret is " ++ (ret) -- show $ VMXOutput $ makeJson ret)
     return ret
         
 
@@ -209,8 +229,8 @@ checkPort p = do
             return True
 
     
-getPipeResponse :: Value -> SessionId -> Handler TypedContent
-getPipeResponse = getPortResponse
+--getPipeResponse :: Value -> SessionId -> Handler TypedContent
+--getPipeResponse = getPortResponse
 --getPipeResponse v sid = do
 --    App _ _ _ _ lm _ _  <- getYesod
 --    locks' <- liftIO $ takeMVar lm
@@ -244,36 +264,27 @@ getPipeResponse = getPortResponse
 --    where
 --        payload = encode v
 
-
-
-    
-    
-
-
-
-
-
 processImage :: SessionId -> [VMXImage] -> VMXParams -> String -> Handler TypedContent
 processImage sid image params name = do
    let req = object ["command" .= command, "name" .= name, "images" .= image, "params" .= params]
-   response <- getPipeResponse req sid
+   response <- getPortResponse req sid
    return response
    where
         command :: String
-        command = "process_image"
+        command = "process"
 
 loadModel :: SessionId -> [String] -> Bool -> Handler TypedContent
 loadModel sid uuids compiled = do
    let req = object ["command" .= command, "uuids" .= uuids, "compiled" .= compiled]
-   response <- getPipeResponse req sid
+   response <- getPortResponse req sid
    return response
    where
         command :: String
-        command = "load_model"
+        command = "load"
 
 
 exitVMXServer :: SessionId -> Handler TypedContent
-exitVMXServer sid = getPipeResponse (object ["command" .= exit]) sid >>=  return
+exitVMXServer sid = getPortResponse (object ["command" .= exit]) sid >>=  return
 	where 	
 		exit :: String
 		exit = "exit"

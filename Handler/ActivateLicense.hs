@@ -98,15 +98,14 @@ instance FromJSON ActivatePayload where
 
 postActivateLicenseR :: LicenseKey -> Handler Value
 postActivateLicenseR key = do
-    addHeader "Access-Control-Allow-Origin" "*"
     incoming <- requireJsonBody
     ident' <- getMachineIdent
     val <- case ident' of 
-        Nothing -> error "no ident"
+        Nothing -> error "No identity, please run /check first"
         Just uuid -> do 
-            let settings = mkManagerSettings (TLSSettingsSimple True False False) Nothing
+            let settings' = mkManagerSettings (TLSSettingsSimple True False False) Nothing
             liftIO $ handle catchException $
-                withManagerSettings settings $ \manager -> do
+                withManagerSettings settings' $ \manager -> do
                     req' <- liftIO $ parseUrl $ "https://beta.vision.ai/license/" <> key <> "/file/" <> uuid
                     let valueBs = encode $ object ["email" .= activationPayloadEmail incoming]
                     let req = req' { method = "POST", requestBody = RequestBodyLBS valueBs}

@@ -25,15 +25,20 @@ import Yesod.Core.Types (loggerSet, Logger (Logger))
 -- Imports for map of SessionIds to MVars
 import qualified Data.Map.Strict as Map
 import Data.IORef (newIORef)
-
+import Control.Exception (tryJust)
+import System.IO.Error (isDoesNotExistError)
+import Control.Monad (guard)
 
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
 import Handler.Home
 import Handler.Session
+import Handler.ManageSession
 import Handler.ProcessImage
 import Handler.SessionParams
+import Handler.SessionConfig
 import Handler.EditModel
+import Handler.CreateModel
 import Handler.Model
 import Handler.ModelImage
 import Handler.ModelData
@@ -104,6 +109,13 @@ makeFoundation conf = do
     -- Create Map of UUID -> Semaphores to control atomic writes to pipe
     portMapMVar <- liftIO $ newMVar $ Map.fromList []
 
+    e <- liftIO $ tryJust (guard . isDoesNotExistError) (readFile "version")
+    let versionMiddle = either (const "development") id e
+
+
+    vmxVersionVar <- liftIO $ newIORef versionMiddle -- $ either (const "development") id $ tryJust (guard . isDoesNotExistError) (readFile "version")
+    --vmxVersionVar <- liftIO $ newIORef ("monkey"::String) --either (const "development") id $ tryJust (guard . isDoesNotExistError) (readFile "version")
+
     -- Keep track of the machineIdent string we get back from vmxserver
     machineIdentIORef <- liftIO $ newIORef Nothing
     modelImageCache   <- liftIO $ newIORef $ Map.fromList []
@@ -111,7 +123,7 @@ makeFoundation conf = do
 
 
     let logger = Yesod.Core.Types.Logger loggerSet' getter
-        foundation = App conf s manager logger portMapMVar machineIdentIORef modelImageCache
+        foundation = App conf s manager logger portMapMVar machineIdentIORef modelImageCache vmxVersionVar
 
     -- Perform database migration using our application's logging settings.
 --     runLoggingT

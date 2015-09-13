@@ -5,18 +5,9 @@ import Import
 import Helper.Shared
 import Helper.VMXTypes
 
-
-optionsProcessImageR :: SessionId -> Handler ()
-optionsProcessImageR _ = do
-    addHeader "Allow" "POST DELETE"
-    addHeader "Access-Control-Allow-Origin" "*"
-    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
-    addHeader "Access-Control-Allow-Methods" "POST"
-    return ()
-
 data ProcessImageCommand =  ProcessImageCommand {
-    processImageName   :: String,
-    processImageImages :: [VMXImage],
+    processImageName   :: Maybe String,
+    processImageImages :: Maybe [VMXImage],
     processImageParams   :: Maybe VMXParams
 }
 
@@ -27,35 +18,23 @@ data ProcessImageCommand =  ProcessImageCommand {
 -- not the remaining "100 objects.  Currently we aren't doing this...
 instance FromJSON ProcessImageCommand where
     parseJSON (Object o) = do
-        ProcessImageCommand "" <$> (o .: "images") <*> (o .:? "params")
+        ProcessImageCommand <$> (o .:? "name")
+                            <*> (o .:? "images")
+                            <*> (o .:? "params")
     parseJSON _ = mzero
 
+optionsProcessImageR :: SessionId -> Handler ()
+optionsProcessImageR _ = do
+    addHeader "Allow" "Get, Post"
+    addHeader "Access-Control-Allow-Headers" "Authorization,Content-Type"
+    addHeader "Access-Control-Allow-Methods" "GET, POST"
+    return ()
 
 postProcessImageR :: SessionId -> Handler TypedContent
 postProcessImageR sid = do
-   addHeader "Access-Control-Allow-Origin" "*"
-   addHeader "Content-Type" "application/json"
    (pic :: ProcessImageCommand) <- requireJsonBody
    let params = fromMaybe (VMXParams Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing) (processImageParams pic)
-   val <- processImage sid (processImageImages pic) params (processImageName pic)
+   let images = fromMaybe ([]) (processImageImages pic)
+   let name = fromMaybe "" (processImageName pic);
+   val <- processImage sid images params name
    return val
-
-deleteProcessImageR :: SessionId -> Handler ()
-deleteProcessImageR = deleteVMXSession
-
-
-deleteVMXSession :: SessionId -> Handler ()
-deleteVMXSession sid = do
-    
-    -- stop process
-    _ <- exitVMXServer sid
-
-    -- remove from port map
-    removeVMXSession sid
-
-    
-    return ()
-    -- delete session files
-    -- delVMXFolder $ "sessions/" <> sid			
-
-

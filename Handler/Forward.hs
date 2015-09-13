@@ -1,16 +1,16 @@
 module Handler.Forward where
 
 import Import
-import Network.HTTP (getResponseBody, simpleHTTP, Request, mkRequest)
-import Network.HTTP( RequestMethod( GET ) )
+--import Network.HTTP (getResponseBody, simpleHTTP, Request, mkRequest)
+--import Network.HTTP( RequestMethod( GET ) )
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
-import Data.Maybe (fromJust)
+--import Data.Maybe (fromJust)
 --import Network.URI (parseURI)
 import Data.List (isPrefixOf)
 import Control.Monad                ((<=<))
 import qualified Data.ByteString.Lazy.Char8 as  LZ
-import Handler.CheckLicense
+--import Handler.CheckLicense
 import Control.Exception (tryJust)
 import System.IO.Error (isDoesNotExistError)
 import Control.Monad (guard)
@@ -27,10 +27,10 @@ import Network.HTTP.Conduit
 -- | make a simple http request but add a user agent to the HTTP header
 -- You HAVE TO add a User-Agent in your header to use the github API.
 simpleHTTPWithUserAgent :: String -> [Char] -> [Char] -> IO LZ.ByteString
-simpleHTTPWithUserAgent url version osv = do
+simpleHTTPWithUserAgent url version' osv = do
     r  <- parseUrl url
 
-    let uuid' = C.pack $ concat [version, " (", osv, " ", arch, " https://vision.ai)"]
+    let uuid' = C.pack $ concat [version', " (", osv, " ", arch, " https://vision.ai)"]
     let request = r { requestHeaders =  [ ("User-Agent",uuid') ] }
     withManager $ (return.responseBody) <=< httpLbs request
 
@@ -57,8 +57,8 @@ getForwardR = do
   --  _ -> do
   (_, Just hout, _, hdl) <- liftIO $ createProcess (proc "uname" ["-mrs"]){ std_out = CreatePipe }
   osv <- liftIO $ Data.Text.IO.hGetContents hout
-  liftIO $ waitForProcess hdl
-      --return osv
+  _ <- liftIO $ waitForProcess hdl
+  
 
   case urlMaybe of
     Nothing -> do
