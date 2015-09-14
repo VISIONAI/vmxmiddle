@@ -192,7 +192,7 @@ getPortResponse' input sessionId = do
 
 
     --let req = req' {method = "POST", requestBody = RequestBodyLBS $ LBS.pack "invalid shit"}
-    let req = req' {method = "POST", requestBody = RequestBodyLBS $ encode input, checkStatus = \_ _ _ -> Nothing}
+    let req = req' {responseTimeout = Just 360000000, method = "POST", requestBody = RequestBodyLBS $ encode input, checkStatus = \_ _ _ -> Nothing}
     res <- http req manager
             --`LX.catch` (\(StatusCodeException s a _) ->
             --             do
