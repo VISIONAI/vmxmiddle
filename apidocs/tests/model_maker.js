@@ -23,6 +23,7 @@ var is400ish = require('./vmxtester').is400ish;
 var imageurl = '/Users/tomasz/projects/VMXserver/tests/testapi/tomasz_blue_crop.jpg';
 
 imageurl = 'http://people.csail.mit.edu/tomasz/img/tomasz_blue_crop.jpg';
+imageurl = 'http://localhost:8081/tomasz_blue_crop.jpg';
 myrequest({method: 'POST', url:url+'/sessions',json:{}},function(error, response, body) {
   assert.equal(response.statusCode, 200, 'Problem with status code');
   var id = body.data.id;
@@ -477,21 +478,25 @@ myrequest({method: 'POST', url:url+'/edit', json:{changes:[],settings:{}}}, func
             assert.equal(response.statusCode, 200, 'Problem with status code');
             //assert.equal(body.error,0,'Error is not 0');
             var good_images = body.data.images;
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:1}],settings:{}}}, function(error, response, body) {
+            var good_id = good_images[0].objects[0].id;
+            var bad_id = good_images[1].objects[0].id;
+
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:good_id}],settings:{}}}, function(error, response, body) {
+            //missing class_label
             assert.equal(response.statusCode, 400, 'Problem with status code');
 
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:1,class_label:10}],settings:{}}}, function(error, response, body) {
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:good_id,class_label:10}],settings:{}}}, function(error, response, body) {
             assert.equal(response.statusCode, 400, 'Problem with status code');
 
 
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:1,class_label:1}],settings:{}}}, function(error, response, body) {
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:good_id,class_label:1}],settings:{}}}, function(error, response, body) {
             assert.equal(response.statusCode, 200, 'Problem with status code');
             assert.equal(body.data.images.length,good_images.length);
 
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:1,class_label:-1}],settings:{max_negatives:1}}}, function(error, response, body) {
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:good_id,class_label:-1}],settings:{max_negatives:1}}}, function(error, response, body) {
             assert.equal(response.statusCode, 400, 'Problem with status code');
             
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:2,class_label:1}],settings:{max_negatives:0, max_positives:3}}}, function(error, response, body) {
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:bad_id,class_label:1}],settings:{max_negatives:0, max_positives:3}}}, function(error, response, body) {
             assert.equal(response.statusCode, 200, 'Problem with status code');
 
             assert.equal(body.data.images.length,2);
@@ -535,8 +540,12 @@ myrequest({method: 'POST', url:url+'/edit', json:{changes:[],settings:{max_negat
             assert.equal(response.statusCode, 200, 'Problem with status code');
           //  assert.equal(body.error,0,'Error is not 0');
             assert.equal(body.data.images.length,2);
+            var good_images = body.data.images;
+            var good_id = good_images[0].objects[0].id;
+            var bad_id = good_images[1].objects[0].id;
 
-myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:2,class_label:1}],settings:{max_negatives:0,max_positives:3}}}, function(error, response, body) {
+  
+myrequest({method: 'POST', url:url+'/edit', json:{changes:[{id:good_id,class_label:1},{id:bad_id,class_label:1}],settings:{max_negatives:0,max_positives:3}}}, function(error, response, body) {
             assert.equal(response.statusCode, 200, 'Problem with status code');
             assert.equal(body.data.images.length,2);
 
