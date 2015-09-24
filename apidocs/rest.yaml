@@ -2,38 +2,62 @@
 swagger: '2.0'
 info:
   version: 0.2.0
-  title: VMX REST API
+  title: VMX v0.2 REST API for Object Detection and Recognition
   description: |
-    **This is the VMX REST API 
-      which lets you programatically manage (create, delete, and edit) multiple VMXworker sessions. Each VMXworker runs as a separate process, is able to run and edit object recognition models, and will have its own endpoint URL: `/sessions/#sessionId`** 
+    This document describes the VMX v0.2 REST API 
+      which lets you programatically manage (create, delete, and edit) multiple VMXworker sessions. A VMXworker process is able to execute, create, and edit real-time object detection models made by VMX. Each worker will have its own endpoint URL: `/sessions/#sessionId`
+      
+      It is possible to build full computer vision applications on top of the VMX API, and you are highly encouraged to do so. The VMX GUI uses this VMX API from a Javascript(AngularJS) interface.  For documentation on how to use the GUI to perform training inside the browser, take a look at https://docs.vision.ai
       
       #### HTTP-based API
-      The API is HTTP-based, so you can use the command line utility `curl`, `request` libraries in Node.js or python, jquery inside the browser, or just about another language which supports GET and POST requests.
+      The VMX API is HTTP-based, so you can use the command line utility `curl`, `request` libraries in Node.js or python, jquery inside the browser, or just about another language which supports GET and POST requests.
+      
+      
       
       
       #### JSON inputs and outputs
-      All inputs to VMX endpoints JSON objects specified in the body of the request, and outputs are JSON objects with the information contained inside the `.data` field. If an error occurs, the API will return a non-200 error code and returned JSON object will contain a `.error` field containing a human-readable error message.
+      All inputs to VMX endpoints are JSON objects specified in the body of the request, and outputs are JSON objects with the information contained inside the `.data` field. If an error occurs, the API will return a non-200 error code and the returned JSON object will contain a `.error` field containing a human-readable error message.
       
       
-    Let's start VMX locally on port 3000.
+    Let's start VMX and check the version.
 
     **On a Mac**
     ```
     cd /Applications/VMX.app/Contents/MacOS/
     ./run.sh
-    curl localhost:3000
+    curl localhost:3000/check
     ```
 
     **On Linux**
     ```
     cd ~/vmx-docker-manager
     ./vmx start 3000
-    curl localhost:3000
+    curl localhost:3000/check
     ```
+    
+    **If you are accessing a vision.ai hosted VMX node, check either port 80(http) or 443(https)**
+    ```
+    curl https://vmx.mycompany.com/check
+    ```
+    
+    For a valid and licensed VMX node you should get something like:
+    ```
+    {
+      "uuid": "935169C6-C4E8-4393-875B-D80B5A998615",
+      "licensed": true,
+      "version": [
+        "VMXserver_Linux_v0.2.1",
+        "VMXmiddle_Linux_v0.4.1",
+        "vmxAppBuilder_v0.2.1"
+      ]
+    }
+    ```
+    
+    If you're connecting to a VMX node with VMXserver v0.1, you'll need to update VMX. **These docs are for version v0.2.**
       
   contact:
     name: vision.ai API team
-    url: https://api.vision.ai    
+    url: https://vision.ai    
 
 host: localhost:3000
 schemes:
@@ -43,8 +67,12 @@ paths:
     get:
       tags: 
         - session management
-      summary: List sessions
-      description: "Lists the active VMXworker sessions. Returns the session ids and summaries of the models loaded in each session."
+      summary: List sessions 
+      description: "Lists the active VMXworker sessions. Returns the session ids and summaries of the models loaded in each session.
+      
+        
+        GUI: <a href=\"/#/sessions\">/#/sessions</a> 
+        "
     
       responses:
         200:
@@ -331,7 +359,13 @@ paths:
       tags: 
         - detection
       summary: Edit model
-      description: "Edit/show the positive examples inside the model. Can be used to show image crops of the positives/negatives, swap examples, or remove examples."
+      description: "Edit/show the positive examples inside the model. Can be used to show image crops of the positives/negatives, swap examples, or remove examples.
+      
+      
+        
+        GUI: <a href=\"/#/sessions/sessionId/edit\">/#/sessions/sessionId/edit</a> 
+        
+        "
       parameters:
         - name: sessionId
           in: path
@@ -429,7 +463,13 @@ paths:
       tags: 
         - settings
       summary: Get the last line of the log
-      description: "Get the last line of the log"
+      description: "Get the last line of the log
+      
+      
+        
+        GUI: <a href=\"/#/sessions/sessionId/log.txt\">/#/sessions/sessionId/log.txt</a> 
+        
+        "
       parameters:
         - name: sessionId
           in: path
@@ -446,7 +486,13 @@ paths:
       tags: 
         - model_library
       summary: List models
-      description: "List the models inside `${VMX_DIR}` by returning a summary representation of each model"
+      description: "List the models inside `${VMX_DIR}` by returning a summary representation of each model
+      
+      
+        
+        GUI: <a href=\"/#/models\">/#/models</a> 
+        "
+      
       responses:
         200:
           description: OK
@@ -463,8 +509,8 @@ paths:
      get:
       tags: 
         - model_library
-      summary: List model summary
-      description: "List the model summary"
+      summary: Show model summary
+      description: "Show the model summary"
       parameters:
         - name: modelUUID
           in: path
@@ -485,8 +531,8 @@ paths:
      get:
       tags: 
         - model_library
-      summary: List model summary
-      description: "List the model summary. Same as `/models/{modelUUID}` "
+      summary: Show model summary
+      description: "Show the model summary. Same as `/models/{modelUUID}` "
       parameters:
         - name: modelUUID
           in: path
@@ -833,7 +879,7 @@ definitions:
     properties:
       image:
         type: string
-        example: "http://sdfsdf.com/image.jpg"
+        example: "http://people.csail.mit.edu/tomasz/img/tomasz_blue_crop.jpg"
         description: "The base64 encoded image or URL pointing to image, works with base64 type prefix or not"
       objects:
         type: array
@@ -851,6 +897,8 @@ definitions:
         description: "The object's human readable name"
       bb:
         type: array
+        minLength: 4
+        maxLength: 4
         items:
           type: number
         description: "The object's bounding box (4 numbers)"
@@ -860,6 +908,8 @@ definitions:
       data:
         description: "Extra data stored with the example"
         type: array
+        minLength: 4
+        maxLength: 4
         items:
           type: number
       id:
