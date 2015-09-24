@@ -22,6 +22,7 @@ var is400ish = require('./vmxtester').is400ish;
 
 var imageurl = '/Users/tomasz/projects/VMXserver/tests/testapi/tomasz_blue_crop.jpg';
 
+imageurl = 'http://people.csail.mit.edu/tomasz/img/tomasz_blue_crop.jpg';
 myrequest({method: 'POST', url:url+'/sessions',json:{}},function(error, response, body) {
   assert.equal(response.statusCode, 200, 'Problem with status code');
   var id = body.data.id;
@@ -408,7 +409,7 @@ var dataurl='sdfaalajsdfla;sjdfa;lsdfkjadslfkjasdflkj';
 
 
                                       myrequest({method: 'POST', url:url+'/save', json:{}}, function(error, response, body) {
-                                        assert.equal(response.statusCode, 400, 'Problem with status code');
+                                        assert.equal(response.statusCode, 200, 'Problem with status code');
                                         
                                         require('./vmxtester').myexec('rm '+d1);
                                         require('./vmxtester').myexec("mv "+d2+" "+d1);
