@@ -40,7 +40,7 @@ data VMXEditChange = VMXEditChange {
     vmxECimage  :: Maybe String,
     vmxESscore  :: Maybe Double,
     vmxESclass_label  :: Integer,
-    vmxESid  :: Integer,
+    vmxESid  :: String,
     vmxEStime  :: Maybe String,
     vmxESdata  :: Maybe [Float]
 }
