@@ -440,20 +440,6 @@ paths:
         200:
           description: OK
              
-        
-
-  /exit:
-    post:
-      tags: 
-        - settings
-      summary: Exit session
-      description: "Shut down the session. Be warned that you **must save your model** if you made edits and don't want to lose changes to your model."
-      responses:
-        200:
-          description: OK
-        400:
-          description: Cannot shutdown (`config.read_only` is `true`)
-
 
   /models:
      get:
